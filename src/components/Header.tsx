@@ -30,7 +30,7 @@ export default function Header() {
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [supabase])
 
   const handleLogin = async () => {
     const redirectTo = typeof window !== 'undefined' 
@@ -109,7 +109,7 @@ export default function Header() {
                           {user.email}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Haz click en "Mi perfil" para poner tu pseudónimo
+                          Haz click en &quot;Mi perfil&quot; para poner tu pseudónimo
                         </p>
                       </div>
                       <Link

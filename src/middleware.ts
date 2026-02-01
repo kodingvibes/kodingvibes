@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refresh session if expired
-  const { data: { user } } = await supabase.auth.getUser()
+  await supabase.auth.getUser()
 
   return response
 }

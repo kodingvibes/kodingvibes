@@ -62,6 +62,11 @@ export default function PostActions({
       return
     }
 
+    if (!currentUserId) {
+      alert('Debes iniciar sesión para eliminar posts')
+      return
+    }
+
     setIsDeleting(true)
     
     try {

@@ -6,10 +6,16 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { TrendingUp, Clock, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import type { Tables } from '@/types/database'
+
+interface PostWithUser extends Tables<'posts'> {
+  users: { name: string | null; username: string | null; email: string } | null
+  comments: { count: number }[]
+}
 
 export default function Home() {
   const router = useRouter()
-  const [posts, setPosts] = useState<any[]>([])
+  const [posts, setPosts] = useState<PostWithUser[]>([])
   const [loading, setLoading] = useState(true)
   
   useEffect(() => {

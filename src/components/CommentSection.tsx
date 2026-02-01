@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import MarkdownContent from './MarkdownContent'
 import { Send, CornerDownRight } from 'lucide-react'
+import type { User } from '@supabase/supabase-js'
 
 interface Comment {
   id: string
@@ -29,7 +30,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   const [replyTo, setReplyTo] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState('')
   const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -39,7 +40,8 @@ export default function CommentSection({ postId }: CommentSectionProps) {
     }
     getUser()
     fetchComments()
-  }, [postId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postId, supabase])
 
   const fetchComments = async () => {
     const { data } = await supabase

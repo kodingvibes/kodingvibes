@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { User, Save, ArrowLeft, AtSign, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 
@@ -15,7 +15,7 @@ interface Profile {
 }
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [, setProfile] = useState<Profile | null>(null)
   const [username, setUsername] = useState('')
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(true)
@@ -26,6 +26,39 @@ export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  const generateUsername = useCallback((email: string): string => {
+    const base = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')
+    const random = Math.floor(Math.random() * 10000)
+    return `${base}${random}`.substring(0, 20)
+  }, [])
+
+  const createProfile = useCallback(async (id: string, email: string) => {
+    const newUsername = generateUsername(email)
+    const newName = email.split('@')[0]
+
+    const { data, error: insertError } = await supabase
+      .from('users')
+      .insert({
+        id,
+        email,
+        name: newName,
+        username: newUsername,
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Error creating profile:', insertError)
+      setError('No se pudo crear el perfil automáticamente')
+    } else if (data) {
+      setProfile(data)
+      setUsername(data.username || '')
+      setName(data.name || '')
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
+    }
+  }, [supabase, generateUsername])
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -69,40 +102,7 @@ export default function ProfilePage() {
     }
 
     loadProfile()
-  }, [router])
-
-  const generateUsername = (email: string): string => {
-    const base = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')
-    const random = Math.floor(Math.random() * 10000)
-    return `${base}${random}`.substring(0, 20)
-  }
-
-  const createProfile = async (id: string, email: string) => {
-    const newUsername = generateUsername(email)
-    const newName = email.split('@')[0]
-
-    const { data, error: insertError } = await supabase
-      .from('users')
-      .insert({
-        id,
-        email,
-        name: newName,
-        username: newUsername,
-      })
-      .select()
-      .single()
-
-    if (insertError) {
-      console.error('Error creating profile:', insertError)
-      setError('No se pudo crear el perfil automáticamente')
-    } else if (data) {
-      setProfile(data)
-      setUsername(data.username || '')
-      setName(data.name || '')
-      setSuccess(true)
-      setTimeout(() => setSuccess(false), 3000)
-    }
-  }
+  }, [router, supabase, createProfile])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -79,7 +79,7 @@ export default function EditPostPage() {
         setContent(postData.content || '')
         setTimeRemaining(remaining)
         setIsAuthorized(true)
-      } catch (err) {
+      } catch {
         setError('Error al cargar el post')
       } finally {
         setLoading(false)
@@ -138,7 +138,7 @@ export default function EditPostPage() {
 
       router.push(`/post/${postId}`)
       router.refresh()
-    } catch (err) {
+    } catch {
       setError('Error al actualizar el post')
       setSaving(false)
     }

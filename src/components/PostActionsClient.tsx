@@ -31,7 +31,7 @@ export default function PostActionsClient({
       setCurrentUserId(user?.id || null)
     }
     getUser()
-  }, [])
+  }, [supabase])
 
   // Verificar si el usuario actual es el dueño del post
   const isOwner = currentUserId === userId
@@ -47,6 +47,11 @@ export default function PostActionsClient({
 
   const handleDelete = async () => {
     if (!confirm('¿Estás seguro de que quieres eliminar este post? Esta acción lo ocultará.')) {
+      return
+    }
+
+    if (!currentUserId) {
+      alert('Debes iniciar sesión para eliminar posts')
       return
     }
 
