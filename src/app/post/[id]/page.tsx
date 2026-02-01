@@ -1,0 +1,130 @@
+import { createClient } from '@/lib/supabase/server'
+import { notFound } from 'next/navigation'
+import Image from 'next/image'
+import Link from 'next/link'
+import VoteButtons from '@/components/VoteButtons'
+import CommentSection from '@/components/CommentSection'
+import MarkdownContent from '@/components/MarkdownContent'
+import PostActionsClient from '@/components/PostActionsClient'
+import { ArrowLeft, Clock, Edit3 } from 'lucide-react'
+
+interface PostPageProps {
+  params: {
+    id: string
+  }
+}
+
+export default async function PostPage({ params }: PostPageProps) {
+  const supabase = await createClient()
+  
+  const { data: post } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      users:user_id (name, username, email)
+    `)
+    .eq('id', params.id)
+    .eq('is_deleted', false)
+    .single()
+
+  if (!post) {
+    notFound()
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const days = Math.floor(hours / 24)
+    
+    if (days > 0) return `hace ${days} día${days > 1 ? 's' : ''}`
+    if (hours > 0) return `hace ${hours} hora${hours > 1 ? 's' : ''}`
+    return 'hace unos minutos'
+  }
+
+  return (
+    <main className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Volver al inicio</span>
+        </Link>
+
+        <article className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="flex">
+            {/* Vote section */}
+            <div className="bg-muted/30 p-4 flex items-start">
+              <VoteButtons postId={post.id} initialVotes={post.vote_count} />
+            </div>
+
+            {/* Content section */}
+            <div className="flex-1 p-6">
+              <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                    {(post.users?.name || post.users?.email || 'A').charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">
+                      @{post.users?.username || post.users?.name || post.users?.email?.split('@')[0] || 'anónimo'}
+                    </p>
+                    <p className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatDate(post.created_at)}
+                      {post.edited_at && (
+                        <span className="flex items-center gap-1 ml-2 text-xs">
+                          <Edit3 className="h-3 w-3" />
+                          (editado)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Post Actions */}
+                <PostActionsClient 
+                  postId={post.id}
+                  userId={post.user_id}
+                  createdAt={post.created_at}
+                  isDeleted={post.is_deleted}
+                />
+              </div>
+
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
+                {post.title}
+              </h1>
+              
+              {post.content && (
+                <div className="mb-6">
+                  <MarkdownContent content={post.content} />
+                </div>
+              )}
+
+              {post.image_url && (
+                <div className="mb-6 overflow-hidden rounded-xl">
+                  <Image
+                    src={post.image_url}
+                    alt={post.title}
+                    width={900}
+                    height={600}
+                    className="w-full max-h-[600px] object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </article>
+
+        {/* Comments section */}
+        <div className="mt-6">
+          <CommentSection postId={post.id} />
+        </div>
+      </div>
+    </main>
+  )
+}

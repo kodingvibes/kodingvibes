@@ -1,101 +1,105 @@
-import Image from "next/image";
+'use client'
+
+import { createClient } from '@/lib/supabase/client'
+import PostCard from '@/components/PostCard'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { TrendingUp, Clock, Sparkles } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const router = useRouter()
+  const [posts, setPosts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  
+  useEffect(() => {
+    const fetchPosts = async () => {
+      const supabase = createClient()
+      
+      const { data: postsData } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          users:user_id (name, username, email),
+          comments:comments (count)
+        `)
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false })
+      
+      setPosts(postsData || [])
+      setLoading(false)
+    }
+    
+    fetchPosts()
+  }, [])
+  
+  const handleDelete = () => {
+    router.refresh()
+  }
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const postsWithCount = posts.map(post => ({
+    ...post,
+    comments_count: post.comments?.[0]?.count || 0
+  }))
+
+  return (
+    <main className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+          <div className="text-center">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
+              Comparte tu <span className="text-yellow-300">conocimiento</span>
+            </h1>
+            <p className="text-lg sm:text-xl text-white/90 max-w-2xl mx-auto mb-8">
+              Únete a la comunidad de desarrolladores. Comparte código, aprende y conecta con otros programadores.
+            </p>
+            <Link
+              href="/submit"
+              className="inline-flex items-center gap-2 bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg"
+            >
+              <Sparkles className="h-5 w-5" />
+              Crear tu primer post
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Sort tabs */}
+        <div className="flex items-center gap-2 mb-6">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground font-medium text-sm">
+            <TrendingUp className="h-4 w-4" />
+            <span>Populares</span>
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-muted-foreground font-medium text-sm hover:bg-muted/80 transition-colors">
+            <Clock className="h-4 w-4" />
+            <span>Recientes</span>
+          </button>
+        </div>
+
+        {/* Posts feed */}
+        <div className="space-y-4">
+          {!loading && postsWithCount.length > 0 ? (
+            postsWithCount.map((post) => (
+              <PostCard key={post.id} post={post} onDelete={handleDelete} />
+            ))
+          ) : (
+            <div className="text-center py-16 bg-card rounded-xl border border-border border-dashed">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground text-lg mb-4">No hay posts aún</p>
+              <Link
+                href="/submit"
+                className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
+              >
+                Sé el primero en publicar
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    </main>
+  )
 }
