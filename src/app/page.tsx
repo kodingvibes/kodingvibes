@@ -63,7 +63,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
-  
+  const [sortBy, setSortBy] = useState<'popular' | 'recent'>('popular')
+   
   useEffect(() => {
     const fetchPosts = async () => {
       const supabase = createClient()
@@ -76,7 +77,7 @@ export default function Home() {
           comments:comments (count)
         `)
         .eq('is_deleted', false)
-        .order('created_at', { ascending: false })
+        .order('vote_count', { ascending: false })
       
       setPosts(postsData || [])
       setLoading(false)
@@ -106,6 +107,13 @@ export default function Home() {
     ...post,
     comments_count: post.comments?.[0]?.count || 0
   }))
+
+  const sortedPosts = [...postsWithCount].sort((a, b) => {
+    if (sortBy === 'popular') {
+      return b.vote_count - a.vote_count
+    }
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  })
 
   const currentMessage = heroMessages[currentMessageIndex]
 
@@ -164,11 +172,25 @@ export default function Home() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32 sm:pb-8">
         {/* Sort tabs */}
         <div className="flex items-center gap-2 mb-6">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground font-medium text-sm">
+          <button 
+            onClick={() => setSortBy('popular')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm transition-colors ${
+              sortBy === 'popular' 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
             <TrendingUp className="h-4 w-4" />
             <span>Populares</span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-muted-foreground font-medium text-sm hover:bg-muted/80 transition-colors">
+          <button 
+            onClick={() => setSortBy('recent')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm transition-colors ${
+              sortBy === 'recent' 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
             <Clock className="h-4 w-4" />
             <span>Recientes</span>
           </button>
@@ -176,8 +198,8 @@ export default function Home() {
 
         {/* Posts feed */}
         <div className="space-y-4">
-          {!loading && postsWithCount.length > 0 ? (
-            postsWithCount.map((post) => (
+          {!loading && sortedPosts.length > 0 ? (
+            sortedPosts.map((post) => (
               <PostCard key={post.id} post={post} onDelete={handleDelete} />
             ))
           ) : (
