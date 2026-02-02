@@ -65,6 +65,18 @@ export default async function PostPage({ params }: PostPageProps) {
 
             {/* Content section */}
             <div className="flex-1 p-6">
+              {post.image_url && (
+                <div className="mb-6 overflow-hidden rounded-xl">
+                  <Image
+                    src={post.image_url}
+                    alt={post.title}
+                    width={900}
+                    height={600}
+                    className="w-full max-h-[600px] object-cover"
+                  />
+                </div>
+              )}
+
               <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
@@ -105,18 +117,6 @@ export default async function PostPage({ params }: PostPageProps) {
                   <MarkdownContent content={post.content} />
                 </div>
               )}
-
-              {post.image_url && (
-                <div className="mb-6 overflow-hidden rounded-xl">
-                  <Image
-                    src={post.image_url}
-                    alt={post.title}
-                    width={900}
-                    height={600}
-                    className="w-full max-h-[600px] object-cover"
-                  />
-                </div>
-              )}
             </div>
           </div>
 
@@ -129,6 +129,18 @@ export default async function PostPage({ params }: PostPageProps) {
 
             {/* Content section */}
             <div className="p-4">
+              {post.image_url && (
+                <div className="mb-6 overflow-hidden rounded-xl">
+                  <Image
+                    src={post.image_url}
+                    alt={post.title}
+                    width={900}
+                    height={600}
+                    className="w-full max-h-[600px] object-cover"
+                  />
+                </div>
+              )}
+
               <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
@@ -167,18 +179,6 @@ export default async function PostPage({ params }: PostPageProps) {
               {post.content && (
                 <div className="mb-6">
                   <MarkdownContent content={post.content} />
-                </div>
-              )}
-
-              {post.image_url && (
-                <div className="mb-6 overflow-hidden rounded-xl">
-                  <Image
-                    src={post.image_url}
-                    alt={post.title}
-                    width={900}
-                    height={600}
-                    className="w-full max-h-[600px] object-cover"
-                  />
                 </div>
               )}
             </div>

@@ -52,9 +52,11 @@ export default function MarkdownContent({ content, className = '' }: MarkdownCon
             }
             
             // Sin language-* es código inline
+            // Eliminar backticks del contenido si existen
+            const cleanContent = String(children).replace(/^`|`$/g, '')
             return (
               <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono border border-border text-primary" {...props}>
-                {children}
+                {cleanContent}
               </code>
             )
           },
