@@ -64,7 +64,14 @@ export function Logo({ className = '', size = 40 }: LogoProps) {
 export function LogoFull({ className = '', size = 32 }: LogoProps) {
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <Logo size={size} />
+      {/* Favicon as logo */}
+      <img 
+        src="/favicon.ico" 
+        alt="KodingVibes" 
+        width={size} 
+        height={size}
+        className="rounded-sm"
+      />
       <span className="font-bold text-xl tracking-tight">
         Koding<span className="gradient-text">Vibes</span>
       </span>
