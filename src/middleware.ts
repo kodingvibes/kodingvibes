@@ -26,7 +26,7 @@ function checkRateLimit(ip: string): boolean {
 
 export async function middleware(request: NextRequest) {
   // Rate limiting
-  const ip = request.ip ?? request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown'
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
   
   if (!checkRateLimit(ip)) {
     return new NextResponse('Too Many Requests', { 

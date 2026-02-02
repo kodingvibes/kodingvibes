@@ -9,12 +9,13 @@ import PostActionsClient from '@/components/PostActionsClient'
 import { ArrowLeft, Clock, Edit3 } from 'lucide-react'
 
 interface PostPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function PostPage({ params }: PostPageProps) {
+  const { id } = await params
   const supabase = await createClient()
   
   const { data: post } = await supabase
@@ -23,7 +24,7 @@ export default async function PostPage({ params }: PostPageProps) {
       *,
       users:user_id (name, username, email)
     `)
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('is_deleted', false)
     .single()
 
