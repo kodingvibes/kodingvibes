@@ -27,24 +27,25 @@ export default function MarkdownContent({ content, className = '' }: MarkdownCon
             const language = match ? match[1] : 'text'
             
             return !inline ? (
-              <div className="my-4 rounded-lg overflow-hidden border border-border">
-                <div className="bg-muted/80 px-4 py-2 text-xs text-muted-foreground border-b border-border flex items-center justify-between">
-                  <span>{language}</span>
-                </div>
+              <span className="block my-4 rounded-lg overflow-hidden border border-border">
+                <span className="block bg-muted/80 px-4 py-2 text-xs text-muted-foreground border-b border-border">
+                  {language}
+                </span>
                 <SyntaxHighlighter
                   {...props}
                   style={oneDark}
                   language={language}
-                  PreTag="div"
+                  PreTag="span"
                   customStyle={{
                     margin: 0,
                     borderRadius: '0 0 0.5rem 0.5rem',
                     padding: '1rem',
+                    display: 'block',
                   }}
                 >
                   {String(children).replace(/\n$/, '')}
                 </SyntaxHighlighter>
-              </div>
+              </span>
             ) : (
               <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono border border-border text-primary" {...props}>
                 {children}

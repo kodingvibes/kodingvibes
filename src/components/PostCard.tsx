@@ -107,13 +107,13 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
             <h2 className="text-lg font-semibold text-foreground group-hover/link:text-primary transition-colors mb-2">
               {post.title}
             </h2>
-            
-            {post.content && (
-              <div className="text-muted-foreground text-sm mb-3 line-clamp-2">
-                <MarkdownContent content={post.content} />
-              </div>
-            )}
           </Link>
+            
+          {post.content && (
+            <div className="text-muted-foreground text-sm mb-3 line-clamp-2">
+              <MarkdownContent content={post.content} />
+            </div>
+          )}
 
           {post.image_url && (
             <div className="mb-3 overflow-hidden rounded-lg">
