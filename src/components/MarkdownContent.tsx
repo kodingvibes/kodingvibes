@@ -22,31 +22,37 @@ export default function MarkdownContent({ content, className = '' }: MarkdownCon
           ),
 
           // Personalizar código con syntax highlighting
-          code: ({ inline, className, children, ...props }: { inline?: boolean; className?: string; children?: React.ReactNode }) => {
+          code: ({ className, children, ...props }: { className?: string; children?: React.ReactNode }) => {
             const match = /language-(\w+)/.exec(className || '')
-            const language = match ? match[1] : 'text'
             
-            return !inline ? (
-              <span className="block my-4 rounded-lg overflow-hidden border border-border">
-                <span className="block bg-muted/80 px-4 py-2 text-xs text-muted-foreground border-b border-border">
-                  {language}
+            // Si tiene language-*, es un bloque de código
+            if (match) {
+              const language = match[1]
+              return (
+                <span className="block my-4 rounded-lg overflow-hidden border border-border">
+                  <span className="block bg-muted/80 px-4 py-2 text-xs text-muted-foreground border-b border-border">
+                    {language}
+                  </span>
+                  <SyntaxHighlighter
+                    {...props}
+                    style={oneDark}
+                    language={language}
+                    PreTag="span"
+                    customStyle={{
+                      margin: 0,
+                      borderRadius: '0 0 0.5rem 0.5rem',
+                      padding: '1rem',
+                      display: 'block',
+                    }}
+                  >
+                    {String(children).replace(/\n$/, '')}
+                  </SyntaxHighlighter>
                 </span>
-                <SyntaxHighlighter
-                  {...props}
-                  style={oneDark}
-                  language={language}
-                  PreTag="span"
-                  customStyle={{
-                    margin: 0,
-                    borderRadius: '0 0 0.5rem 0.5rem',
-                    padding: '1rem',
-                    display: 'block',
-                  }}
-                >
-                  {String(children).replace(/\n$/, '')}
-                </SyntaxHighlighter>
-              </span>
-            ) : (
+              )
+            }
+            
+            // Sin language-* es código inline
+            return (
               <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono border border-border text-primary" {...props}>
                 {children}
               </code>
