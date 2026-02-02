@@ -121,8 +121,8 @@ export default async function PostPage({ params }: PostPageProps) {
 
           {/* Mobile: Vote section floating */}
           <div className="sm:hidden">
-            {/* Floating vote buttons */}
-            <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-1 bg-card border border-border rounded-xl shadow-2xl p-2">
+            {/* Floating vote buttons - positioned left to avoid overlap with create button */}
+            <div className="fixed bottom-6 left-6 z-50 flex flex-col items-center gap-1 bg-card border border-border rounded-xl shadow-2xl p-2">
               <VoteButtons postId={post.id} initialVotes={post.vote_count} />
             </div>
 
