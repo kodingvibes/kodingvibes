@@ -23,6 +23,7 @@ create table if not exists public.posts (
   title text not null,
   content text,
   image_url text,
+  tags text[] default '{}',
   vote_count integer default 0 not null,
   is_deleted boolean default false not null,
   deleted_at timestamptz,
@@ -58,6 +59,7 @@ create table if not exists public.votes (
 create index if not exists posts_user_id_idx on public.posts(user_id);
 create index if not exists posts_created_at_idx on public.posts(created_at desc);
 create index if not exists posts_is_deleted_idx on public.posts(is_deleted);
+create index if not exists posts_tags_idx on public.posts using gin(tags);
 create index if not exists comments_post_id_idx on public.comments(post_id);
 create index if not exists comments_parent_id_idx on public.comments(parent_id);
 create index if not exists comments_user_id_idx on public.comments(user_id);

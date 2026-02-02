@@ -7,7 +7,8 @@ import VoteButtons from './VoteButtons'
 import MarkdownContent from './MarkdownContent'
 import PostActions from './PostActions'
 import { createClient } from '@/lib/supabase/client'
-import { MessageSquare, Clock } from 'lucide-react'
+import { MessageSquare, Clock, Hash } from 'lucide-react'
+import { PREDEFINED_TAGS } from './TagInput'
 
 interface Post {
   id: string
@@ -18,6 +19,7 @@ interface Post {
   created_at: string
   user_id: string
   is_deleted: boolean
+  tags: string[] | null
   users: {
     name: string | null
     username: string | null

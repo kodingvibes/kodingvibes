@@ -4,9 +4,10 @@ import { createClient } from '@/lib/supabase/client'
 import PostCard from '@/components/PostCard'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { TrendingUp, Clock, Sparkles } from 'lucide-react'
+import { TrendingUp, Clock, Sparkles, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Tables } from '@/types/database'
+import { PREDEFINED_TAGS } from '@/components/TagInput'
 
 interface PostWithUser extends Tables<'posts'> {
   users: { name: string | null; username: string | null; email: string } | null

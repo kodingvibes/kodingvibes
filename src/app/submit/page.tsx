@@ -2,22 +2,71 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ImageIcon, X, Sparkles, Eye, EyeOff, Code } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import MarkdownContent from '@/components/MarkdownContent'
 import { validateString, validateFile, checkUserRateLimit, sanitizeMarkdown } from '@/lib/security/validation'
+import TagInput from '@/components/TagInput'
 
 export default function SubmitPage() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [tags, setTags] = useState<string[]>([])
   const [image, setImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  // Handle clipboard paste for images
+  const handlePaste = useCallback((e: ClipboardEvent) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      
+      // Check if the item is an image
+      if (item.type.indexOf('image') !== -1) {
+        e.preventDefault()
+        const blob = item.getAsFile()
+        if (blob) {
+          // Create a File object from the blob
+          const file = new File([blob], `pasted-image-${Date.now()}.png`, { type: blob.type })
+          
+          // Validate the file
+          const validation = validateFile(file, {
+            maxSizeMB: 5,
+            allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+          })
+
+          if (!validation.valid) {
+            alert(validation.error)
+            return
+          }
+
+          setImage(file)
+          const reader = new FileReader()
+          reader.onloadend = () => {
+            setImagePreview(reader.result as string)
+          }
+          reader.readAsDataURL(file)
+        }
+        break
+      }
+    }
+  }, [])
+
+  // Add paste event listener
+  useEffect(() => {
+    document.addEventListener('paste', handlePaste)
+    return () => {
+      document.removeEventListener('paste', handlePaste)
+    }
+  }, [handlePaste])
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -142,6 +191,7 @@ export default function SubmitPage() {
           title: titleValidation.sanitized || title.trim(),
           content: sanitizedContent,
           image_url: imageUrl,
+          tags: tags,
           user_id: user.id,
         })
         .select()
@@ -232,6 +282,7 @@ export default function SubmitPage() {
           <div className="mb-6">
             <label className="block text-sm font-medium text-foreground mb-2">
               Imagen
+              <span className="text-xs text-muted-foreground font-normal ml-2">(También puedes pegar imagen con Ctrl+V)</span>
             </label>
             
             {imagePreview ? (
@@ -268,6 +319,14 @@ export default function SubmitPage() {
                 />
               </label>
             )}
+          </div>
+
+          {/* Tags */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Tags
+            </label>
+            <TagInput selectedTags={tags} onChange={setTags} maxTags={5} />
           </div>
 
           <div className="flex justify-end gap-3">
