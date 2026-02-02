@@ -7,6 +7,7 @@ import { ImageIcon, X, Sparkles, Eye, EyeOff, Code } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import MarkdownContent from '@/components/MarkdownContent'
+import { validateString, validateFile, checkUserRateLimit, sanitizeMarkdown } from '@/lib/security/validation'
 
 export default function SubmitPage() {
   const [title, setTitle] = useState('')
@@ -21,10 +22,17 @@ export default function SubmitPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen debe ser menor a 5MB')
+      // OWASP File Validation
+      const validation = validateFile(file, {
+        maxSizeMB: 5,
+        allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      })
+
+      if (!validation.valid) {
+        alert(validation.error)
         return
       }
+
       setImage(file)
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -40,6 +48,17 @@ export default function SubmitPage() {
   }
 
   const uploadImage = async (file: File): Promise<string | null> => {
+    // Validación adicional antes de subir
+    const validation = validateFile(file, {
+      maxSizeMB: 5,
+      allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    })
+
+    if (!validation.valid) {
+      alert(validation.error)
+      return null
+    }
+
     const fileExt = file.name.split('.').pop()
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
     const filePath = `posts/${fileName}`
@@ -63,9 +82,33 @@ export default function SubmitPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!title.trim()) {
-      alert('El título es obligatorio')
+    // OWASP Input Validation
+    const titleValidation = validateString(title, {
+      maxLength: 300,
+      minLength: 5,
+      allowHTML: false
+    })
+
+    if (!titleValidation.valid) {
+      alert(`Error en título: ${titleValidation.error}`)
       return
+    }
+
+    // Validar contenido si existe
+    let sanitizedContent = null
+    if (content.trim()) {
+      const contentValidation = validateString(content, {
+        maxLength: 10000,
+        minLength: 0,
+        allowHTML: false
+      })
+
+      if (!contentValidation.valid) {
+        alert(`Error en contenido: ${contentValidation.error}`)
+        return
+      }
+
+      sanitizedContent = sanitizeMarkdown(contentValidation.sanitized || content)
     }
 
     setLoading(true)
@@ -78,16 +121,26 @@ export default function SubmitPage() {
         return
       }
 
+      // Rate limiting: máximo 3 posts por hora
+      if (!checkUserRateLimit(user.id, 'post', 3, 3600000)) {
+        alert('Has alcanzado el límite de posts. Por favor espera antes de publicar nuevamente.')
+        return
+      }
+
       let imageUrl = null
       if (image) {
         imageUrl = await uploadImage(image)
+        if (!imageUrl) {
+          setLoading(false)
+          return
+        }
       }
 
       const { data: post, error } = await supabase
         .from('posts')
         .insert({
-          title: title.trim(),
-          content: content.trim() || null,
+          title: titleValidation.sanitized || title.trim(),
+          content: sanitizedContent,
           image_url: imageUrl,
           user_id: user.id,
         })

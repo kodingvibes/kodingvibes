@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import MarkdownContent from './MarkdownContent'
 import { Send, CornerDownRight } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
+import { validateString, checkUserRateLimit, sanitizeMarkdown } from '@/lib/security/validation'
 
 interface Comment {
   id: string
@@ -82,14 +83,35 @@ export default function CommentSection({ postId }: CommentSectionProps) {
       return
     }
 
-    setLoading(true)
+    // Rate limiting: máximo 5 comentarios por minuto
+    if (!checkUserRateLimit(user.id, 'comment', 5, 60000)) {
+      alert('Has alcanzado el límite de comentarios. Por favor espera un momento.')
+      return
+    }
 
     const content = parentId ? replyContent : newComment
+
+    // Validación de seguridad OWASP
+    const validation = validateString(content, {
+      maxLength: 5000,
+      minLength: 1,
+      allowHTML: false
+    })
+
+    if (!validation.valid) {
+      alert(`Error de validación: ${validation.error}`)
+      return
+    }
+
+    // Sanitizar contenido Markdown
+    const sanitizedContent = sanitizeMarkdown(validation.sanitized || content)
+
+    setLoading(true)
 
     const { error } = await supabase.from('comments').insert({
       post_id: postId,
       user_id: user.id,
-      content: content,
+      content: sanitizedContent,
       parent_id: parentId || null,
     })
 
