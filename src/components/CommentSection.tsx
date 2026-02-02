@@ -25,6 +25,115 @@ interface CommentSectionProps {
   postId: string
 }
 
+interface CommentItemProps {
+  comment: Comment
+  depth?: number
+  user: User | null
+  replyTo: string | null
+  replyContent: string
+  loading: boolean
+  onReplyClick: (commentId: string) => void
+  onReplyContentChange: (value: string) => void
+  onSubmitReply: (e: React.FormEvent, commentId: string) => void
+}
+
+const CommentItem = ({ 
+  comment, 
+  depth = 0, 
+  user, 
+  replyTo, 
+  replyContent, 
+  loading,
+  onReplyClick,
+  onReplyContentChange,
+  onSubmitReply
+}: CommentItemProps) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const days = Math.floor(hours / 24)
+    
+    if (days > 0) return `hace ${days} día${days > 1 ? 's' : ''}`
+    if (hours > 0) return `hace ${hours} hora${hours > 1 ? 's' : ''}`
+    return 'hace unos minutos'
+  }
+
+  return (
+    <div className={`${depth > 0 ? 'ml-6 sm:ml-8 border-l-2 border-border pl-4' : ''}`}>
+      <div className="bg-muted/50 rounded-xl p-4 mb-3">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs">
+            {(comment.users?.name || comment.users?.email || 'A').charAt(0).toUpperCase()}
+          </div>
+          <span className="font-medium text-foreground">
+            @{comment.users?.username || comment.users?.name || comment.users?.email?.split('@')[0] || 'anónimo'}
+          </span>
+          <span>•</span>
+          <span>{formatDate(comment.created_at)}</span>
+        </div>
+        
+        <div className="text-foreground text-sm">
+          <MarkdownContent content={comment.content} />
+        </div>
+        
+        {user && (
+          <button
+            onClick={() => onReplyClick(comment.id)}
+            className="mt-3 text-xs text-muted-foreground hover:text-primary font-medium transition-colors"
+          >
+            {replyTo === comment.id ? 'Cancelar' : 'Responder'}
+          </button>
+        )}
+        
+        {replyTo === comment.id && (
+          <form onSubmit={(e) => onSubmitReply(e, comment.id)} className="mt-3 animate-slide-up">
+            <textarea
+              value={replyContent}
+              onChange={(e) => onReplyContentChange(e.target.value)}
+              placeholder="Escribe tu respuesta... (soporta Markdown)"
+              className="w-full p-3 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-sm resize-none"
+              rows={3}
+              required
+            />
+            <div className="flex justify-end mt-2">
+              <button
+                type="submit"
+                disabled={loading || !replyContent.trim()}
+                className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-2 transition-opacity"
+              >
+                <Send className="h-4 w-4" />
+                Responder
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+      
+      {comment.replies && comment.replies.length > 0 && (
+        <div>
+          {comment.replies.map(reply => (
+            <CommentItem 
+              key={reply.id} 
+              comment={reply} 
+              depth={depth + 1}
+              user={user}
+              replyTo={replyTo}
+              replyContent={replyContent}
+              loading={loading}
+              onReplyClick={onReplyClick}
+              onReplyContentChange={onReplyContentChange}
+              onSubmitReply={onSubmitReply}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function CommentSection({ postId }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState('')
@@ -130,79 +239,13 @@ export default function CommentSection({ postId }: CommentSectionProps) {
     setLoading(false)
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const days = Math.floor(hours / 24)
-    
-    if (days > 0) return `hace ${days} día${days > 1 ? 's' : ''}`
-    if (hours > 0) return `hace ${hours} hora${hours > 1 ? 's' : ''}`
-    return 'hace unos minutos'
+  const handleReplyClick = (commentId: string) => {
+    setReplyTo(replyTo === commentId ? null : commentId)
   }
 
-  const CommentItem = ({ comment, depth = 0 }: { comment: Comment; depth?: number }) => (
-    <div className={`${depth > 0 ? 'ml-6 sm:ml-8 border-l-2 border-border pl-4' : ''}`}>
-      <div className="bg-muted/50 rounded-xl p-4 mb-3">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs">
-            {(comment.users?.name || comment.users?.email || 'A').charAt(0).toUpperCase()}
-          </div>
-          <span className="font-medium text-foreground">
-            @{comment.users?.username || comment.users?.name || comment.users?.email?.split('@')[0] || 'anónimo'}
-          </span>
-          <span>•</span>
-          <span>{formatDate(comment.created_at)}</span>
-        </div>
-        
-        <div className="text-foreground text-sm">
-          <MarkdownContent content={comment.content} />
-        </div>
-        
-        {user && (
-          <button
-            onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
-            className="mt-3 text-xs text-muted-foreground hover:text-primary font-medium transition-colors"
-          >
-            {replyTo === comment.id ? 'Cancelar' : 'Responder'}
-          </button>
-        )}
-        
-        {replyTo === comment.id && (
-          <form onSubmit={(e) => handleSubmit(e, comment.id)} className="mt-3 animate-slide-up">
-            <textarea
-              value={replyContent}
-              onChange={(e) => setReplyContent(e.target.value)}
-              placeholder="Escribe tu respuesta... (soporta Markdown)"
-              className="w-full p-3 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-sm resize-none"
-              rows={3}
-              required
-            />
-            <div className="flex justify-end mt-2">
-              <button
-                type="submit"
-                disabled={loading || !replyContent.trim()}
-                className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-2 transition-opacity"
-              >
-                <Send className="h-4 w-4" />
-                Responder
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-      
-      {comment.replies && comment.replies.length > 0 && (
-        <div>
-          {comment.replies.map(reply => (
-            <CommentItem key={reply.id} comment={reply} depth={depth + 1} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
+  const handleReplyContentChange = (value: string) => {
+    setReplyContent(value)
+  }
 
   return (
     <div className="mt-8">
@@ -254,7 +297,17 @@ export default function CommentSection({ postId }: CommentSectionProps) {
           </div>
         ) : (
           comments.map(comment => (
-            <CommentItem key={comment.id} comment={comment} />
+            <CommentItem 
+              key={comment.id} 
+              comment={comment} 
+              user={user}
+              replyTo={replyTo}
+              replyContent={replyContent}
+              loading={loading}
+              onReplyClick={handleReplyClick}
+              onReplyContentChange={handleReplyContentChange}
+              onSubmitReply={handleSubmit}
+            />
           ))
         )}
       </div>
