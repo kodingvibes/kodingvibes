@@ -55,9 +55,9 @@ export default async function PostPage({ params }: PostPageProps) {
           <span>Volver al inicio</span>
         </Link>
 
-        <article className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="flex">
-            {/* Vote section */}
+        <article className="bg-card border border-border rounded-xl overflow-hidden relative">
+          {/* Desktop: Vote section lateral */}
+          <div className="hidden sm:flex">
             <div className="bg-muted/30 p-4 flex items-start">
               <VoteButtons postId={post.id} initialVotes={post.vote_count} />
             </div>
@@ -96,6 +96,70 @@ export default async function PostPage({ params }: PostPageProps) {
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
+                {post.title}
+              </h1>
+              
+              {post.content && (
+                <div className="mb-6">
+                  <MarkdownContent content={post.content} />
+                </div>
+              )}
+
+              {post.image_url && (
+                <div className="mb-6 overflow-hidden rounded-xl">
+                  <Image
+                    src={post.image_url}
+                    alt={post.title}
+                    width={900}
+                    height={600}
+                    className="w-full max-h-[600px] object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile: Vote section floating */}
+          <div className="sm:hidden">
+            {/* Floating vote buttons */}
+            <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-1 bg-card border border-border rounded-xl shadow-2xl p-2">
+              <VoteButtons postId={post.id} initialVotes={post.vote_count} />
+            </div>
+
+            {/* Content section */}
+            <div className="p-4">
+              <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                    {(post.users?.name || post.users?.email || 'A').charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">
+                      @{post.users?.username || post.users?.name || post.users?.email?.split('@')[0] || 'anónimo'}
+                    </p>
+                    <p className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatDate(post.created_at)}
+                      {post.edited_at && (
+                        <span className="flex items-center gap-1 ml-2 text-xs">
+                          <Edit3 className="h-3 w-3" />
+                          (editado)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Post Actions */}
+                <PostActionsClient 
+                  postId={post.id}
+                  userId={post.user_id}
+                  createdAt={post.created_at}
+                  isDeleted={post.is_deleted}
+                />
+              </div>
+
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-4">
                 {post.title}
               </h1>
               
