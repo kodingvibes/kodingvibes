@@ -148,9 +148,9 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5 }: TagInp
         </button>
 
         {isOpen && selectedTags.length < maxTags && (
-          <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
+          <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
             {/* Search */}
-            <div className="p-2 border-b border-border sticky top-0 bg-popover">
+            <div className="p-2 border-b border-border sticky top-0 bg-background">
               <input
                 type="text"
                 placeholder="Buscar tags..."
