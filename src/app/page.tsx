@@ -16,42 +16,42 @@ interface PostWithUser extends Tables<'posts'> {
 const heroMessages = [
   {
     title: "El Prompt es el nuevo Push",
-    subtitle: "Comparte configs, descubre workflows y deja de pelear con la sintaxis."
+    subtitle: "Comparte configuraciones, descubre workflows y deja de pelear con la sintaxis."
   },
   {
     title: "De Junior a Prompt Engineer en comunidad",
     subtitle: "Tu stack ya no es solo React. Es Claude + Cursor + ese prompt mágico que alguien más ya debuggeó."
   },
   {
-    title: "Agents trabajando mientras dormís",
-    subtitle: "Orquestá tu equipo de IA, compartí flujos autónomos y conectá con quienes ya no codean solos."
+    title: "Agents trabajando mientras duermes",
+    subtitle: "Orquesta tu equipo de IA, comparte flujos autónomos y conecta con quienes ya no programan solos."
   },
   {
     title: "El conocimiento colectivo de la IA",
-    subtitle: "¿Cómo hiciste que GPT entendiera tu base legacy? Compartí el template. Robá el de otros."
+    subtitle: "¿Cómo hiciste que GPT entendiera tu base legacy? Comparte el template. Toma el de otros."
   },
   {
-    title: "Codeá con IA, no contra ella",
+    title: "Codea con IA, no contra ella",
     subtitle: "Vibe coding en español. Desde tus primeros prompts hasta repos que se escriben solos."
   },
   {
-    title: "El futuro se shippea hoy",
-    subtitle: "Galería de proyectos hechos 80% por agents. Mostrá lo tuyo, aprendé el stack nuevo."
+    title: "El futuro se lanza hoy",
+    subtitle: "Galería de proyectos hechos 80% por agents. Muestra lo tuyo, aprende el stack nuevo."
   },
   {
     title: "Debugging cognitivo",
-    subtitle: "Cuando la IA alucina, la comunidad corrige. Compartí tus fails épicos y sus fixes."
+    subtitle: "Cuando la IA alucina, la comunidad corrige. Comparte tus fails épicos y sus fixes."
   },
   {
-    title: "Syntaxis opcional, lógica obligatoria",
-    subtitle: "Dejar de tipear no significa dejar de pensar. Discutí arquitectura mientras el boilerplate se genera solo."
+    title: "Sintaxis opcional, lógica obligatoria",
+    subtitle: "Dejar de tipear no significa dejar de pensar. Discute arquitectura mientras el boilerplate se genera solo."
   },
   {
     title: "Tu stack extendido (humano + silicona)",
-    subtitle: "Conectá con devs que hablan español y orquestan IA como si nada. Bienvenido al nuevo toolchain."
+    subtitle: "Conecta con devs que hablan español y orquestan IA como si nada. Bienvenido al nuevo toolchain."
   },
   {
-    title: "La última comunidad antes de que lo codee todo una IA",
+    title: "La última comunidad antes de que lo programe todo una IA",
     subtitle: "Mientras tanto, compartimos prompts, evaluamos models y decidimos qué partes mantener humanas."
   }
 ]
