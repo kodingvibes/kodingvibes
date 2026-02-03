@@ -87,10 +87,10 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-popover border rounded-xl shadow-lg z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-background border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between p-3 border-b bg-muted/50">
-            <h3 className="font-semibold text-sm">Notificaciones</h3>
+          <div className="flex items-center justify-between p-3 border-b border-border bg-muted">
+            <h3 className="font-semibold text-sm text-foreground">Notificaciones</h3>
             <div className="flex items-center gap-1">
               {unreadCount > 0 && (
                 <button
@@ -188,7 +188,7 @@ export function NotificationBell() {
 
           {/* Footer */}
           {notifications.length > 0 && (
-            <div className="p-2 border-t bg-muted/30 text-center">
+            <div className="p-2 border-t border-border bg-muted text-center">
               <Link
                 href="/notifications"
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
