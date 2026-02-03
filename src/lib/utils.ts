@@ -1,11 +1,11 @@
-import { formatDistanceToNow as formatDistance } from 'date-fns';
+import { formatDistanceToNow as formatDistanceToNowBase } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export function formatDistanceToNow(date: string | Date): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   
   try {
-    return formatDistance(dateObj, new Date(), { 
+    return formatDistanceToNowBase(dateObj, { 
       addSuffix: true,
       locale: es 
     });
