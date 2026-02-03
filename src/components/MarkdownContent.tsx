@@ -12,7 +12,7 @@ interface MarkdownContentProps {
 
 export default function MarkdownContent({ content, className = '' }: MarkdownContentProps) {
   return (
-    <div className={`prose prose-sm dark:prose-invert prose-slate max-w-none ${className}`}>
+    <div className={`prose prose-sm dark:prose-invert prose-slate max-w-none overflow-hidden ${className}`}>
       <ReactMarkdown 
         remarkPlugins={[remarkGfm]}
         components={{

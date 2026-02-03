@@ -4,11 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import VoteButtons from './VoteButtons'
-import MarkdownContent from './MarkdownContent'
 import PostActions from './PostActions'
 import { createClient } from '@/lib/supabase/client'
-import { MessageSquare, Clock, Hash } from 'lucide-react'
-import { PREDEFINED_TAGS } from './TagInput'
+import { MessageSquare, Clock } from 'lucide-react'
 
 interface Post {
   id: string
@@ -110,12 +108,6 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
               {post.title}
             </h2>
           </Link>
-            
-          {post.content && (
-            <div className="text-muted-foreground text-sm mb-3 line-clamp-2">
-              <MarkdownContent content={post.content} />
-            </div>
-          )}
 
           {post.image_url && (
             <div className="mb-3 overflow-hidden rounded-lg">
