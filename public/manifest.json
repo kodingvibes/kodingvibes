@@ -1,0 +1,44 @@
+{
+  "name": "KodingVibes",
+  "short_name": "KodingVibes",
+  "description": "Una comunidad estilo Reddit para compartir conocimiento, código y experiencias de desarrollo.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#6366f1",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["developer", "community", "education"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Nuevo Post",
+      "short_name": "Nuevo",
+      "description": "Crear un nuevo post",
+      "url": "/submit",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Perfil",
+      "short_name": "Perfil",
+      "description": "Ver tu perfil",
+      "url": "/profile",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}

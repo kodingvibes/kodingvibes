@@ -192,6 +192,156 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          type: string
+          title: string
+          message: string
+          post_id: string | null
+          comment_id: string | null
+          actor_id: string | null
+          actor_name: string | null
+          is_read: boolean
+          created_at: string
+          metadata: Json | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: string
+          title: string
+          message: string
+          post_id?: string | null
+          comment_id?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          is_read?: boolean
+          created_at?: string
+          metadata?: Json | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: string
+          title?: string
+          message?: string
+          post_id?: string | null
+          comment_id?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          is_read?: boolean
+          created_at?: string
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          subscription: Json
+          device_info: string | null
+          is_active: boolean
+          created_at: string
+          last_used_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          subscription: Json
+          device_info?: string | null
+          is_active?: boolean
+          created_at?: string
+          last_used_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          subscription?: Json
+          device_info?: string | null
+          is_active?: boolean
+          created_at?: string
+          last_used_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_notification_queue: {
+        Row: {
+          id: string
+          user_id: string
+          payload: Json
+          processed: boolean
+          error_message: string | null
+          created_at: string
+          processed_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          payload: Json
+          processed?: boolean
+          error_message?: string | null
+          created_at?: string
+          processed_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          payload?: Json
+          processed?: boolean
+          error_message?: string | null
+          created_at?: string
+          processed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_notification_queue_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

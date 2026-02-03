@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { Plus, Sun, Moon, LogOut, User as UserIcon, Settings } from 'lucide-react'
 import { useTheme } from '@/providers/theme-provider'
 import { LogoFull } from '@/components/icons/Logo'
+import { NotificationBell } from '@/components/NotificationBell'
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null)
@@ -77,6 +78,9 @@ export default function Header() {
                   <Moon className="h-5 w-5 text-slate-600" />
                 )}
               </button>
+
+              {/* Notification Bell - Only for logged in users */}
+              {user && <NotificationBell />}
 
               {/* Create Post Button - Desktop only */}
               {user && (
