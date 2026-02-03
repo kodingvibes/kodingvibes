@@ -87,7 +87,7 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-background border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
+        <div className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 sm:mt-2 mt-2 w-auto sm:w-96 bg-background border border-border rounded-xl shadow-2xl z-50 overflow-hidden max-w-md sm:max-w-none mx-auto sm:mx-0">
           {/* Header */}
           <div className="flex items-center justify-between p-3 border-b border-border bg-muted">
             <h3 className="font-semibold text-sm text-foreground">Notificaciones</h3>
