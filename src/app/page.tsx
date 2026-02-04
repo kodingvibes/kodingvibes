@@ -149,7 +149,7 @@ export default function Home() {
     setSelectedGroup(group)
     setShowGroupDropdown(false)
     
-    if (group && group.slug !== 'general') {
+    if (group) {
       router.push(`/?group=${group.slug}`)
     } else {
       router.push('/')
