@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -16,53 +17,76 @@ interface PostPageProps {
 }
 
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
-  const { id } = await params
-  const supabase = await createClient()
+  try {
+    const { id } = await params
+    
+    // Create a client without cookies for metadata generation (works with crawlers)
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return []
+          },
+          setAll() {
+            // No-op for metadata generation
+          },
+        },
+      }
+    )
 
-  const { data: post } = await supabase
-    .from('posts')
-    .select('title, content, image_url')
-    .eq('id', id)
-    .eq('is_deleted', false)
-    .single()
+    const { data: post } = await supabase
+      .from('posts')
+      .select('title, content, image_url')
+      .eq('id', id)
+      .eq('is_deleted', false)
+      .single()
 
-  if (!post) {
+    if (!post) {
+      return {
+        title: 'KodingVibes',
+        description: 'Comunidad de desarrolladores',
+      }
+    }
+
+    const metadata: Metadata = {
+      title: 'KodingVibes',
+      description: post.title,
+      openGraph: {
+        title: 'KodingVibes',
+        description: post.title,
+        type: 'article',
+      },
+      twitter: {
+        title: 'KodingVibes',
+        description: post.title,
+        card: 'summary_large_image',
+      },
+    }
+
+    if (post.image_url) {
+      metadata.openGraph = {
+        ...metadata.openGraph,
+        images: [{
+          url: post.image_url,
+          alt: post.title,
+        }],
+      }
+      metadata.twitter = {
+        ...metadata.twitter,
+        images: [post.image_url],
+      }
+    }
+
+    return metadata
+  } catch (error) {
+    console.error('Error generating metadata:', error)
     return {
       title: 'KodingVibes',
       description: 'Comunidad de desarrolladores',
     }
   }
-
-  const metadata: Metadata = {
-    title: 'KodingVibes',
-    description: post.title,
-    openGraph: {
-      title: 'KodingVibes',
-      description: post.title,
-      type: 'article',
-    },
-    twitter: {
-      title: 'KodingVibes',
-      description: post.title,
-      card: 'summary_large_image',
-    },
-  }
-
-  if (post.image_url) {
-    metadata.openGraph = {
-      ...metadata.openGraph,
-      images: [{
-        url: post.image_url,
-        alt: post.title,
-      }],
-    }
-    metadata.twitter = {
-      ...metadata.twitter,
-      images: [post.image_url],
-    }
-  }
-
-  return metadata
 }
 
 export default async function PostPage({ params }: PostPageProps) {
