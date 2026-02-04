@@ -112,11 +112,34 @@ export default function ProfilePage() {
 
     if (!userId) return
 
-    // Validate username
+    // Validate username format
     if (username && !/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
       setError('El username debe tener entre 3 y 20 caracteres, solo letras, números y guiones bajos')
       setSaving(false)
       return
+    }
+
+    // Check if username is already taken (only if username is being changed)
+    if (username) {
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', username)
+        .neq('id', userId) // Exclude current user
+        .maybeSingle()
+
+      if (checkError) {
+        console.error('Error checking username:', checkError)
+        setError('Error al verificar disponibilidad del username')
+        setSaving(false)
+        return
+      }
+
+      if (existingUser) {
+        setError(`El username "${username}" ya está en uso. Por favor elige otro.`)
+        setSaving(false)
+        return
+      }
     }
 
     const { error: updateError } = await supabase
