@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import { 
   ArrowLeft, Plus, Trash2, AlertCircle, 
   Check, Tag, Palette, Settings, Users, Shield, 
-  Search, ChevronLeft, ChevronRight 
+  Search, ChevronLeft, ChevronRight
 } from 'lucide-react'
 import type { Tables } from '@/types/database'
 
@@ -31,11 +31,14 @@ type GroupMember = {
   }
 }
 
+type TabType = 'settings' | 'tags' | 'moderators'
+
 export default function GroupAdminPage() {
   const router = useRouter()
   const params = useParams()
   const slug = params.slug as string
   
+  const [activeTab, setActiveTab] = useState<TabType>('settings')
   const [group, setGroup] = useState<Group | null>(null)
   const [tags, setTags] = useState<GroupTag[]>([])
   const [members, setMembers] = useState<GroupMember[]>([])
@@ -45,11 +48,21 @@ export default function GroupAdminPage() {
   const [isCreator, setIsCreator] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  
+  // Settings tab state
+  const [groupName, setGroupName] = useState('')
+  const [groupDescription, setGroupDescription] = useState('')
+  const [groupColor, setGroupColor] = useState('#6366f1')
+  
+  // Tags tab state
   const [newTagName, setNewTagName] = useState('')
   const [newTagColor, setNewTagColor] = useState('#6366f1')
+  
+  // Moderators tab state
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const membersPerPage = 10
+  
   const supabase = createClient()
 
   useEffect(() => {
@@ -75,6 +88,9 @@ export default function GroupAdminPage() {
         }
 
         setGroup(groupData)
+        setGroupName(groupData.name)
+        setGroupDescription(groupData.description || '')
+        setGroupColor(groupData.color || '#6366f1')
 
         // Check if user is admin of the group
         const { data: memberData } = await supabase
@@ -140,6 +156,50 @@ export default function GroupAdminPage() {
 
     fetchData()
   }, [slug, router, supabase])
+
+  const handleUpdateGroupSettings = async () => {
+    if (!groupName.trim()) {
+      setError('El nombre del grupo no puede estar vacío')
+      return
+    }
+
+    if (!group) return
+
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const { error: updateError } = await supabase
+        .from('groups')
+        .update({
+          name: groupName.trim(),
+          description: groupDescription.trim() || null,
+          color: groupColor
+        })
+        .eq('id', group.id)
+
+      if (updateError) {
+        setError('Error al actualizar el grupo: ' + updateError.message)
+        return
+      }
+
+      setGroup({
+        ...group,
+        name: groupName.trim(),
+        description: groupDescription.trim() || null,
+        color: groupColor
+      })
+      
+      setSuccess('Configuración del grupo actualizada exitosamente')
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      console.error('Error:', err)
+      setError('Error al actualizar el grupo')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const handleAddTag = async () => {
     if (!newTagName.trim()) {
@@ -356,7 +416,7 @@ export default function GroupAdminPage() {
                 Administrar {group.name}
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Gestiona los tags y configuración de tu grupo
+                Gestiona la configuración de tu grupo
               </p>
             </div>
           </div>
@@ -377,105 +437,281 @@ export default function GroupAdminPage() {
           </div>
         )}
 
-        {/* Tags Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Tag className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Tags del Grupo
-            </h2>
-            <span className="ml-auto text-sm text-gray-500 dark:text-gray-400">
-              {tags.length}/10
-            </span>
-          </div>
+        {/* Tabs */}
+        <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
+          <nav className="flex -mb-px" aria-label="Tabs">
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'settings'
+                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Ajustes
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('tags')}
+              className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'tags'
+                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Tag className="w-4 h-4" />
+                Tags
+                <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-gray-200 dark:bg-gray-700">
+                  {tags.length}/10
+                </span>
+              </div>
+            </button>
+            {isCreator && (
+              <button
+                onClick={() => setActiveTab('moderators')}
+                className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'moderators'
+                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Moderadores
+                  <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-gray-200 dark:bg-gray-700">
+                    {members.length}
+                  </span>
+                </div>
+              </button>
+            )}
+          </nav>
+        </div>
 
-          {/* Add Tag Form */}
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Crear nuevo tag
-            </h3>
-            <div className="flex gap-3">
-              <div className="flex-1">
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center gap-2 mb-6">
+              <Settings className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Ajustes del Grupo
+              </h2>
+            </div>
+
+            <div className="space-y-6">
+              {/* Group Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nombre del Grupo
+                </label>
                 <input
                   type="text"
-                  value={newTagName}
-                  onChange={(e) => setNewTagName(e.target.value)}
-                  placeholder="Nombre del tag"
-                  maxLength={50}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && !saving) {
-                      handleAddTag()
-                    }
-                  }}
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  placeholder="Nombre del grupo"
+                  maxLength={100}
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
-              <div className="relative">
-                <input
-                  type="color"
-                  value={newTagColor}
-                  onChange={(e) => setNewTagColor(e.target.value)}
-                  className="w-20 h-10 rounded-lg cursor-pointer border border-gray-300 dark:border-gray-600"
-                  title="Color del tag"
+
+              {/* Group Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Descripción
+                </label>
+                <textarea
+                  value={groupDescription}
+                  onChange={(e) => setGroupDescription(e.target.value)}
+                  placeholder="Descripción del grupo"
+                  maxLength={500}
+                  rows={4}
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                 />
-                <Palette className="w-4 h-4 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none text-white" />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {groupDescription.length}/500 caracteres
+                </p>
               </div>
-              <button
-                onClick={handleAddTag}
-                disabled={saving || tags.length >= 10 || !newTagName.trim()}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Agregar
-              </button>
+
+              {/* Group Color/Icon */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Color del Icono
+                </label>
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-20 h-20 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-lg"
+                    style={{ backgroundColor: groupColor }}
+                  >
+                    {groupName ? groupName[0].toUpperCase() : 'G'}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={groupColor}
+                        onChange={(e) => setGroupColor(e.target.value)}
+                        className="w-24 h-12 rounded-lg cursor-pointer border border-gray-300 dark:border-gray-600"
+                      />
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={groupColor}
+                          onChange={(e) => setGroupColor(e.target.value)}
+                          placeholder="#6366f1"
+                          maxLength={7}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                        />
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      El color se usa para el icono del grupo
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Slug info (read-only) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  URL del Grupo
+                </label>
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg">
+                  <code className="text-sm text-gray-900 dark:text-white font-mono">
+                    /group/{slug}
+                  </code>
+                </div>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  La URL del grupo no se puede modificar
+                </p>
+              </div>
+
+              {/* Save Button */}
+              <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={handleUpdateGroupSettings}
+                  disabled={saving}
+                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                  {saving ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Guardar Cambios
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Tags List */}
-          {tags.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <Tag className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No hay tags creados todavía</p>
-              <p className="text-sm mt-1">Crea el primer tag para tu grupo</p>
+        {/* Tags Tab */}
+        {activeTab === 'tags' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center gap-2 mb-6">
+              <Tag className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Tags del Grupo
+              </h2>
+              <span className="ml-auto text-sm text-gray-500 dark:text-gray-400">
+                {tags.length}/10
+              </span>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {tags.map((tag) => (
-                <div
-                  key={tag.id}
-                  className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
-                >
-                  <div
-                    className="w-4 h-4 rounded"
-                    style={{ backgroundColor: tag.color }}
+
+            {/* Add Tag Form */}
+            <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Crear nuevo tag
+              </h3>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    placeholder="Nombre del tag"
+                    maxLength={50}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !saving) {
+                        handleAddTag()
+                      }
+                    }}
                   />
-                  <span className="flex-1 text-gray-900 dark:text-white font-medium">
-                    {tag.name}
-                  </span>
-                  <button
-                    onClick={() => handleDeleteTag(tag.id)}
-                    disabled={saving}
-                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
-                    title="Eliminar tag"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
-              ))}
+                <div className="relative">
+                  <input
+                    type="color"
+                    value={newTagColor}
+                    onChange={(e) => setNewTagColor(e.target.value)}
+                    className="w-20 h-10 rounded-lg cursor-pointer border border-gray-300 dark:border-gray-600"
+                    title="Color del tag"
+                  />
+                  <Palette className="w-4 h-4 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none text-white" />
+                </div>
+                <button
+                  onClick={handleAddTag}
+                  disabled={saving || tags.length >= 10 || !newTagName.trim()}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Agregar
+                </button>
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Info */}
-        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            <strong>Nota:</strong> Los tags que crees aquí estarán disponibles para que los miembros los usen al crear posts en este grupo. Puedes crear hasta 10 tags personalizados.
-          </p>
-        </div>
+            {/* Tags List */}
+            {tags.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <Tag className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No hay tags creados todavía</p>
+                <p className="text-sm mt-1">Crea el primer tag para tu grupo</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {tags.map((tag) => (
+                  <div
+                    key={tag.id}
+                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+                  >
+                    <div
+                      className="w-4 h-4 rounded"
+                      style={{ backgroundColor: tag.color }}
+                    />
+                    <span className="flex-1 text-gray-900 dark:text-white font-medium">
+                      {tag.name}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteTag(tag.id)}
+                      disabled={saving}
+                      className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                      title="Eliminar tag"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
-        {/* Moderators Section - Only visible to group creator */}
-        {isCreator && (
-          <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            {/* Info */}
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                <strong>Nota:</strong> Los tags que crees aquí estarán disponibles para que los miembros los usen al crear posts en este grupo. Puedes crear hasta 10 tags personalizados.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Moderators Tab - Only visible to group creator */}
+        {activeTab === 'moderators' && isCreator && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center gap-2 mb-6">
               <Shield className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
