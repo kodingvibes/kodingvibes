@@ -10,15 +10,16 @@ export async function GET(request: NextRequest) {
     // Get post ID and title from query params
     const postId = searchParams.get('id');
     let title = searchParams.get('title') || 'KodingVibes';
+    let imageUrl = searchParams.get('image') || null;
     
-    // If we have a post ID but no title, try to fetch the title from Supabase
-    if (postId && title === 'KodingVibes') {
+    // If we have a post ID, try to fetch the post data from Supabase
+    if (postId) {
       try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
         
         if (supabaseUrl && supabaseKey) {
-          const response = await fetch(`${supabaseUrl}/rest/v1/posts?id=eq.${postId}&select=title&is_deleted=eq.false`, {
+          const response = await fetch(`${supabaseUrl}/rest/v1/posts?id=eq.${postId}&select=title,image_url&is_deleted=eq.false`, {
             headers: {
               'apikey': supabaseKey,
               'Authorization': `Bearer ${supabaseKey}`,
@@ -27,14 +28,19 @@ export async function GET(request: NextRequest) {
           
           if (response.ok) {
             const data = await response.json();
-            if (data && data.length > 0 && data[0].title) {
-              title = data[0].title;
+            if (data && data.length > 0) {
+              if (data[0].title && title === 'KodingVibes') {
+                title = data[0].title;
+              }
+              if (data[0].image_url && !imageUrl) {
+                imageUrl = data[0].image_url;
+              }
             }
           }
         }
       } catch (fetchError) {
-        console.error('Error fetching post title:', fetchError);
-        // Continue with default title
+        console.error('Error fetching post data:', fetchError);
+        // Continue with default values
       }
     }
     
@@ -49,63 +55,152 @@ export async function GET(request: NextRequest) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#1a1a2e',
-            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-            padding: '40px',
+            backgroundColor: '#0a0a0f',
+            background: 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%)',
+            padding: '60px',
+            position: 'relative',
           }}
         >
+          {/* Logo SVG at top */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '40px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+            }}
+          >
+            {/* Logo SVG */}
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 40 40"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* Outer circle */}
+              <circle
+                cx="20"
+                cy="20"
+                r="18"
+                stroke="#6366f1"
+                strokeWidth="2"
+                fill="none"
+              />
+              {/* Inner design - code brackets */}
+              <path
+                d="M14 14L10 20L14 26"
+                stroke="#a855f7"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+              <path
+                d="M26 14L30 20L26 26"
+                stroke="#a855f7"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+              {/* Middle slash */}
+              <path
+                d="M18 28L22 12"
+                stroke="#6366f1"
+                strokeWidth="2"
+                strokeLinecap="round"
+                fill="none"
+              />
+            </svg>
+            
+            {/* KodingVibes text */}
+            <span
+              style={{
+                fontSize: '28px',
+                fontWeight: 'bold',
+                color: '#ffffff',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              Koding<span style={{ color: '#a855f7' }}>Vibes</span>
+            </span>
+          </div>
+          
           <div
             style={{
               display: 'flex',
-              flexDirection: 'column',
+              flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
-              textAlign: 'center',
-              maxWidth: '1000px',
+              gap: '40px',
+              width: '100%',
+              maxWidth: '1100px',
+              marginTop: '40px',
             }}
           >
-            {/* Logo/Brand */}
-            <div
-              style={{
-                fontSize: '32px',
-                fontWeight: 'bold',
-                color: '#e94560',
-                marginBottom: '40px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-              }}
-            >
-              <span style={{ fontSize: '40px' }}>{`{`}</span>
-              KodingVibes
-              <span style={{ fontSize: '40px' }}>{`}`}</span>
-            </div>
+            {/* Post Image - if exists */}
+            {imageUrl && (
+              <div
+                style={{
+                  display: 'flex',
+                  width: '400px',
+                  height: '280px',
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                  flexShrink: 0,
+                }}
+              >
+                <img
+                  src={imageUrl}
+                  alt="Post image"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              </div>
+            )}
             
             {/* Title */}
             <div
               style={{
-                fontSize: '60px',
-                fontWeight: 'bold',
-                color: '#ffffff',
-                lineHeight: '1.2',
-                marginBottom: '30px',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                display: 'flex',
+                flexDirection: 'column',
+                flex: 1,
+                justifyContent: 'center',
               }}
             >
-              {title.length > 80 ? title.substring(0, 80) + '...' : title}
-            </div>
-            
-            {/* Subtitle */}
-            <div
-              style={{
-                fontSize: '28px',
-                color: '#a0a0a0',
-                marginTop: '20px',
-              }}
-            >
-              Comunidad de desarrolladores
+              <div
+                style={{
+                  fontSize: imageUrl ? '52px' : '64px',
+                  fontWeight: 'bold',
+                  color: '#ffffff',
+                  lineHeight: '1.2',
+                  textShadow: '2px 2px 8px rgba(0,0,0,0.5)',
+                }}
+              >
+                {title.length > 80 ? title.substring(0, 80) + '...' : title}
+              </div>
             </div>
           </div>
+          
+          {/* Bottom gradient line */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '0',
+              left: '0',
+              right: '0',
+              height: '4px',
+              background: 'linear-gradient(90deg, #6366f1 0%, #a855f7 50%, #e94560 100%)',
+            }}
+          />
         </div>
       ),
       {
