@@ -15,19 +15,34 @@ interface PostPageProps {
   }>
 }
 
-export const metadata: Metadata = {
-  title: 'KodingVibes',
-  description: 'Comunidad de desarrolladores',
-  openGraph: {
+export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
+  const { id } = await params
+  
+  // Construct OG image URL with post ID
+  // The OG endpoint will fetch the post title from Supabase
+  const ogImageUrl = `/api/og?id=${encodeURIComponent(id)}`
+  
+  return {
     title: 'KodingVibes',
     description: 'Comunidad de desarrolladores',
-    type: 'article',
-  },
-  twitter: {
-    title: 'KodingVibes',
-    description: 'Comunidad de desarrolladores',
-    card: 'summary_large_image',
-  },
+    openGraph: {
+      title: 'KodingVibes',
+      description: 'Comunidad de desarrolladores',
+      type: 'article',
+      images: [{
+        url: ogImageUrl,
+        width: 1200,
+        height: 630,
+        alt: 'KodingVibes',
+      }],
+    },
+    twitter: {
+      title: 'KodingVibes',
+      description: 'Comunidad de desarrolladores',
+      card: 'summary_large_image',
+      images: [ogImageUrl],
+    },
+  }
 }
 
 export default async function PostPage({ params }: PostPageProps) {
