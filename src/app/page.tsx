@@ -3,16 +3,17 @@
 import { createClient } from '@/lib/supabase/client'
 import PostCard from '@/components/PostCard'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { TrendingUp, Clock, Sparkles, X } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { TrendingUp, Clock, Sparkles, Hash, ChevronDown, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Tables } from '@/types/database'
-import { PREDEFINED_TAGS } from '@/components/TagInput'
 
 interface PostWithUser extends Tables<'posts'> {
   users: { name: string | null; username: string | null; email: string } | null
   comments: { count: number }[]
 }
+
+type Group = Tables<'groups'>
 
 const heroMessages = [
   {
@@ -59,17 +60,48 @@ const heroMessages = [
 
 export default function Home() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const groupFilter = searchParams.get('group')
+  
   const [posts, setPosts] = useState<PostWithUser[]>([])
   const [loading, setLoading] = useState(true)
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [sortBy, setSortBy] = useState<'popular' | 'recent'>('recent')
-   
+  
+  // Groups state
+  const [groups, setGroups] = useState<Group[]>([])
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
+  const [showGroupDropdown, setShowGroupDropdown] = useState(false)
+  
+  const supabase = createClient()
+  
   useEffect(() => {
-    const fetchPosts = async () => {
-      const supabase = createClient()
+    const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
       
-      const { data: postsData } = await supabase
+      // Fetch groups
+      const { data: groupsData } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('is_active', true)
+        .order('post_count', { ascending: false })
+
+      if (groupsData) {
+        setGroups(groupsData)
+        
+        // Set selected group from URL or default to Comunidad
+        if (groupFilter) {
+          const group = groupsData.find(g => g.slug === groupFilter)
+          if (group) setSelectedGroup(group)
+        } else {
+          const comunidadGroup = groupsData.find(g => g.slug === 'comunidad')
+          if (comunidadGroup) setSelectedGroup(comunidadGroup)
+        }
+      }
+
+      // Build posts query
+      let postsQuery = supabase
         .from('posts')
         .select(`
           *,
@@ -78,14 +110,23 @@ export default function Home() {
         `)
         .eq('is_deleted', false)
         .gte('vote_count', 0)
-        .order('vote_count', { ascending: false })
+
+      // Filter by group if specified
+      if (groupFilter) {
+        const group = groupsData?.find(g => g.slug === groupFilter)
+        if (group) {
+          postsQuery = postsQuery.eq('group_id', group.id)
+        }
+      }
+
+      const { data: postsData } = await postsQuery.order('vote_count', { ascending: false })
       
       setPosts(postsData || [])
       setLoading(false)
     }
     
-    fetchPosts()
-  }, [])
+    fetchData()
+  }, [groupFilter])
 
   // Hero carousel rotation
   useEffect(() => {
@@ -94,14 +135,25 @@ export default function Home() {
       setTimeout(() => {
         setCurrentMessageIndex((prev) => (prev + 1) % heroMessages.length)
         setIsTransitioning(false)
-      }, 500) // Wait for fade out
-    }, 6000) // Change every 6 seconds
+      }, 500)
+    }, 6000)
 
     return () => clearInterval(interval)
   }, [])
   
   const handleDelete = () => {
     router.refresh()
+  }
+
+  const handleGroupSelect = (group: Group | null) => {
+    setSelectedGroup(group)
+    setShowGroupDropdown(false)
+    
+    if (group && group.slug !== 'general') {
+      router.push(`/?group=${group.slug}`)
+    } else {
+      router.push('/')
+    }
   }
 
   const postsWithCount = posts.map(post => ({
@@ -171,30 +223,101 @@ export default function Home() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32 sm:pb-8">
-        {/* Sort tabs */}
-        <div className="flex items-center gap-2 mb-6">
-          <button 
-            onClick={() => setSortBy('popular')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm transition-colors ${
-              sortBy === 'popular' 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            }`}
-          >
-            <TrendingUp className="h-4 w-4" />
-            <span>Populares</span>
-          </button>
-          <button 
-            onClick={() => setSortBy('recent')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm transition-colors ${
-              sortBy === 'recent' 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            }`}
-          >
-            <Clock className="h-4 w-4" />
-            <span>Recientes</span>
-          </button>
+        {/* Channel Selector & Sort tabs */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+          {/* Group Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowGroupDropdown(!showGroupDropdown)}
+              className="flex items-center gap-2 px-4 py-2 bg-muted rounded-full font-medium text-sm hover:bg-muted/80 transition-colors"
+            >
+              <Hash className="h-4 w-4" />
+              <span>{selectedGroup?.name || 'Todos los canales'}</span>
+              <ChevronDown className="h-4 w-4" />
+            </button>
+            
+            {showGroupDropdown && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowGroupDropdown(false)}
+                />
+                <div className="absolute top-full left-0 mt-2 w-64 bg-card border border-border rounded-xl shadow-lg z-50 py-2 max-h-80 overflow-y-auto">
+                  <button
+                    onClick={() => handleGroupSelect(null)}
+                    className={`w-full px-4 py-2 text-left hover:bg-muted transition-colors flex items-center gap-2 ${
+                      !selectedGroup ? 'bg-primary/10 text-primary' : ''
+                    }`}
+                  >
+                    <Hash className="h-4 w-4" />
+                    <span>Todos los canales</span>
+                  </button>
+                  
+                  <div className="border-t border-border my-2" />
+                  
+                  {groups.map((group) => (
+                    <button
+                      key={group.id}
+                      onClick={() => handleGroupSelect(group)}
+                      className={`w-full px-4 py-2 text-left hover:bg-muted transition-colors flex items-center gap-3 ${
+                        selectedGroup?.id === group.id ? 'bg-primary/10 text-primary' : ''
+                      }`}
+                    >
+                      <div 
+                        className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
+                        style={{ backgroundColor: group.color || '#6366f1' }}
+                      >
+                        {group.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{group.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {group.post_count} posts
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                  
+                  <div className="border-t border-border my-2" />
+                  
+                  <Link
+                    href="/groups"
+                    onClick={() => setShowGroupDropdown(false)}
+                    className="w-full px-4 py-2 text-left hover:bg-muted transition-colors flex items-center gap-2 text-primary"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Ver todos los canales</span>
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Sort tabs */}
+          <div className="flex items-center gap-2 sm:ml-auto">
+            <button 
+              onClick={() => setSortBy('popular')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm transition-colors ${
+                sortBy === 'popular' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              <TrendingUp className="h-4 w-4" />
+              <span>Populares</span>
+            </button>
+            <button 
+              onClick={() => setSortBy('recent')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm transition-colors ${
+                sortBy === 'recent' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              <Clock className="h-4 w-4" />
+              <span>Recientes</span>
+            </button>
+          </div>
         </div>
 
         {/* Posts feed */}
@@ -208,9 +331,13 @@ export default function Home() {
               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="h-8 w-8 text-muted-foreground" />
               </div>
-              <p className="text-muted-foreground text-lg mb-4">No hay posts aún</p>
+              <p className="text-muted-foreground text-lg mb-2">
+                {selectedGroup 
+                  ? `No hay posts en ${selectedGroup.name} aún` 
+                  : 'No hay posts aún'}
+              </p>
               <Link
-                href="/submit"
+                href={selectedGroup ? `/submit?group=${selectedGroup.id}` : '/submit'}
                 className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
               >
                 Sé el primero en publicar

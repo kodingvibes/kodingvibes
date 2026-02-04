@@ -84,6 +84,7 @@ export type Database = {
           updated_at: string
           user_id: string
           vote_count: number
+          group_id: string | null
         }
         Insert: {
           content?: string | null
@@ -98,6 +99,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           vote_count?: number
+          group_id?: string | null
         }
         Update: {
           content?: string | null
@@ -112,6 +114,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vote_count?: number
+          group_id?: string | null
         }
         Relationships: [
           {
@@ -119,6 +122,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
             referencedColumns: ["id"]
           },
         ]
@@ -384,12 +394,181 @@ export type Database = {
           },
         ]
       }
+      groups: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          description: string | null
+          is_public: boolean
+          is_active: boolean
+          created_by: string
+          created_at: string
+          updated_at: string
+          member_count: number
+          post_count: number
+          icon_url: string | null
+          color: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          description?: string | null
+          is_public?: boolean
+          is_active?: boolean
+          created_by: string
+          created_at?: string
+          updated_at?: string
+          member_count?: number
+          post_count?: number
+          icon_url?: string | null
+          color?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          description?: string | null
+          is_public?: boolean
+          is_active?: boolean
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+          member_count?: number
+          post_count?: number
+          icon_url?: string | null
+          color?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          id: string
+          group_id: string
+          user_id: string
+          role: string
+          joined_at: string
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          user_id: string
+          role?: string
+          joined_at?: string
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          user_id?: string
+          role?: string
+          joined_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_creation_requests: {
+        Row: {
+          id: string
+          requested_by: string
+          name: string
+          slug: string
+          description: string | null
+          is_public: boolean
+          status: string
+          reviewed_by: string | null
+          reviewed_at: string | null
+          rejection_reason: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          requested_by: string
+          name: string
+          slug: string
+          description?: string | null
+          is_public?: boolean
+          status?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          rejection_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          requested_by?: string
+          name?: string
+          slug?: string
+          description?: string | null
+          is_public?: boolean
+          status?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          rejection_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_creation_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_creation_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      approve_group_request: {
+        Args: {
+          request_id: string
+          admin_id: string
+        }
+        Returns: undefined
+      }
+      reject_group_request: {
+        Args: {
+          request_id: string
+          admin_id: string
+          reason: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

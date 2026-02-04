@@ -5,7 +5,7 @@ import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Plus, Sun, Moon, LogOut, User as UserIcon, Settings } from 'lucide-react'
+import { Plus, Sun, Moon, LogOut, User as UserIcon, Settings, Hash, Crown } from 'lucide-react'
 import { useTheme } from '@/providers/theme-provider'
 import { LogoFull } from '@/components/icons/Logo'
 import { NotificationBell } from '@/components/NotificationBell'
@@ -14,6 +14,7 @@ export default function Header() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
   const supabase = createClient()
   const { theme, toggleTheme } = useTheme()
@@ -22,12 +23,27 @@ export default function Header() {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
+      
+      if (user) {
+        // Check if user is admin
+        const { data: userData } = await supabase
+          .from('users')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single()
+        
+        setIsAdmin(userData?.is_admin || false)
+      }
+      
       setLoading(false)
     }
     getUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      if (!session?.user) {
+        setIsAdmin(false)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -66,6 +82,17 @@ export default function Header() {
 
             {/* Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
+              {/* Desktop Navigation Links */}
+              <div className="hidden md:flex items-center gap-2">
+                <Link
+                  href="/groups"
+                  className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-muted transition-colors text-sm font-medium text-foreground"
+                >
+                  <Hash className="h-4 w-4" />
+                  Canales
+                </Link>
+              </div>
+
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
@@ -126,6 +153,17 @@ export default function Header() {
                         <Settings className="h-4 w-4" />
                         <span>Mi perfil</span>
                       </Link>
+                      {/* Admin Link */}
+                      {isAdmin && (
+                        <Link
+                          href="/admin/group-requests"
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        >
+                          <Crown className="h-4 w-4 text-yellow-500" />
+                          <span>Admin: Solicitudes</span>
+                        </Link>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-muted transition-colors"

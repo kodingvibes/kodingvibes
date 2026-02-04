@@ -1,16 +1,23 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
-import { ImageIcon, X, Sparkles, Eye, EyeOff, Code } from 'lucide-react'
+import { ImageIcon, X, Sparkles, Eye, EyeOff, Code, Lock, Globe } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import MarkdownContent from '@/components/MarkdownContent'
 import { validateString, validateFile, checkUserRateLimit, sanitizeMarkdown } from '@/lib/security/validation'
 import TagInput from '@/components/TagInput'
+import type { Tables } from '@/types/database'
+
+type Group = Tables<'groups'>
 
 export default function SubmitPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const preselectedGroupId = searchParams.get('group')
+
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [tags, setTags] = useState<string[]>([])
@@ -18,8 +25,65 @@ export default function SubmitPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
-  const router = useRouter()
+  
+  // Group selection states
+  const [groups, setGroups] = useState<Group[]>([])
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(preselectedGroupId)
+  const [loadingGroups, setLoadingGroups] = useState(true)
+  const [_userMemberships, _setUserMemberships] = useState<Set<string>>(new Set())
+  
   const supabase = createClient()
+
+  // Fetch groups where user can post
+  useEffect(() => {
+    const fetchGroups = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        setLoadingGroups(false)
+        return
+      }
+
+      // Fetch all groups with their details
+      const { data: groupsData } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('is_active', true)
+        .order('member_count', { ascending: false })
+
+      if (groupsData) {
+        // Fetch user's memberships
+        const { data: memberships } = await supabase
+          .from('group_members')
+          .select('group_id')
+          .eq('user_id', user.id)
+
+        const membershipSet = new Set(memberships?.map(m => m.group_id) || [])
+        _setUserMemberships(membershipSet)
+
+        // Filter groups: public groups OR groups where user is member
+        const accessibleGroups = groupsData.filter(g => 
+          g.is_public || membershipSet.has(g.id)
+        )
+
+        setGroups(accessibleGroups)
+
+        // If no group preselected, default to 'comunidad' if available
+        if (!preselectedGroupId) {
+          const comunidadGroup = accessibleGroups.find(g => g.slug === 'comunidad')
+          if (comunidadGroup) {
+            setSelectedGroupId(comunidadGroup.id)
+          } else if (accessibleGroups.length > 0) {
+            setSelectedGroupId(accessibleGroups[0].id)
+          }
+        }
+      }
+
+      setLoadingGroups(false)
+    }
+
+    fetchGroups()
+  }, [preselectedGroupId, supabase])
 
   // Handle clipboard paste for images
   const handlePaste = useCallback((e: ClipboardEvent) => {
@@ -131,6 +195,11 @@ export default function SubmitPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (!selectedGroupId) {
+      alert('Debes seleccionar un canal para publicar')
+      return
+    }
+
     // OWASP Input Validation
     const titleValidation = validateString(title, {
       maxLength: 300,
@@ -193,6 +262,7 @@ export default function SubmitPage() {
           image_url: imageUrl,
           tags: tags,
           user_id: user.id,
+          group_id: selectedGroupId,
         })
         .select()
         .single()
@@ -210,6 +280,8 @@ export default function SubmitPage() {
     }
   }
 
+  const selectedGroup = groups.find(g => g.id === selectedGroupId)
+
   return (
     <main className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -219,6 +291,89 @@ export default function SubmitPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 shadow-sm">
+          {/* Channel Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-3">
+              Canal <span className="text-red-500">*</span>
+            </label>
+            
+            {loadingGroups ? (
+              <div className="p-3 bg-muted rounded-lg animate-pulse h-12" />
+            ) : groups.length === 0 ? (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  No tienes acceso a ningún canal. 
+                  <Link href="/groups" className="underline ml-1">
+                    Explora los canales disponibles
+                  </Link>
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                {groups.map((group) => (
+                  <button
+                    key={group.id}
+                    type="button"
+                    onClick={() => setSelectedGroupId(group.id)}
+                    className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all ${
+                      selectedGroupId === group.id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50 bg-background'
+                    }`}
+                  >
+                    <div 
+                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                      style={{ backgroundColor: group.color || '#6366f1' }}
+                    >
+                      {group.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-medium text-sm truncate ${
+                        selectedGroupId === group.id ? 'text-primary' : 'text-foreground'
+                      }`}>
+                        {group.name}
+                      </p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        {group.is_public ? (
+                          <>
+                            <Globe className="h-3 w-3" />
+                            <span>Público</span>
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="h-3 w-3" />
+                            <span>Privado</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {selectedGroupId === group.id && (
+                      <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            {selectedGroup && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Publicando en: <span className="font-medium text-foreground">{selectedGroup.name}</span>
+                {selectedGroup.slug !== 'general' && (
+                  <Link 
+                    href={`/group/${selectedGroup.slug}`}
+                    className="ml-2 text-primary hover:underline"
+                  >
+                    Ver canal
+                  </Link>
+                )}
+              </p>
+            )}
+          </div>
+
           <div className="mb-5">
             <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
               Título <span className="text-red-500">*</span>
@@ -338,7 +493,7 @@ export default function SubmitPage() {
             </Link>
             <button
               type="submit"
-              disabled={loading || !title.trim()}
+              disabled={loading || !title.trim() || !selectedGroupId || groups.length === 0}
               className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               {loading ? 'Publicando...' : 'Publicar'}
