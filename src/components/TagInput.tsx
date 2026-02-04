@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { X, Tag } from 'lucide-react'
 
 interface GroupTag {
@@ -19,6 +19,25 @@ interface TagInputProps {
 export default function TagInput({ selectedTags, onChange, maxTags = 5, groupTags = [] }: TagInputProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+        setSearchQuery('')
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
 
   // Convertir group tags al formato interno
   const groupTagsFormatted = groupTags.map(gt => ({
@@ -38,6 +57,7 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5, groupTag
       onChange([...selectedTags, tagValue])
     }
     setSearchQuery('')
+    setIsOpen(false) // Cerrar siempre después de agregar un tag
   }
 
   const removeTag = (tagValue: string) => {
@@ -83,7 +103,7 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5, groupTag
       )}
 
       {/* Tag Selector */}
-      <div className="relative">
+      <div className="relative" ref={dropdownRef}>
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
@@ -99,7 +119,7 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5, groupTag
         </button>
 
         {isOpen && selectedTags.length < maxTags && (
-          <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
+          <div className="absolute z-10 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
             {/* Search */}
             <div className="p-2 border-b border-border sticky top-0 bg-background">
               <input
@@ -129,12 +149,7 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5, groupTag
                     <button
                       key={tag.value}
                       type="button"
-                      onClick={() => {
-                        addTag(tag.value)
-                        if (selectedTags.length + 1 >= maxTags) {
-                          setIsOpen(false)
-                        }
-                      }}
+                      onClick={() => addTag(tag.value)}
                       className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-2"
                     >
                       <span 
