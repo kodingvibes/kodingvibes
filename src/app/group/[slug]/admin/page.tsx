@@ -6,7 +6,8 @@ import { useRouter, useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { 
   ArrowLeft, Plus, Trash2, AlertCircle, 
-  Check, Tag, Palette, Settings, Users, Shield 
+  Check, Tag, Palette, Settings, Users, Shield, 
+  Search, ChevronLeft, ChevronRight 
 } from 'lucide-react'
 import type { Tables } from '@/types/database'
 
@@ -46,6 +47,9 @@ export default function GroupAdminPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [newTagName, setNewTagName] = useState('')
   const [newTagColor, setNewTagColor] = useState('#6366f1')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const membersPerPage = 10
   const supabase = createClient()
 
   useEffect(() => {
@@ -490,85 +494,179 @@ export default function GroupAdminPage() {
               </ul>
             </div>
 
+            {/* Search and Stats Bar */}
+            <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="relative flex-1 w-full sm:max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre o usuario..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    setCurrentPage(1) // Reset to first page on search
+                  }}
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {members.length} {members.length === 1 ? 'miembro' : 'miembros'}
+              </div>
+            </div>
+
             {/* Members List with Role Management */}
             <div className="space-y-2">
-              {members.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>No hay miembros en el grupo</p>
-                </div>
-              ) : (
-                members.map((member) => {
-                  const isGroupCreator = member.user_id === group?.created_by
+              {(() => {
+                // Filter members based on search query
+                const filteredMembers = members.filter(member => {
+                  const searchLower = searchQuery.toLowerCase()
+                  const username = member.users.username.toLowerCase()
+                  const name = (member.users.name || '').toLowerCase()
+                  return username.includes(searchLower) || name.includes(searchLower)
+                })
+
+                // Calculate pagination
+                const totalPages = Math.ceil(filteredMembers.length / membersPerPage)
+                const startIndex = (currentPage - 1) * membersPerPage
+                const endIndex = startIndex + membersPerPage
+                const paginatedMembers = filteredMembers.slice(startIndex, endIndex)
+
+                if (filteredMembers.length === 0) {
                   return (
-                    <div
-                      key={member.id}
-                      className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700"
-                    >
-                      {/* Avatar */}
-                      <div className="flex-shrink-0">
-                        {member.users.avatar_url ? (
-                          <img
-                            src={member.users.avatar_url}
-                            alt={member.users.username}
-                            className="w-10 h-10 rounded-full"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-medium">
-                            {member.users.username[0].toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* User Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {member.users.name || member.users.username}
-                          </p>
-                          {isGroupCreator && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-                              Creador
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          @{member.users.username}
-                        </p>
-                      </div>
-
-                      {/* Role Selector */}
-                      {!isGroupCreator ? (
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={member.role}
-                            onChange={(e) => handleChangeRole(member.id, e.target.value as 'member' | 'moderator' | 'admin')}
-                            disabled={saving}
-                            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
-                          >
-                            <option value="member">Miembro</option>
-                            <option value="moderator">Moderador</option>
-                            <option value="admin">Admin</option>
-                          </select>
-
-                          <button
-                            onClick={() => handleRemoveMember(member.id, member.user_id)}
-                            disabled={saving}
-                            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
-                            title="Remover del grupo"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                      {searchQuery ? (
+                        <>
+                          <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                          <p>No se encontraron miembros</p>
+                          <p className="text-sm mt-1">Intenta con otro término de búsqueda</p>
+                        </>
                       ) : (
-                        <span className="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400">
-                          Creador
-                        </span>
+                        <>
+                          <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                          <p>No hay miembros en el grupo</p>
+                        </>
                       )}
                     </div>
                   )
-                })
-              )}
+                }
+
+                return (
+                  <>
+                    {paginatedMembers.map((member) => {
+                      const isGroupCreator = member.user_id === group?.created_by
+                      
+                      // Get role badge color
+                      const getRoleBadge = (role: string) => {
+                        switch (role) {
+                          case 'admin':
+                            return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                          case 'moderator':
+                            return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                          default:
+                            return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        }
+                      }
+
+                      return (
+                        <div
+                          key={member.id}
+                          className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+                        >
+                          {/* Avatar */}
+                          <div className="flex-shrink-0">
+                            {member.users.avatar_url ? (
+                              <img
+                                src={member.users.avatar_url}
+                                alt={member.users.username}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
+                                {member.users.username[0].toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* User Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                {member.users.name || member.users.username}
+                              </p>
+                              {isGroupCreator && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 flex-shrink-0">
+                                  Creador
+                                </span>
+                              )}
+                              {!isGroupCreator && (
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 ${getRoleBadge(member.role)}`}>
+                                  {member.role === 'admin' ? 'Admin' : member.role === 'moderator' ? 'Moderador' : 'Miembro'}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              @{member.users.username}
+                            </p>
+                          </div>
+
+                          {/* Role Selector - Only for non-creators */}
+                          {!isGroupCreator && (
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <select
+                                value={member.role}
+                                onChange={(e) => handleChangeRole(member.id, e.target.value as 'member' | 'moderator' | 'admin')}
+                                disabled={saving}
+                                className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                              >
+                                <option value="member">Miembro</option>
+                                <option value="moderator">Moderador</option>
+                                <option value="admin">Admin</option>
+                              </select>
+
+                              <button
+                                onClick={() => handleRemoveMember(member.id, member.user_id)}
+                                disabled={saving}
+                                className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                title="Remover del grupo"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Mostrando {startIndex + 1}-{Math.min(endIndex, filteredMembers.length)} de {filteredMembers.length}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                            className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <span className="text-sm text-gray-700 dark:text-gray-300 min-w-[80px] text-center">
+                            Página {currentPage} de {totalPages}
+                          </span>
+                          <button
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
+                            className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           </div>
         )}
