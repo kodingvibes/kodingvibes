@@ -89,7 +89,7 @@ export default function GroupPage() {
       // Fetch members
       const { data: membersData } = await supabase
         .from('group_members')
-        .select('*, users(name, username, email)')
+        .select('*, users:user_id(name, username, email)')
         .eq('group_id', groupData.id)
         .order('joined_at', { ascending: false })
 
