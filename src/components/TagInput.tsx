@@ -3,67 +3,6 @@
 import { useState } from 'react'
 import { X, Tag } from 'lucide-react'
 
-// Tags predefinidos relacionados con desarrollo e IA
-export const PREDEFINED_TAGS = [
-  // Desarrollo
-  { value: 'javascript', label: 'JavaScript', category: 'dev' },
-  { value: 'typescript', label: 'TypeScript', category: 'dev' },
-  { value: 'react', label: 'React', category: 'dev' },
-  { value: 'nextjs', label: 'Next.js', category: 'dev' },
-  { value: 'nodejs', label: 'Node.js', category: 'dev' },
-  { value: 'python', label: 'Python', category: 'dev' },
-  { value: 'rust', label: 'Rust', category: 'dev' },
-  { value: 'golang', label: 'Go', category: 'dev' },
-  { value: 'frontend', label: 'Frontend', category: 'dev' },
-  { value: 'backend', label: 'Backend', category: 'dev' },
-  { value: 'fullstack', label: 'Full Stack', category: 'dev' },
-  { value: 'devops', label: 'DevOps', category: 'dev' },
-  { value: 'database', label: 'Base de Datos', category: 'dev' },
-  { value: 'api', label: 'API', category: 'dev' },
-  { value: 'testing', label: 'Testing', category: 'dev' },
-  { value: 'security', label: 'Seguridad', category: 'dev' },
-  { value: 'performance', label: 'Performance', category: 'dev' },
-  
-  // Inteligencia Artificial
-  { value: 'ai', label: 'Inteligencia Artificial', category: 'ai' },
-  { value: 'machine-learning', label: 'Machine Learning', category: 'ai' },
-  { value: 'deep-learning', label: 'Deep Learning', category: 'ai' },
-  { value: 'llm', label: 'LLM', category: 'ai' },
-  { value: 'chatgpt', label: 'ChatGPT', category: 'ai' },
-  { value: 'claude', label: 'Claude', category: 'ai' },
-  { value: 'cursor', label: 'Cursor', category: 'ai' },
-  { value: 'copilot', label: 'GitHub Copilot', category: 'ai' },
-  { value: 'prompt-engineering', label: 'Prompt Engineering', category: 'ai' },
-  { value: 'agents', label: 'AI Agents', category: 'ai' },
-  { value: 'openai', label: 'OpenAI', category: 'ai' },
-  { value: 'anthropic', label: 'Anthropic', category: 'ai' },
-  { value: 'huggingface', label: 'Hugging Face', category: 'ai' },
-  { value: 'tensorflow', label: 'TensorFlow', category: 'ai' },
-  { value: 'pytorch', label: 'PyTorch', category: 'ai' },
-  { value: 'nlp', label: 'NLP', category: 'ai' },
-  { value: 'computer-vision', label: 'Computer Vision', category: 'ai' },
-  
-  // Herramientas y Plataformas
-  { value: 'vscode', label: 'VS Code', category: 'tools' },
-  { value: 'docker', label: 'Docker', category: 'tools' },
-  { value: 'kubernetes', label: 'Kubernetes', category: 'tools' },
-  { value: 'aws', label: 'AWS', category: 'tools' },
-  { value: 'vercel', label: 'Vercel', category: 'tools' },
-  { value: 'supabase', label: 'Supabase', category: 'tools' },
-  { value: 'git', label: 'Git', category: 'tools' },
-  { value: 'github', label: 'GitHub', category: 'tools' },
-  
-  // Conceptos
-  { value: 'tutorial', label: 'Tutorial', category: 'concept' },
-  { value: 'beginner', label: 'Principiante', category: 'concept' },
-  { value: 'advanced', label: 'Avanzado', category: 'concept' },
-  { value: 'best-practices', label: 'Mejores Prácticas', category: 'concept' },
-  { value: 'architecture', label: 'Arquitectura', category: 'concept' },
-  { value: 'tips', label: 'Tips', category: 'concept' },
-  { value: 'showcase', label: 'Showcase', category: 'concept' },
-  { value: 'discussion', label: 'Discusión', category: 'concept' },
-]
-
 interface GroupTag {
   id: string
   name: string
@@ -81,18 +20,15 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5, groupTag
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Convertir group tags al formato de tags predefinidos
+  // Convertir group tags al formato interno
   const groupTagsFormatted = groupTags.map(gt => ({
     value: gt.name.toLowerCase().replace(/\s+/g, '-'),
     label: gt.name,
-    category: 'group' as const,
     color: gt.color
   }))
 
-  // Combinar tags predefinidos con tags del grupo
-  const allTags = [...groupTagsFormatted, ...PREDEFINED_TAGS]
-
-  const filteredTags = allTags.filter(tag => 
+  // Solo usar tags del grupo
+  const filteredTags = groupTagsFormatted.filter(tag => 
     tag.label.toLowerCase().includes(searchQuery.toLowerCase()) &&
     !selectedTags.includes(tag.value)
   )
@@ -109,39 +45,13 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5, groupTag
   }
 
   const getTagLabel = (value: string) => {
-    // Buscar en tags del grupo primero
-    const groupTagsFormatted = groupTags.map(gt => ({
-      value: gt.name.toLowerCase().replace(/\s+/g, '-'),
-      label: gt.name
-    }))
     const groupTag = groupTagsFormatted.find(t => t.value === value)
-    if (groupTag) return groupTag.label
-    
-    return PREDEFINED_TAGS.find(t => t.value === value)?.label || value
+    return groupTag?.label || value
   }
 
   const getTagColor = (value: string) => {
-    // Buscar en tags del grupo primero
-    const groupTagsFormatted = groupTags.map(gt => ({
-      value: gt.name.toLowerCase().replace(/\s+/g, '-'),
-      color: gt.color
-    }))
     const groupTag = groupTagsFormatted.find(t => t.value === value)
-    if (groupTag) {
-      return `text-white dark:text-white`
-    }
-
-    const tag = PREDEFINED_TAGS.find(t => t.value === value)
-    switch (tag?.category) {
-      case 'dev':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-      case 'ai':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-      case 'tools':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
-    }
+    return groupTag ? 'text-white dark:text-white' : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
   }
 
   return (
@@ -150,11 +60,6 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5, groupTag
       {selectedTags.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {selectedTags.map(tag => {
-            // Buscar si es un tag del grupo para aplicar color personalizado
-            const groupTagsFormatted = groupTags.map(gt => ({
-              value: gt.name.toLowerCase().replace(/\s+/g, '-'),
-              color: gt.color
-            }))
             const groupTag = groupTagsFormatted.find(t => t.value === tag)
             
             return (
@@ -211,110 +116,35 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5, groupTag
             <div className="p-1">
               {filteredTags.length === 0 ? (
                 <div className="px-3 py-2 text-sm text-muted-foreground text-center">
-                  No se encontraron tags
+                  {groupTags.length === 0 
+                    ? 'Este grupo no tiene tags configurados' 
+                    : 'No se encontraron tags'}
                 </div>
               ) : (
-                <>
-                  {/* Group Tags */}
-                  {filteredTags.some(t => t.category === 'group') && (
-                    <div className="mb-2">
-                      <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Tags del Grupo
-                      </div>
-                      {filteredTags.filter(t => t.category === 'group').map(tag => (
-                        <button
-                          key={tag.value}
-                          type="button"
-                          onClick={() => {
-                            addTag(tag.value)
-                            if (selectedTags.length + 1 >= maxTags) {
-                              setIsOpen(false)
-                            }
-                          }}
-                          className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-2"
-                        >
-                          <span 
-                            className="w-3 h-3 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: (tag as { label: string; color?: string }).color }}
-                          />
-                          {tag.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Dev Tags */}
-                  {filteredTags.some(t => t.category === 'dev') && (
-                    <div className="mb-2">
-                      <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Desarrollo
-                      </div>
-                      {filteredTags.filter(t => t.category === 'dev').map(tag => (
-                        <button
-                          key={tag.value}
-                          type="button"
-                          onClick={() => {
-                            addTag(tag.value)
-                            if (selectedTags.length + 1 >= maxTags) {
-                              setIsOpen(false)
-                            }
-                          }}
-                          className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent rounded-md transition-colors"
-                        >
-                          {tag.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* AI Tags */}
-                  {filteredTags.some(t => t.category === 'ai') && (
-                    <div className="mb-2">
-                      <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Inteligencia Artificial
-                      </div>
-                      {filteredTags.filter(t => t.category === 'ai').map(tag => (
-                        <button
-                          key={tag.value}
-                          type="button"
-                          onClick={() => {
-                            addTag(tag.value)
-                            if (selectedTags.length + 1 >= maxTags) {
-                              setIsOpen(false)
-                            }
-                          }}
-                          className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent rounded-md transition-colors"
-                        >
-                          {tag.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Other Tags */}
-                  {filteredTags.some(t => !['dev', 'ai'].includes(t.category)) && (
-                    <div>
-                      <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Otros
-                      </div>
-                      {filteredTags.filter(t => !['dev', 'ai'].includes(t.category)).map(tag => (
-                        <button
-                          key={tag.value}
-                          type="button"
-                          onClick={() => {
-                            addTag(tag.value)
-                            if (selectedTags.length + 1 >= maxTags) {
-                              setIsOpen(false)
-                            }
-                          }}
-                          className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent rounded-md transition-colors"
-                        >
-                          {tag.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </>
+                <div>
+                  <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Tags del Grupo
+                  </div>
+                  {filteredTags.map(tag => (
+                    <button
+                      key={tag.value}
+                      type="button"
+                      onClick={() => {
+                        addTag(tag.value)
+                        if (selectedTags.length + 1 >= maxTags) {
+                          setIsOpen(false)
+                        }
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-2"
+                    >
+                      <span 
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: tag.color }}
+                      />
+                      {tag.label}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           </div>
