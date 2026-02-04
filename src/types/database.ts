@@ -20,6 +20,7 @@ export type Database = {
           post_id: string
           updated_at: string
           user_id: string
+          vote_count: number
         }
         Insert: {
           content: string
@@ -31,6 +32,7 @@ export type Database = {
           post_id: string
           updated_at?: string
           user_id: string
+          vote_count?: number
         }
         Update: {
           content?: string
@@ -42,6 +44,7 @@ export type Database = {
           post_id?: string
           updated_at?: string
           user_id?: string
+          vote_count?: number
         }
         Relationships: [
           {
@@ -335,6 +338,45 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "push_notification_queue_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comment_votes: {
+        Row: {
+          id: string
+          comment_id: string
+          user_id: string
+          value: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          comment_id: string
+          user_id: string
+          value: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          comment_id?: string
+          user_id?: string
+          value?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_votes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comment_votes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"

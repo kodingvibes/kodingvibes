@@ -77,6 +77,7 @@ export default function Home() {
           comments:comments (count)
         `)
         .eq('is_deleted', false)
+        .gte('vote_count', 0)
         .order('vote_count', { ascending: false })
       
       setPosts(postsData || [])
