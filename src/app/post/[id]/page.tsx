@@ -18,30 +18,79 @@ interface PostPageProps {
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
   const { id } = await params
   
-  // Construct OG image URL with post ID
-  // The OG endpoint will fetch the post title from Supabase
-  const ogImageUrl = `/api/og?id=${encodeURIComponent(id)}`
-  
-  return {
-    title: 'KodingVibes',
-    description: 'Comunidad de desarrolladores',
-    openGraph: {
+  try {
+    // Fetch post data for metadata
+    const supabase = await createClient()
+    const { data: post } = await supabase
+      .from('posts')
+      .select('title, content, created_at, edited_at, tags, users:user_id (name, username)')
+      .eq('id', id)
+      .eq('is_deleted', false)
+      .single()
+    
+    if (!post) {
+      return {
+        title: 'Post no encontrado | KodingVibes',
+        description: 'El post que buscas no existe o ha sido eliminado.',
+      }
+    }
+    
+    // Extract description from content (first 160 chars)
+    const description = post.content 
+      ? post.content.replace(/[#*_`\[\]()]/g, '').substring(0, 160) + '...'
+      : 'Lee este post en KodingVibes, la comunidad de desarrolladores en español.'
+    
+    // Build keywords from tags if available
+    const keywords = post.tags 
+      ? ['desarrollo', 'programación', 'comunidad', ...post.tags]
+      : ['desarrollo', 'programación', 'comunidad', 'IA', 'código']
+    
+    // Get author name
+    const authorName = post.users?.name || post.users?.username || 'KodingVibes'
+    
+    // Construct OG image URL
+    const ogImageUrl = `/api/og?id=${encodeURIComponent(id)}`
+    
+    return {
+      title: `${post.title} | KodingVibes`,
+      description,
+      keywords,
+      authors: [{ name: authorName }],
+      openGraph: {
+        title: post.title,
+        description,
+        type: 'article',
+        url: `https://www.kodingvibes.com/post/${id}`,
+        siteName: 'KodingVibes',
+        locale: 'es_ES',
+        publishedTime: post.created_at,
+        modifiedTime: post.edited_at || post.created_at,
+        authors: [authorName],
+        images: [{
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        }],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: post.title,
+        description,
+        images: [ogImageUrl],
+        creator: '@kodingvibes',
+      },
+      alternates: {
+        canonical: `https://www.kodingvibes.com/post/${id}`,
+      },
+    }
+  } catch (error) {
+    console.error('Error generating metadata:', error)
+    // Fallback metadata
+    return {
       title: 'KodingVibes',
       description: 'Comunidad de desarrolladores',
-      type: 'article',
-      images: [{
-        url: ogImageUrl,
-        width: 1200,
-        height: 630,
-        alt: 'KodingVibes',
-      }],
-    },
-    twitter: {
-      title: 'KodingVibes',
-      description: 'Comunidad de desarrolladores',
-      card: 'summary_large_image',
-      images: [ogImageUrl],
-    },
+    }
   }
 }
 

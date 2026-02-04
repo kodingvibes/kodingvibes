@@ -5,8 +5,53 @@ import Script from "next/script";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 
 export const metadata: Metadata = {
-  title: "KodingVibes - Comunidad de Desarrolladores",
-  description: "Una comunidad estilo Reddit para compartir conocimiento, código y experiencias de desarrollo.",
+  title: {
+    default: "KodingVibes - Comunidad de Desarrolladores",
+    template: "%s | KodingVibes",
+  },
+  description: "Una comunidad estilo Reddit para compartir conocimiento, código y experiencias de desarrollo en español. Únete para compartir prompts, workflows y herramientas de IA.",
+  keywords: ["desarrolladores", "comunidad", "programación", "código", "AI", "prompts", "workflows", "herramientas", "desarrollo", "software", "español"],
+  authors: [{ name: "KodingVibes" }],
+  creator: "KodingVibes",
+  publisher: "KodingVibes",
+  metadataBase: new URL("https://www.kodingvibes.com"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "es_ES",
+    url: "https://www.kodingvibes.com",
+    siteName: "KodingVibes",
+    title: "KodingVibes - Comunidad de Desarrolladores",
+    description: "Una comunidad estilo Reddit para compartir conocimiento, código y experiencias de desarrollo en español.",
+    images: [
+      {
+        url: "/api/og",
+        width: 1200,
+        height: 630,
+        alt: "KodingVibes - Comunidad de Desarrolladores",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "KodingVibes - Comunidad de Desarrolladores",
+    description: "Una comunidad estilo Reddit para compartir conocimiento, código y experiencias de desarrollo en español.",
+    images: ["/api/og"],
+    creator: "@kodingvibes",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -14,13 +59,19 @@ export const metadata: Metadata = {
     title: "KodingVibes",
   },
   icons: {
-    apple: [
-      { url: "/icon-192x192.png", sizes: "192x192" },
+    icon: [
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
     ],
+    apple: [
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: ["/favicon.ico"],
   },
-  other: {
-    "mobile-web-app-capable": "yes",
+  verification: {
+    google: "your-google-verification-code", // Add your Google Search Console verification code
   },
+  category: "technology",
 };
 
 export const viewport: Viewport = {
