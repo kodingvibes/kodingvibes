@@ -548,11 +548,6 @@ export default function CommentSection({ postId }: CommentSectionProps) {
     })
   }
 
-  const hiddenCount = comments.reduce((count, comment) => {
-    if (comment.vote_count < 0 && !visibleHidden.has(comment.id)) return count + 1 + countHiddenReplies(comment.replies || [])
-    return count + countHiddenReplies(comment.replies || [])
-  }, 0)
-
   const countHiddenReplies = (replies: Comment[]): number => {
     return replies.reduce((count, reply) => {
       if (reply.vote_count < 0 && !visibleHidden.has(reply.id)) {
@@ -561,6 +556,11 @@ export default function CommentSection({ postId }: CommentSectionProps) {
       return count + countHiddenReplies(reply.replies || [])
     }, 0)
   }
+
+  const hiddenCount = comments.reduce((count, comment) => {
+    if (comment.vote_count < 0 && !visibleHidden.has(comment.id)) return count + 1 + countHiddenReplies(comment.replies || [])
+    return count + countHiddenReplies(comment.replies || [])
+  }, 0)
 
   return (
     <div className="mt-8">
