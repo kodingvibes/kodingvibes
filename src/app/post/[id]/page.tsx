@@ -112,6 +112,19 @@ export default async function PostPage({ params }: PostPageProps) {
     notFound()
   }
 
+  // Cargar tags del grupo si existe
+  let groupTags: Array<{ id: string; name: string; color: string }> = []
+  if (post.group_id) {
+    const { data: tagsData } = await supabase
+      .from('group_tags')
+      .select('*')
+      .eq('group_id', post.group_id)
+    
+    if (tagsData) {
+      groupTags = tagsData
+    }
+  }
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -188,6 +201,28 @@ export default async function PostPage({ params }: PostPageProps) {
                 />
               </div>
 
+              {/* Tags sobre el título */}
+              {post.tags && post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {post.tags.map((tagValue) => {
+                    // Buscar el tag en los tags del grupo
+                    const groupTag = groupTags.find(gt => 
+                      gt.name.toLowerCase().replace(/\s+/g, '-') === tagValue
+                    )
+                    
+                    return (
+                      <span
+                        key={tagValue}
+                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-white"
+                        style={{ backgroundColor: groupTag?.color || '#6b7280' }}
+                      >
+                        {groupTag?.name || tagValue}
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
+
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
                 {post.title}
               </h1>
@@ -251,6 +286,28 @@ export default async function PostPage({ params }: PostPageProps) {
                   isDeleted={post.is_deleted}
                 />
               </div>
+
+              {/* Tags sobre el título */}
+              {post.tags && post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {post.tags.map((tagValue) => {
+                    // Buscar el tag en los tags del grupo
+                    const groupTag = groupTags.find(gt => 
+                      gt.name.toLowerCase().replace(/\s+/g, '-') === tagValue
+                    )
+                    
+                    return (
+                      <span
+                        key={tagValue}
+                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-white"
+                        style={{ backgroundColor: groupTag?.color || '#6b7280' }}
+                      >
+                        {groupTag?.name || tagValue}
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
 
               <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-4">
                 {post.title}

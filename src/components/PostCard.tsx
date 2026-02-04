@@ -8,6 +8,12 @@ import PostActions from './PostActions'
 import { createClient } from '@/lib/supabase/client'
 import { MessageSquare, Clock } from 'lucide-react'
 
+interface GroupTag {
+  id: string
+  name: string
+  color: string
+}
+
 interface Post {
   id: string
   title: string
@@ -18,6 +24,7 @@ interface Post {
   user_id: string
   is_deleted: boolean
   tags: string[] | null
+  group_id: string | null
   users: {
     name: string | null
     username: string | null
@@ -34,6 +41,7 @@ interface PostCardProps {
 export default function PostCard({ post, onDelete }: PostCardProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [groupTags, setGroupTags] = useState<GroupTag[]>([])
   const supabase = createClient()
 
   useEffect(() => {
@@ -43,7 +51,22 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
       setIsLoading(false)
     }
     getUser()
-  }, [post.user_id])
+
+    // Cargar tags del grupo si existe
+    const loadGroupTags = async () => {
+      if (post.group_id) {
+        const { data } = await supabase
+          .from('group_tags')
+          .select('*')
+          .eq('group_id', post.group_id)
+        
+        if (data) {
+          setGroupTags(data)
+        }
+      }
+    }
+    loadGroupTags()
+  }, [post.user_id, post.group_id, supabase])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -101,6 +124,28 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
           </div>
 
           <Link href={`/post/${post.id}`} className="block group/link">
+            {/* Tags sobre el título */}
+            {post.tags && post.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {post.tags.map((tagValue) => {
+                  // Buscar el tag en los tags del grupo
+                  const groupTag = groupTags.find(gt => 
+                    gt.name.toLowerCase().replace(/\s+/g, '-') === tagValue
+                  )
+                  
+                  return (
+                    <span
+                      key={tagValue}
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white"
+                      style={{ backgroundColor: groupTag?.color || '#6b7280' }}
+                    >
+                      {groupTag?.name || tagValue}
+                    </span>
+                  )
+                })}
+              </div>
+            )}
+            
             <h2 className="text-lg font-semibold text-foreground group-hover/link:text-primary transition-colors mb-2">
               {post.title}
             </h2>
