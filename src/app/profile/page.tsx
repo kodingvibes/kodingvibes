@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
-import { User, Save, ArrowLeft, AtSign, AlertCircle } from 'lucide-react'
+import { User, Save, ArrowLeft, AtSign, AlertCircle, Users, Settings } from 'lucide-react'
 import Link from 'next/link'
 
 interface Profile {
@@ -12,6 +12,17 @@ interface Profile {
   name: string | null
   username: string | null
   avatar_url: string | null
+}
+
+interface Group {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  color: string | null
+  member_count: number
+  post_count: number
+  created_at: string
 }
 
 export default function ProfilePage() {
@@ -24,6 +35,7 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [myGroups, setMyGroups] = useState<Group[]>([])
   const router = useRouter()
   const supabase = createClient()
 
@@ -91,6 +103,20 @@ export default function ProfilePage() {
         } else {
           // Perfil no existe, crearlo automáticamente
           await createProfile(user.id, user.email || '')
+        }
+
+        // Cargar grupos creados por el usuario
+        const { data: groupsData, error: groupsError } = await supabase
+          .from('groups')
+          .select('*')
+          .eq('created_by', user.id)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+
+        if (groupsError) {
+          console.error('Error loading groups:', groupsError)
+        } else if (groupsData) {
+          setMyGroups(groupsData)
         }
       } catch (err) {
         console.error('Unexpected error:', err)
@@ -272,6 +298,60 @@ export default function ProfilePage() {
             Si no tienes uno, se usará tu nombre o email.
           </p>
         </div>
+
+        {/* Mis Grupos */}
+        {myGroups.length > 0 && (
+          <div className="mt-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="h-5 w-5 text-foreground" />
+              <h2 className="text-xl font-bold text-foreground">Mis Grupos</h2>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {myGroups.map((group) => (
+                <div
+                  key={group.id}
+                  className="bg-card border border-border rounded-xl p-4 hover:border-primary/50 transition-all"
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
+                      style={{ backgroundColor: group.color || '#6366f1' }}
+                    >
+                      {group.name[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground truncate">
+                        {group.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                        {group.description || 'Sin descripción'}
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
+                        <span>{group.member_count} miembros</span>
+                        <span>{group.post_count} posts</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4 pt-4 border-t border-border">
+                    <Link
+                      href={`/group/${group.slug}`}
+                      className="flex-1 px-3 py-2 text-center text-sm border border-border rounded-lg hover:bg-muted transition-colors"
+                    >
+                      Ver grupo
+                    </Link>
+                    <Link
+                      href={`/group/${group.slug}/admin`}
+                      className="flex-1 px-3 py-2 text-center text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-1"
+                    >
+                      <Settings className="h-3 w-3" />
+                      Administrar
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </main>
   )

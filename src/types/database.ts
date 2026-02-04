@@ -492,6 +492,51 @@ export type Database = {
           },
         ]
       }
+      group_tags: {
+        Row: {
+          id: string
+          group_id: string
+          name: string
+          color: string
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          name: string
+          color?: string
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          name?: string
+          color?: string
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_tags_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_tags_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_creation_requests: {
         Row: {
           id: string

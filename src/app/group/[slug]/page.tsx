@@ -242,8 +242,10 @@ export default function GroupPage() {
   }
 
   const canViewContent = group.is_public || isMember
+  const isGroupCreator = group.created_by === user?.id
   const isAdmin = userRole === 'admin' || user?.is_admin
   const isModerator = userRole === 'moderator'
+  const canManageGroup = isGroupCreator || isAdmin || isModerator
 
   return (
     <main className="min-h-screen bg-background">
@@ -302,11 +304,14 @@ export default function GroupPage() {
             <div className="flex items-center gap-2">
               {isMember ? (
                 <>
-                  {(isAdmin || isModerator) && (
-                    <button className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full font-medium transition-colors">
+                  {canManageGroup && (
+                    <Link
+                      href={`/group/${slug}/admin`}
+                      className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full font-medium transition-colors"
+                    >
                       <Settings className="h-4 w-4" />
                       Administrar
-                    </button>
+                    </Link>
                   )}
                   {!group.is_default && (
                     <button
