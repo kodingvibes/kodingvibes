@@ -14,12 +14,13 @@ La aplicación ha sido auditada completamente contra OWASP Top 10:2021. Se han i
 
 **Nuevas Mejoras (2026-02-04):**
 - ✅ Eliminado `dangerouslySetInnerHTML` (violación CSP)
-- ✅ CSP mejorado: eliminado 'unsafe-inline' de scripts
+- ✅ CSP ajustado para Next.js (unsafe-inline necesario para scripts inline)
 - ✅ Sistema de logging seguro implementado (no expone datos sensibles)
 - ✅ Validación adicional contra SQL Injection
 - ✅ Validación de emails añadida
-- ✅ Protección upgrade-insecure-requests y block-all-mixed-content
+- ✅ Protección upgrade-insecure-requests
 - ✅ WebSocket securizado en CSP (wss://*.supabase.co)
+- ✅ Vercel Live compatible (https://vercel.live)
 
 **Medidas Existentes:**
 - ✅ Headers de seguridad completos (CSP, HSTS, X-Frame-Options, etc.)
@@ -145,7 +146,8 @@ alter table public.votes enable row level security;
 
 **Eliminado:**
 - ❌ `dangerouslySetInnerHTML` movido a archivo externo
-- ❌ 'unsafe-inline' removido de script-src en CSP
+- ⚠️ `'unsafe-inline'` necesario para Next.js (genera scripts inline dinámicamente)
+- ❌ `block-all-mixed-content` removido (obsoleto, reemplazado por upgrade-insecure-requests)
 
 ---
 
@@ -186,17 +188,19 @@ alter table public.votes enable row level security;
    Permissions-Policy: camera=(), microphone=(), geolocation=()
    ```
 
-2. **Content Security Policy (CSP) Mejorado**
+2. **Content Security Policy (CSP) Robusto**
    ```
    default-src 'self';
-   script-src 'self' 'unsafe-eval';  // Sin 'unsafe-inline'
+   script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live;
    style-src 'self' 'unsafe-inline';
    img-src 'self' https://*.supabase.co https://*.googleusercontent.com data: blob:;
-   connect-src 'self' https://*.supabase.co wss://*.supabase.co;
+   connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vercel.live;
    frame-ancestors 'none';
    upgrade-insecure-requests;
-   block-all-mixed-content;
    ```
+   
+   **Nota:** `'unsafe-inline'` es necesario para Next.js que genera scripts inline dinámicamente.
+   Para mejorar esto, se recomienda implementar nonces en el futuro.
 
 3. **Información de Error Controlada**
    - No se exponen stack traces en producción
@@ -358,8 +362,11 @@ https://github.com/advisories/GHSA-5f7q-jpqc-wp7h
 ✅ X-XSS-Protection: 1; mode=block
 ✅ Referrer-Policy: strict-origin-when-cross-origin
 ✅ Permissions-Policy: camera=(), microphone=(), geolocation=()
-✅ Content-Security-Policy: (CSP mejorado - sin 'unsafe-inline' en scripts)
+✅ Content-Security-Policy: (CSP configurado - unsafe-inline necesario para Next.js)
 ```
+
+**Nota CSP:** Next.js genera scripts inline dinámicamente que requieren `'unsafe-inline'`.
+Para eliminar esto completamente, se requeriría implementar nonces con middleware personalizado.
 
 ### ✅ Prueba 3: XSS Protection
 ```bash
@@ -367,8 +374,14 @@ https://github.com/advisories/GHSA-5f7q-jpqc-wp7h
 ✅ sanitizeMarkdown() funcional
 ✅ ReactMarkdown con configuración segura
 ✅ Sin dangerouslySetInnerHTML en código
-✅ CSP sin 'unsafe-inline' en scripts
+⚠️ CSP con 'unsafe-inline' (requerido por Next.js)
 ```
+
+**Nota:** Aunque CSP permite `'unsafe-inline'`, la protección XSS sigue siendo robusta debido a:
+- Sanitización de inputs con DOMPurify
+- Validación estricta de contenido de usuario
+- ReactMarkdown configurado de forma segura
+- No se permite HTML arbitrario de usuarios
 
 ### ✅ Prueba 4: SQL Injection Protection
 ```bash
@@ -411,15 +424,16 @@ https://github.com/advisories/GHSA-5f7q-jpqc-wp7h
 
 ### Prioridad ALTA
 1. ✅ **[COMPLETADO]** Eliminar `dangerouslySetInnerHTML`
-2. ✅ **[COMPLETADO]** Mejorar CSP (eliminar 'unsafe-inline')
+2. ⚠️ **[PARCIAL]** CSP ajustado ('unsafe-inline' necesario para Next.js)
 3. ✅ **[COMPLETADO]** Implementar logging seguro
 4. ⏳ **[PENDIENTE]** Actualizar Next.js a v16 cuando esté disponible
 
 ### Prioridad MEDIA
 5. ✅ **[COMPLETADO]** Añadir validación de emails
 6. ✅ **[COMPLETADO]** Añadir detección SQL injection
-7. 🔄 **[RECOMENDADO]** Implementar WAF (Web Application Firewall)
-8. 🔄 **[RECOMENDADO]** Configurar alertas de seguridad automáticas
+7. 🔄 **[RECOMENDADO]** Implementar nonces CSP con middleware (eliminar unsafe-inline)
+8. 🔄 **[RECOMENDADO]** Implementar WAF (Web Application Firewall)
+9. 🔄 **[RECOMENDADO]** Configurar alertas de seguridad automáticas
 
 ### Prioridad BAJA
 9. 🔄 **[OPCIONAL]** Implementar 2FA

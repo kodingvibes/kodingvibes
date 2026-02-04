@@ -96,7 +96,7 @@ export default function RootLayout({
       <head>
         <Script
           id="sw-register"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           src="/register-sw.js"
         />
       </head>
