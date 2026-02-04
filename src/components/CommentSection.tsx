@@ -1,7 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import MarkdownContent from './MarkdownContent'
 import { Send, CornerDownRight, ArrowBigUp, ArrowBigDown, Eye } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
@@ -228,37 +228,108 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   const [userVotes, setUserVotes] = useState<Map<string, number>>(new Map())
   const [voteLoading, setVoteLoading] = useState<string | null>(null)
   const [visibleHidden, setVisibleHidden] = useState<Set<string>>(new Set())
+  const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
+  const fetchUserVotes = useCallback(async (currentUser: User) => {
+    if (!currentUser) return
+
+    try {
+      const { data, error: voteError } = await supabase
+        .from('comment_votes')
+        .select('comment_id, value')
+        .eq('user_id', currentUser.id)
+
+      if (voteError) {
+        console.error('Error fetching user votes:', voteError)
+        return
+      }
+
+      if (data) {
+        const voteMap = new Map<string, number>()
+        data.forEach(vote => {
+          voteMap.set(vote.comment_id, vote.value)
+        })
+        setUserVotes(voteMap)
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching user votes:', err)
     }
-    getUser()
-    fetchComments()
-    if (user) {
-      fetchUserVotes()
+  }, [supabase])
+
+  const fetchComments = useCallback(async () => {
+    try {
+      setError(null)
+      const { data, error: commentsError } = await supabase
+        .from('comments')
+        .select(`
+          *,
+          users:user_id (name, username, email)
+        `)
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true })
+        .returns<Comment[]>()
+
+      if (commentsError) {
+        console.error('Error fetching comments:', commentsError)
+        setError('Error al cargar los comentarios')
+        return
+      }
+
+      if (data) {
+        const commentMap = new Map<string, Comment & { replies: Comment[] }>()
+        const rootComments: Comment[] = []
+
+        data.forEach(comment => {
+          const commentWithReplies = { ...comment, vote_count: comment.vote_count || 0, replies: [] }
+          commentMap.set(comment.id, commentWithReplies)
+        })
+
+        data.forEach(comment => {
+          if (comment.parent_id && commentMap.has(comment.parent_id)) {
+            commentMap.get(comment.parent_id)!.replies.push(commentMap.get(comment.id)!)
+          } else {
+            rootComments.push(commentMap.get(comment.id)!)
+          }
+        })
+
+        setComments(rootComments)
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching comments:', err)
+      setError('Error al cargar los comentarios')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, supabase])
 
-  const fetchUserVotes = async () => {
-    if (!user) return
+  useEffect(() => {
+    let isMounted = true
 
-    const { data } = await supabase
-      .from('comment_votes')
-      .select('comment_id, value')
-      .eq('user_id', user.id)
-
-    if (data) {
-      const voteMap = new Map<string, number>()
-      data.forEach(vote => {
-        voteMap.set(vote.comment_id, vote.value)
-      })
-      setUserVotes(voteMap)
+    const initialize = async () => {
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser()
+        
+        if (isMounted) {
+          setUser(currentUser)
+          await fetchComments()
+          
+          if (currentUser) {
+            await fetchUserVotes(currentUser)
+          }
+        }
+      } catch (err) {
+        console.error('Error initializing component:', err)
+        if (isMounted) {
+          setError('Error al inicializar el componente')
+        }
+      }
     }
-  }
+
+    initialize()
+
+    return () => {
+      isMounted = false
+    }
+  }, [postId, supabase, fetchComments, fetchUserVotes])
 
   const handleVote = async (commentId: string, value: number) => {
     if (!user) {
@@ -272,11 +343,16 @@ export default function CommentSection({ postId }: CommentSectionProps) {
       const currentVote = userVotes.get(commentId)
 
       if (currentVote === value) {
-        await supabase
+        const { error: deleteError } = await supabase
           .from('comment_votes')
           .delete()
           .eq('comment_id', commentId)
           .eq('user_id', user.id)
+
+        if (deleteError) {
+          console.error('Error removing vote:', deleteError)
+          return
+        }
 
         setUserVotes(prev => {
           const newMap = new Map(prev)
@@ -286,7 +362,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
 
         updateCommentVoteCount(commentId, -value)
       } else {
-        await supabase
+        const { error: upsertError } = await supabase
           .from('comment_votes')
           .upsert({
             comment_id: commentId,
@@ -295,6 +371,11 @@ export default function CommentSection({ postId }: CommentSectionProps) {
           }, {
             onConflict: 'user_id,comment_id'
           })
+
+        if (upsertError) {
+          console.error('Error upserting vote:', upsertError)
+          return
+        }
 
         setUserVotes(prev => {
           const newMap = new Map(prev)
@@ -305,8 +386,8 @@ export default function CommentSection({ postId }: CommentSectionProps) {
         const voteDiff = currentVote ? value - currentVote : value
         updateCommentVoteCount(commentId, voteDiff)
       }
-    } catch (error) {
-      console.error('Error voting:', error)
+    } catch (err) {
+      console.error('Error voting:', err)
     } finally {
       setVoteLoading(null)
     }
@@ -329,38 +410,6 @@ export default function CommentSection({ postId }: CommentSectionProps) {
       }
       return comment
     })
-  }
-
-  const fetchComments = async () => {
-    const { data } = await supabase
-      .from('comments')
-      .select(`
-        *,
-        users:user_id (name, username, email)
-      `)
-      .eq('post_id', postId)
-      .order('created_at', { ascending: true })
-      .returns<Comment[]>()
-
-    if (data) {
-      const commentMap = new Map<string, Comment & { replies: Comment[] }>()
-      const rootComments: Comment[] = []
-
-      data.forEach(comment => {
-        const commentWithReplies = { ...comment, vote_count: comment.vote_count || 0, replies: [] }
-        commentMap.set(comment.id, commentWithReplies)
-      })
-
-      data.forEach(comment => {
-        if (comment.parent_id && commentMap.has(comment.parent_id)) {
-          commentMap.get(comment.parent_id)!.replies.push(commentMap.get(comment.id)!)
-        } else {
-          rootComments.push(commentMap.get(comment.id)!)
-        }
-      })
-
-      setComments(rootComments)
-    }
   }
 
   const handleSubmit = async (e: React.FormEvent, parentId?: string) => {
@@ -393,26 +442,32 @@ export default function CommentSection({ postId }: CommentSectionProps) {
 
     setLoading(true)
 
-    const { error } = await supabase.from('comments').insert({
-      post_id: postId,
-      user_id: user.id,
-      content: sanitizedContent,
-      parent_id: parentId || null,
-    })
+    try {
+      const { error: insertError } = await supabase.from('comments').insert({
+        post_id: postId,
+        user_id: user.id,
+        content: sanitizedContent,
+        parent_id: parentId || null,
+      })
 
-    if (error) {
-      console.error('Error creating comment:', error)
-    } else {
-      if (parentId) {
-        setReplyContent('')
-        setReplyTo(null)
+      if (insertError) {
+        console.error('Error creating comment:', insertError)
+        alert('Error al crear el comentario')
       } else {
-        setNewComment('')
+        if (parentId) {
+          setReplyContent('')
+          setReplyTo(null)
+        } else {
+          setNewComment('')
+        }
+        await fetchComments()
       }
-      fetchComments()
+    } catch (err) {
+      console.error('Unexpected error creating comment:', err)
+      alert('Error al crear el comentario')
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   const handleReplyClick = (commentId: string) => {
@@ -425,6 +480,26 @@ export default function CommentSection({ postId }: CommentSectionProps) {
 
   const handleShowHidden = (commentId: string) => {
     setVisibleHidden(prev => new Set(prev).add(commentId))
+  }
+
+  const toggleShowAllHidden = () => {
+    if (visibleHidden.size > 0) {
+      setVisibleHidden(new Set())
+    } else {
+      const allHidden = new Set<string>()
+      const collectHiddenIds = (comments: Comment[]) => {
+        comments.forEach(comment => {
+          if (comment.vote_count < 0) {
+            allHidden.add(comment.id)
+          }
+          if (comment.replies) {
+            collectHiddenIds(comment.replies)
+          }
+        })
+      }
+      collectHiddenIds(comments)
+      setVisibleHidden(allHidden)
+    }
   }
 
   const hasAnyHiddenComments = (comments: Comment[]): boolean => {
@@ -496,6 +571,18 @@ export default function CommentSection({ postId }: CommentSectionProps) {
         </span>
       </h3>
 
+      {error && (
+        <div className="mb-4 bg-destructive/10 text-destructive rounded-xl p-4 text-center">
+          <p>{error}</p>
+          <button
+            onClick={fetchComments}
+            className="mt-2 text-sm underline hover:no-underline"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
       {user ? (
         <form onSubmit={(e) => handleSubmit(e)} className="mb-8">
           <div className="bg-card border border-border rounded-xl p-4">
@@ -528,12 +615,12 @@ export default function CommentSection({ postId }: CommentSectionProps) {
       {hasAnyHiddenComments(comments) && (
         <div className="mb-4">
           <button
-            onClick={() => setVisibleHidden(new Set())}
+            onClick={toggleShowAllHidden}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             {visibleHidden.size > 0
-              ? `Ocultar ${visibleHidden.size} comentario${visibleHidden.size > 1 ? 's' : ''}`
-              : `${hiddenCount} comentario${hiddenCount > 1 ? 's' : ''} oculto${hiddenCount > 1 ? 's' : ''}`
+              ? `${hiddenCount} comentario${hiddenCount > 1 ? 's' : ''} oculto${hiddenCount > 1 ? 's' : ''}`
+              : `Mostrar ${hiddenCount} comentario${hiddenCount > 1 ? 's' : ''} oculto${hiddenCount > 1 ? 's' : ''}`
             }
           </button>
         </div>
