@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Users, Lock, Globe, Plus, Hash, ArrowRight } from 'lucide-react'
+import { Users, Lock, Globe, Plus, Hash, ArrowRight, Home } from 'lucide-react'
 import type { Tables } from '@/types/database'
 import type { User } from '@supabase/supabase-js'
 
@@ -104,6 +104,13 @@ export default function GroupsPage() {
 
   const handleLeaveGroup = async (groupId: string) => {
     if (!user) return
+
+    // No permitir salir del grupo por defecto
+    const group = groups.find(g => g.id === groupId)
+    if (group?.is_default) {
+      alert('No puedes abandonar el canal principal de la comunidad')
+      return
+    }
 
     const { error } = await supabase
       .from('group_members')
@@ -248,7 +255,15 @@ function GroupCard({
             {group.name.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">{group.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-foreground">{group.name}</h3>
+              {group.is_default && (
+                <span className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded text-xs font-medium">
+                  <Home className="h-3 w-3" />
+                  Principal
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Users className="h-3.5 w-3.5" />
@@ -280,13 +295,15 @@ function GroupCard({
         </Link>
         
         {isMember ? (
-          <button
-            onClick={onLeave}
-            className="px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors text-sm"
-          >
-            Salir
-          </button>
-        ) : (
+          !group.is_default && (
+            <button
+              onClick={onLeave}
+              className="px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors text-sm"
+            >
+              Salir
+            </button>
+          )
+        ) : !group.is_default && (
           <button
             onClick={onJoin}
             className="px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 rounded-lg font-medium transition-opacity text-sm"

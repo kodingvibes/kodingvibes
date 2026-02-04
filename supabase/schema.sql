@@ -97,12 +97,14 @@ create trigger vote_count_trigger
   for each row execute function public.update_vote_count();
 
 -- Function to handle user creation from auth with automatic username generation
+-- and automatic membership to default group (comunidad)
 create or replace function public.handle_new_user()
 returns trigger as $$
 declare
   base_username text;
   final_username text;
   counter integer := 0;
+  default_group_id uuid;
 begin
   -- Generate base username from email or name
   base_username := lower(regexp_replace(
@@ -136,6 +138,7 @@ begin
     end if;
   end loop;
   
+  -- Crear el usuario
   insert into public.users (id, email, name, username, avatar_url)
   values (
     new.id, 
@@ -144,9 +147,20 @@ begin
     final_username,
     new.raw_user_meta_data->>'avatar_url'
   );
+  
+  -- Agregar automáticamente al grupo por defecto (comunidad)
+  select id into default_group_id from public.groups where is_default = true limit 1;
+  
+  if default_group_id is not null then
+    insert into public.group_members (group_id, user_id, role)
+    values (default_group_id, new.id, 'member')
+    on conflict (group_id, user_id) do nothing;
+  end if;
+  
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer
+set search_path = public;
 
 -- Trigger to create user profile on signup
 drop trigger if exists on_auth_user_created on auth.users;

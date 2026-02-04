@@ -402,6 +402,7 @@ export type Database = {
           description: string | null
           is_public: boolean
           is_active: boolean
+          is_default: boolean
           created_by: string
           created_at: string
           updated_at: string
@@ -417,6 +418,7 @@ export type Database = {
           description?: string | null
           is_public?: boolean
           is_active?: boolean
+          is_default?: boolean
           created_by: string
           created_at?: string
           updated_at?: string
@@ -432,6 +434,7 @@ export type Database = {
           description?: string | null
           is_public?: boolean
           is_active?: boolean
+          is_default?: boolean
           created_by?: string
           created_at?: string
           updated_at?: string

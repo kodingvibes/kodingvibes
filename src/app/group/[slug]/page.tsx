@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import { 
   Users, Lock, Globe, Plus, ArrowLeft, Hash,
   TrendingUp, Clock, Settings, UserPlus, LogOut,
-  Shield, Crown
+  Shield, Crown, Home
 } from 'lucide-react'
 import PostCard from '@/components/PostCard'
 import type { Tables } from '@/types/database'
@@ -238,8 +238,14 @@ export default function GroupPage() {
                 {group.name.charAt(0).toUpperCase()}
               </div>
               <div>
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h1 className="text-3xl font-bold">{group.name}</h1>
+                  {group.is_default && (
+                    <span className="inline-flex items-center gap-1 bg-yellow-400/30 text-yellow-100 px-2 py-1 rounded-full text-xs font-medium">
+                      <Home className="h-3 w-3" />
+                      Canal Principal
+                    </span>
+                  )}
                   {group.is_public ? (
                     <span className="inline-flex items-center gap-1 bg-white/20 px-2 py-1 rounded-full text-xs font-medium">
                       <Globe className="h-3 w-3" />
@@ -273,15 +279,17 @@ export default function GroupPage() {
                       Administrar
                     </button>
                   )}
-                  <button
-                    onClick={handleLeaveGroup}
-                    className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full font-medium transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Salir
-                  </button>
+                  {!group.is_default && (
+                    <button
+                      onClick={handleLeaveGroup}
+                      className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full font-medium transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Salir
+                    </button>
+                  )}
                 </>
-              ) : (
+              ) : !group.is_default ? (
                 <button
                   onClick={handleJoinGroup}
                   className="inline-flex items-center gap-2 bg-white text-indigo-600 px-6 py-2 rounded-full font-semibold hover:bg-white/90 transition-colors"
@@ -289,7 +297,7 @@ export default function GroupPage() {
                   <UserPlus className="h-5 w-5" />
                   Unirse
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
 
