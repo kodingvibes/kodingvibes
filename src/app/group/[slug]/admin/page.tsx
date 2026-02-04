@@ -567,6 +567,29 @@ export default function GroupAdminPage() {
                         }
                       }
 
+                      // Avatar component with fallback
+                      const AvatarDisplay = () => {
+                        const [imageError, setImageError] = useState(false)
+                        const hasAvatar = member.users.avatar_url && !imageError
+
+                        if (hasAvatar) {
+                          return (
+                            <img
+                              src={member.users.avatar_url!}
+                              alt={member.users.username}
+                              className="w-10 h-10 rounded-full object-cover"
+                              onError={() => setImageError(true)}
+                            />
+                          )
+                        }
+
+                        return (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
+                            {member.users.username[0].toUpperCase()}
+                          </div>
+                        )
+                      }
+
                       return (
                         <div
                           key={member.id}
@@ -574,17 +597,7 @@ export default function GroupAdminPage() {
                         >
                           {/* Avatar */}
                           <div className="flex-shrink-0">
-                            {member.users.avatar_url ? (
-                              <img
-                                src={member.users.avatar_url}
-                                alt={member.users.username}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
-                                {member.users.username[0].toUpperCase()}
-                              </div>
-                            )}
+                            <AvatarDisplay />
                           </div>
 
                           {/* User Info */}
