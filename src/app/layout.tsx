@@ -3,6 +3,7 @@ import "./globals.css";
 import { ClientLayout } from "@/components/ClientLayout";
 import Script from "next/script";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: {
@@ -126,6 +127,7 @@ export default function RootLayout({
           {children}
         </ClientLayout>
         <PushNotificationPrompt />
+        <Analytics />
       </body>
     </html>
   );
