@@ -7,11 +7,62 @@ import CommentSection from '@/components/CommentSection'
 import MarkdownContent from '@/components/MarkdownContent'
 import PostActionsClient from '@/components/PostActionsClient'
 import { ArrowLeft, Clock, Edit3 } from 'lucide-react'
+import type { Metadata } from 'next'
 
 interface PostPageProps {
   params: Promise<{
     id: string
   }>
+}
+
+export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+
+  const { data: post } = await supabase
+    .from('posts')
+    .select('title, content, image_url')
+    .eq('id', id)
+    .eq('is_deleted', false)
+    .single()
+
+  if (!post) {
+    return {
+      title: 'KodingVibes',
+      description: 'Comunidad de desarrolladores',
+    }
+  }
+
+  const metadata: Metadata = {
+    title: 'KodingVibes',
+    description: post.title,
+    openGraph: {
+      title: 'KodingVibes',
+      description: post.title,
+      type: 'article',
+    },
+    twitter: {
+      title: 'KodingVibes',
+      description: post.title,
+      card: 'summary_large_image',
+    },
+  }
+
+  if (post.image_url) {
+    metadata.openGraph = {
+      ...metadata.openGraph,
+      images: [{
+        url: post.image_url,
+        alt: post.title,
+      }],
+    }
+    metadata.twitter = {
+      ...metadata.twitter,
+      images: [post.image_url],
+    }
+  }
+
+  return metadata
 }
 
 export default async function PostPage({ params }: PostPageProps) {

@@ -63,7 +63,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const [sortBy, setSortBy] = useState<'popular' | 'recent'>('popular')
+  const [sortBy, setSortBy] = useState<'popular' | 'recent'>('recent')
    
   useEffect(() => {
     const fetchPosts = async () => {
