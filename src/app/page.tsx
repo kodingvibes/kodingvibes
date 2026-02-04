@@ -90,8 +90,6 @@ export default function Home() {
       if (groupsError) {
         console.error('Error fetching groups:', groupsError)
       }
-      
-      console.log('Fetched groups:', groupsData)
 
       if (groupsData) {
         setGroups(groupsData)
@@ -136,8 +134,6 @@ export default function Home() {
       if (postsError) {
         console.error('Error fetching posts:', postsError)
       }
-      
-      console.log('Fetched posts:', postsData)
 
       setPosts(postsData || [])
       setLoading(false)

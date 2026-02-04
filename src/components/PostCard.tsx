@@ -39,9 +39,6 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      console.log('PostCard - Current user:', user?.id)
-      console.log('PostCard - Post user_id:', post.user_id)
-      console.log('PostCard - Match:', user?.id === post.user_id)
       setCurrentUserId(user?.id || null)
       setIsLoading(false)
     }

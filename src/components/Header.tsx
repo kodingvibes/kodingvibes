@@ -59,8 +59,6 @@ export default function Header() {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
     const redirectTo = `${baseUrl}/auth/callback`
     
-    console.log('Login redirect:', { baseUrl, redirectTo, env: process.env.NEXT_PUBLIC_SITE_URL })
-    
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

@@ -135,7 +135,6 @@ export async function initializePushNotifications(vapidPublicKey: string): Promi
       const subscription = await subscribeToPushNotifications(vapidPublicKey);
       if (subscription) {
         await savePushSubscription(subscription);
-        console.log('Push notifications re-subscribed');
       }
     }
   } catch (error) {

@@ -90,7 +90,6 @@ export default function ProfilePage() {
           setName(data.name || '')
         } else {
           // Perfil no existe, crearlo automáticamente
-          console.log('Profile not found, creating...')
           await createProfile(user.id, user.email || '')
         }
       } catch (err) {

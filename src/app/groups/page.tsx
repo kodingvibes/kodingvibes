@@ -44,8 +44,6 @@ export default function GroupsPage() {
           statusText
         })
       }
-      
-      console.log('Groups page - Fetched groups:', groupsData, 'User:', currentUser?.id)
 
       if (groupsData) {
         if (currentUser) {

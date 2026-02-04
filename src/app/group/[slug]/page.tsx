@@ -22,8 +22,12 @@ type Post = Tables<'posts'> & {
   users: { name: string | null; username: string | null; email: string } | null
   comments: { count: number }[]
 }
-type GroupMember = Tables<'group_members'> & {
-  users: { name: string | null; username: string | null; email: string } | null
+type GroupMember = {
+  id: string
+  role: string
+  joined_at: string
+  user_id: string
+  users: { username: string | null } | null
 }
 
 interface PostWithCount extends Post {
@@ -86,14 +90,36 @@ export default function GroupPage() {
         }
       }
 
-      // Fetch members
-      const { data: membersData } = await supabase
+      // Fetch members (without join to avoid RLS recursion)
+      const { data: membersData, error: membersError } = await supabase
         .from('group_members')
-        .select('*, users:user_id(name, username, email)')
+        .select('id, role, joined_at, user_id')
         .eq('group_id', groupData.id)
         .order('joined_at', { ascending: false })
 
-      setMembers(membersData || [])
+      if (membersError) {
+        console.error('Error fetching members:', membersError)
+      }
+
+      // Fetch usernames separately if we have members
+      let membersWithUsers: GroupMember[] = []
+      if (membersData && membersData.length > 0) {
+        const userIds = membersData.map(m => m.user_id)
+        
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, username')
+          .in('id', userIds)
+
+        const usersMap = new Map(usersData?.map(u => [u.id, u.username]) || [])
+        
+        membersWithUsers = membersData.map(member => ({
+          ...member,
+          users: { username: usersMap.get(member.user_id) || null }
+        }))
+      }
+      
+      setMembers(membersWithUsers)
 
       // Fetch posts if user is member or group is public
       if (groupData.is_public || membershipData) {

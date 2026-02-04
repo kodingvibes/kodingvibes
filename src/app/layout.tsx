@@ -103,17 +103,10 @@ export default function RootLayout({
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js').then(
                     function(registration) {
-                      console.log('SW registrado:', registration.scope);
-                      
-                      // Escuchar mensajes del Service Worker
-                      navigator.serviceWorker.addEventListener('message', function(event) {
-                        if (event.data && event.data.type === 'PUSH_RECEIVED') {
-                          console.log('Push notification received:', event.data);
-                        }
-                      });
+                      // Service Worker registrado
                     },
                     function(err) {
-                      console.log('SW falló:', err);
+                      // Service Worker falló
                     }
                   );
                 });

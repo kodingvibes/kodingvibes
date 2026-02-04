@@ -29,30 +29,15 @@ export default function PostActions({
   // Verificar si el usuario actual es el dueño del post
   const isOwner = currentUserId === userId
   
-  // Debug info
-  console.log('PostActions - isOwner:', isOwner)
-  console.log('PostActions - currentUserId:', currentUserId)
-  console.log('PostActions - userId:', userId)
-  console.log('PostActions - createdAt:', createdAt)
-  
   // Calcular si está dentro de los 15 minutos de edición
   const canEdit = () => {
     if (!isOwner || isDeleted) {
-      console.log('canEdit: false - not owner or deleted')
       return false
     }
     
-    // Asegurar que createdAt tenga formato ISO
     const created = new Date(createdAt)
     const now = new Date()
-    
-    console.log('Created date:', created.toISOString())
-    console.log('Now:', now.toISOString())
-    console.log('Created timestamp:', created.getTime())
-    console.log('Now timestamp:', now.getTime())
-    
     const diffMinutes = (now.getTime() - created.getTime()) / (1000 * 60)
-    console.log('Diff minutes:', diffMinutes)
     
     return diffMinutes <= 15
   }
@@ -95,7 +80,6 @@ export default function PostActions({
   }
 
   if (!isOwner || isDeleted) {
-    console.log('PostActions: not rendering - isOwner:', isOwner, 'isDeleted:', isDeleted)
     return null
   }
 
