@@ -81,11 +81,17 @@ export default function Home() {
       const { data: { user } } = await supabase.auth.getUser()
       
       // Fetch groups
-      const { data: groupsData } = await supabase
+      const { data: groupsData, error: groupsError } = await supabase
         .from('groups')
         .select('*')
         .eq('is_active', true)
         .order('post_count', { ascending: false })
+
+      if (groupsError) {
+        console.error('Error fetching groups:', groupsError)
+      }
+      
+      console.log('Fetched groups:', groupsData)
 
       if (groupsData) {
         setGroups(groupsData)
@@ -125,8 +131,14 @@ export default function Home() {
         }
       }
 
-      const { data: postsData } = await postsQuery.order('vote_count', { ascending: false })
+      const { data: postsData, error: postsError } = await postsQuery.order('vote_count', { ascending: false })
       
+      if (postsError) {
+        console.error('Error fetching posts:', postsError)
+      }
+      
+      console.log('Fetched posts:', postsData)
+
       setPosts(postsData || [])
       setLoading(false)
     }

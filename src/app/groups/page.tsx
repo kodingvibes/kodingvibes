@@ -27,11 +27,25 @@ export default function GroupsPage() {
       setUser(currentUser)
 
       // Fetch all active groups
-      const { data: groupsData } = await supabase
+      const { data: groupsData, error: groupsError, status, statusText } = await supabase
         .from('groups')
         .select('*')
         .eq('is_active', true)
         .order('post_count', { ascending: false })
+
+      if (groupsError) {
+        console.error('Error fetching groups:', {
+          error: groupsError,
+          message: groupsError.message,
+          details: groupsError.details,
+          hint: groupsError.hint,
+          code: groupsError.code,
+          status,
+          statusText
+        })
+      }
+      
+      console.log('Groups page - Fetched groups:', groupsData, 'User:', currentUser?.id)
 
       if (groupsData) {
         if (currentUser) {

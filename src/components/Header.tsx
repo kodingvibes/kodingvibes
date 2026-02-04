@@ -15,9 +15,14 @@ export default function Header() {
   const [loading, setLoading] = useState(true)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const supabase = createClient()
   const { theme, toggleTheme } = useTheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const getUser = async () => {
@@ -98,11 +103,16 @@ export default function Header() {
                 onClick={toggleTheme}
                 className="p-2 rounded-full hover:bg-muted transition-colors"
                 aria-label={theme === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'}
+                suppressHydrationWarning
               >
-                {theme === 'dark' ? (
-                  <Sun className="h-5 w-5 text-yellow-500" />
-                ) : (
-                  <Moon className="h-5 w-5 text-slate-600" />
+                {mounted && (
+                  <>
+                    {theme === 'dark' ? (
+                      <Sun className="h-5 w-5 text-yellow-500" />
+                    ) : (
+                      <Moon className="h-5 w-5 text-slate-600" />
+                    )}
+                  </>
                 )}
               </button>
 
