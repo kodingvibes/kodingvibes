@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Check, Trash2, ArrowUp, MessageCircle, MessageSquare } from 'lucide-react';
+import { Bell, Check, Trash2, ArrowUp, MessageCircle, MessageSquare, Shield, Ban, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useNotifications, useNotificationPermission } from '@/hooks/useNotifications';
 import { Notification, NotificationType } from '@/types/notifications';
@@ -11,12 +11,22 @@ const notificationIcons: Record<NotificationType, React.ReactNode> = {
   upvote: <ArrowUp className="h-4 w-4 text-indigo-500" />,
   comment: <MessageCircle className="h-4 w-4 text-blue-500" />,
   reply: <MessageSquare className="h-4 w-4 text-green-500" />,
+  ban: <Ban className="h-4 w-4 text-red-500" />,
+  unban: <CheckCircle className="h-4 w-4 text-green-500" />,
+  moderation_request: <AlertTriangle className="h-4 w-4 text-orange-500" />,
+  moderation_approved: <CheckCircle className="h-4 w-4 text-green-500" />,
+  moderation_rejected: <XCircle className="h-4 w-4 text-red-500" />,
 };
 
 const notificationColors: Record<NotificationType, string> = {
   upvote: 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800',
   comment: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800',
   reply: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
+  ban: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
+  unban: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
+  moderation_request: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800',
+  moderation_approved: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
+  moderation_rejected: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
 };
 
 export function NotificationBell() {

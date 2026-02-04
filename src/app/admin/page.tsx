@@ -2,10 +2,10 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { 
   Shield, AlertTriangle, Check, X, Ban, Clock, 
-  User as UserIcon, ArrowLeft, AlertCircle, Info, Search
+  User as UserIcon, ArrowLeft, Search
 } from 'lucide-react'
 import Link from 'next/link'
 import type { Tables } from '@/types/database'
@@ -55,36 +55,7 @@ export default function AdminDashboardPage() {
   
   const supabase = createClient()
 
-  useEffect(() => {
-    const checkAdminAndFetch = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/')
-        return
-      }
-
-      // Check if user is admin
-      const { data: userData } = await supabase
-        .from('users')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single()
-
-      if (!userData?.is_admin) {
-        alert('No tienes permisos para acceder a esta página')
-        router.push('/')
-        return
-      }
-
-      setIsAdmin(true)
-      await fetchData()
-    }
-
-    checkAdminAndFetch()
-  }, [supabase, router])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     // Fetch pending moderation requests
     const { data: requestsData } = await supabase
       .from('moderation_requests')
@@ -112,7 +83,36 @@ export default function AdminDashboardPage() {
 
     setActiveBans(bansData || [])
     setLoading(false)
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    const checkAdminAndFetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        router.push('/')
+        return
+      }
+
+      // Check if user is admin
+      const { data: userData } = await supabase
+        .from('users')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single()
+
+      if (!userData?.is_admin) {
+        alert('No tienes permisos para acceder a esta página')
+        router.push('/')
+        return
+      }
+
+      setIsAdmin(true)
+      await fetchData()
+    }
+
+    checkAdminAndFetch()
+  }, [router, fetchData])
 
   const handleApproveModeration = async (requestId: string) => {
     setProcessingId(requestId)

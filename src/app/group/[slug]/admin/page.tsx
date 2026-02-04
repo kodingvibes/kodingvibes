@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { 
-  ArrowLeft, Plus, Trash2, Save, AlertCircle, 
+  ArrowLeft, Plus, Trash2, AlertCircle, 
   Check, Tag, Palette, Settings 
 } from 'lucide-react'
 import type { Tables } from '@/types/database'
