@@ -56,6 +56,30 @@ export default function EditPostPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
+  // Función para detectar si hay cambios
+  const hasChanges = (): boolean => {
+    if (!post) return false
+    
+    // Comparar título
+    if (title !== post.title) return true
+    
+    // Comparar contenido
+    if (content !== (post.content || '')) return true
+    
+    // Comparar tags (ordenados para comparación correcta)
+    const currentTags = [...tags].sort()
+    const originalTags = [...(post.tags || [])].sort()
+    if (JSON.stringify(currentTags) !== JSON.stringify(originalTags)) return true
+    
+    // Comparar si hay nueva imagen
+    if (image !== null) return true
+    
+    // Comparar si se eliminó la imagen
+    if (existingImageUrl !== post.image_url) return true
+    
+    return false
+  }
+
   useEffect(() => {
     const fetchPost = async () => {
       try {
@@ -517,7 +541,7 @@ Puedes usar Markdown:
               </Link>
               <button
                 type="submit"
-                disabled={saving || !title.trim() || timeRemaining <= 0}
+                disabled={saving || !title.trim() || (timeRemaining <= 0 && !isAdmin) || !hasChanges()}
                 className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
               >
                 <Save className="h-4 w-4" />
