@@ -1,5 +1,5 @@
 // Tipos de notificaciones
-export type NotificationType = 'upvote' | 'comment' | 'reply' | 'ban' | 'unban' | 'moderation_request' | 'moderation_approved' | 'moderation_rejected';
+export type NotificationType = 'upvote' | 'comment' | 'reply' | 'ban' | 'unban' | 'moderation_request' | 'moderation_approved' | 'moderation_rejected' | 'group_request';
 
 export interface Notification {
   id: string;
@@ -16,6 +16,11 @@ export interface Notification {
   metadata?: {
     vote_count?: number;
     post_title?: string;
+    request_id?: string;
+    channel_name?: string;
+    channel_slug?: string;
+    description?: string;
+    is_public?: boolean;
   };
 }
 
@@ -31,6 +36,11 @@ export interface NotificationInsert {
   metadata?: {
     vote_count?: number;
     post_title?: string;
+    request_id?: string;
+    channel_name?: string;
+    channel_slug?: string;
+    description?: string;
+    is_public?: boolean;
   };
 }
 

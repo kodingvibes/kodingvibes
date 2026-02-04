@@ -145,3 +145,44 @@ export function validateSearchInput(input: string): { valid: boolean; error?: st
   
   return { valid: true, sanitized }
 }
+
+// Validación de Email
+export function validateEmail(email: string): { valid: boolean; error?: string } {
+  if (!email || typeof email !== 'string') {
+    return { valid: false, error: 'Email is required' }
+  }
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  
+  if (!emailRegex.test(email)) {
+    return { valid: false, error: 'Invalid email format' }
+  }
+  
+  return { valid: true }
+}
+
+// Protección contra SQL Injection (verificar patrones sospechosos)
+export function detectSQLInjection(input: string): boolean {
+  const sqlPatterns = [
+    /(')|(--)|(\;)|(\|\|)|(\*)/i,
+    /(union|select|insert|update|delete|drop|create|alter|exec|execute|script|javascript|iframe)/i,
+    /(or\s+\d+\s*=\s*\d+|and\s+\d+\s*=\s*\d+)/i,
+  ]
+  
+  return sqlPatterns.some(pattern => pattern.test(input))
+}
+
+// Validación segura de entrada con detección de SQL injection
+export function validateSecureInput(input: string, maxLength: number = 1000): { valid: boolean; error?: string; sanitized?: string } {
+  const stringValidation = validateString(input, { maxLength, allowHTML: false })
+  
+  if (!stringValidation.valid) {
+    return stringValidation
+  }
+  
+  if (detectSQLInjection(input)) {
+    return { valid: false, error: 'Input contains potentially malicious content' }
+  }
+  
+  return stringValidation
+}

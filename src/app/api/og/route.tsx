@@ -39,7 +39,10 @@ export async function GET(request: NextRequest) {
           }
         }
       } catch (fetchError) {
-        console.error('Error fetching post data:', fetchError);
+        // Log error without sensitive details
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error fetching post data:', fetchError);
+        }
         // Continue with default values
       }
     }

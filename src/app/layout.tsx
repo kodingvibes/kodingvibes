@@ -97,22 +97,7 @@ export default function RootLayout({
         <Script
           id="sw-register"
           strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(
-                    function(registration) {
-                      // Service Worker registrado
-                    },
-                    function(err) {
-                      // Service Worker falló
-                    }
-                  );
-                });
-              }
-            `,
-          }}
+          src="/register-sw.js"
         />
       </head>
       <body className="antialiased min-h-screen">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Check, Trash2, ArrowUp, MessageCircle, MessageSquare, Shield, Ban, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Bell, Check, Trash2, ArrowUp, MessageCircle, MessageSquare, Shield, Ban, AlertTriangle, CheckCircle, XCircle, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useNotifications, useNotificationPermission } from '@/hooks/useNotifications';
 import { Notification, NotificationType } from '@/types/notifications';
@@ -16,6 +16,7 @@ const notificationIcons: Record<NotificationType, React.ReactNode> = {
   moderation_request: <AlertTriangle className="h-4 w-4 text-orange-500" />,
   moderation_approved: <CheckCircle className="h-4 w-4 text-green-500" />,
   moderation_rejected: <XCircle className="h-4 w-4 text-red-500" />,
+  group_request: <Users className="h-4 w-4 text-purple-500" />,
 };
 
 const notificationColors: Record<NotificationType, string> = {
@@ -27,6 +28,7 @@ const notificationColors: Record<NotificationType, string> = {
   moderation_request: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800',
   moderation_approved: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
   moderation_rejected: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
+  group_request: 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800',
 };
 
 export function NotificationBell() {
@@ -65,8 +67,12 @@ export function NotificationBell() {
       await markAsRead(notification.id);
     }
     
-    // Navigate to the relevant post/comment
-    if (notification.post_id) {
+    // Navigate based on notification type
+    if (notification.type === 'group_request') {
+      // Navigate to admin group requests page
+      window.location.href = '/admin/group-requests';
+    } else if (notification.post_id) {
+      // Navigate to the relevant post/comment
       const url = notification.comment_id 
         ? `/post/${notification.post_id}?comment=${notification.comment_id}`
         : `/post/${notification.post_id}`;
