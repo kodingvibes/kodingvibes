@@ -12,6 +12,7 @@ import TagInput from '@/components/TagInput'
 import type { Tables } from '@/types/database'
 
 type Group = Tables<'groups'>
+type GroupTag = Tables<'group_tags'>
 
 export default function SubmitPage() {
   const router = useRouter()
@@ -31,6 +32,7 @@ export default function SubmitPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(preselectedGroupId)
   const [loadingGroups, setLoadingGroups] = useState(true)
   const [_userMemberships, _setUserMemberships] = useState<Set<string>>(new Set())
+  const [groupTags, setGroupTags] = useState<GroupTag[]>([])
   
   const supabase = createClient()
 
@@ -84,6 +86,28 @@ export default function SubmitPage() {
 
     fetchGroups()
   }, [preselectedGroupId, supabase])
+
+  // Fetch group tags when selected group changes
+  useEffect(() => {
+    const fetchGroupTags = async () => {
+      if (!selectedGroupId) {
+        setGroupTags([])
+        return
+      }
+
+      const { data: tagsData } = await supabase
+        .from('group_tags')
+        .select('*')
+        .eq('group_id', selectedGroupId)
+        .order('created_at', { ascending: true })
+
+      if (tagsData) {
+        setGroupTags(tagsData)
+      }
+    }
+
+    fetchGroupTags()
+  }, [selectedGroupId, supabase])
 
   // Handle clipboard paste for images
   const handlePaste = useCallback((e: ClipboardEvent) => {
@@ -487,7 +511,12 @@ Puedes usar Markdown:
             <label className="block text-sm font-medium text-foreground mb-2">
               Tags
             </label>
-            <TagInput selectedTags={tags} onChange={setTags} maxTags={5} />
+            <TagInput 
+              selectedTags={tags} 
+              onChange={setTags} 
+              maxTags={5} 
+              groupTags={groupTags}
+            />
           </div>
 
           <div className="flex justify-end gap-3">

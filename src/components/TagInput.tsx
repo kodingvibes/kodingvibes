@@ -64,17 +64,35 @@ export const PREDEFINED_TAGS = [
   { value: 'discussion', label: 'Discusión', category: 'concept' },
 ]
 
+interface GroupTag {
+  id: string
+  name: string
+  color: string
+}
+
 interface TagInputProps {
   selectedTags: string[]
   onChange: (tags: string[]) => void
   maxTags?: number
+  groupTags?: GroupTag[]
 }
 
-export default function TagInput({ selectedTags, onChange, maxTags = 5 }: TagInputProps) {
+export default function TagInput({ selectedTags, onChange, maxTags = 5, groupTags = [] }: TagInputProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const filteredTags = PREDEFINED_TAGS.filter(tag => 
+  // Convertir group tags al formato de tags predefinidos
+  const groupTagsFormatted = groupTags.map(gt => ({
+    value: gt.name.toLowerCase().replace(/\s+/g, '-'),
+    label: gt.name,
+    category: 'group' as const,
+    color: gt.color
+  }))
+
+  // Combinar tags predefinidos con tags del grupo
+  const allTags = [...groupTagsFormatted, ...PREDEFINED_TAGS]
+
+  const filteredTags = allTags.filter(tag => 
     tag.label.toLowerCase().includes(searchQuery.toLowerCase()) &&
     !selectedTags.includes(tag.value)
   )
@@ -91,10 +109,28 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5 }: TagInp
   }
 
   const getTagLabel = (value: string) => {
+    // Buscar en tags del grupo primero
+    const groupTagsFormatted = groupTags.map(gt => ({
+      value: gt.name.toLowerCase().replace(/\s+/g, '-'),
+      label: gt.name
+    }))
+    const groupTag = groupTagsFormatted.find(t => t.value === value)
+    if (groupTag) return groupTag.label
+    
     return PREDEFINED_TAGS.find(t => t.value === value)?.label || value
   }
 
   const getTagColor = (value: string) => {
+    // Buscar en tags del grupo primero
+    const groupTagsFormatted = groupTags.map(gt => ({
+      value: gt.name.toLowerCase().replace(/\s+/g, '-'),
+      color: gt.color
+    }))
+    const groupTag = groupTagsFormatted.find(t => t.value === value)
+    if (groupTag) {
+      return `text-white dark:text-white`
+    }
+
     const tag = PREDEFINED_TAGS.find(t => t.value === value)
     switch (tag?.category) {
       case 'dev':
@@ -113,21 +149,31 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5 }: TagInp
       {/* Selected Tags */}
       {selectedTags.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {selectedTags.map(tag => (
-            <span
-              key={tag}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getTagColor(tag)}`}
-            >
-              {getTagLabel(tag)}
-              <button
-                type="button"
-                onClick={() => removeTag(tag)}
-                className="hover:opacity-70 transition-opacity"
+          {selectedTags.map(tag => {
+            // Buscar si es un tag del grupo para aplicar color personalizado
+            const groupTagsFormatted = groupTags.map(gt => ({
+              value: gt.name.toLowerCase().replace(/\s+/g, '-'),
+              color: gt.color
+            }))
+            const groupTag = groupTagsFormatted.find(t => t.value === tag)
+            
+            return (
+              <span
+                key={tag}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getTagColor(tag)}`}
+                style={groupTag ? { backgroundColor: groupTag.color } : {}}
               >
-                <X className="h-3 w-3" />
-              </button>
-            </span>
-          ))}
+                {getTagLabel(tag)}
+                <button
+                  type="button"
+                  onClick={() => removeTag(tag)}
+                  className="hover:opacity-70 transition-opacity"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )
+          })}
         </div>
       )}
 
@@ -169,6 +215,34 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5 }: TagInp
                 </div>
               ) : (
                 <>
+                  {/* Group Tags */}
+                  {filteredTags.some(t => t.category === 'group') && (
+                    <div className="mb-2">
+                      <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Tags del Grupo
+                      </div>
+                      {filteredTags.filter(t => t.category === 'group').map(tag => (
+                        <button
+                          key={tag.value}
+                          type="button"
+                          onClick={() => {
+                            addTag(tag.value)
+                            if (selectedTags.length + 1 >= maxTags) {
+                              setIsOpen(false)
+                            }
+                          }}
+                          className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-2"
+                        >
+                          <span 
+                            className="w-3 h-3 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: (tag as any).color }}
+                          />
+                          {tag.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Dev Tags */}
                   {filteredTags.some(t => t.category === 'dev') && (
                     <div className="mb-2">

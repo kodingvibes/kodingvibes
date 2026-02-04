@@ -3,12 +3,16 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
-import { ArrowLeft, Save, Clock, Eye, EyeOff, Code, AlertCircle, Trash2 } from 'lucide-react'
+import { ArrowLeft, Save, Clock, Eye, EyeOff, Code, AlertCircle, Trash2, ImageIcon, X } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import MarkdownContent from '@/components/MarkdownContent'
+import TagInput from '@/components/TagInput'
+import { validateFile } from '@/lib/security/validation'
 import type { Tables } from '@/types/database'
 
 type Post = Tables<'posts'>
+type GroupTag = Tables<'group_tags'>
 
 const EDIT_WINDOW_MINUTES = 15
 
@@ -21,6 +25,11 @@ export default function EditPostPage() {
   const [post, setPost] = useState<Post | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [tags, setTags] = useState<string[]>([])
+  const [image, setImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null)
+  const [groupTags, setGroupTags] = useState<GroupTag[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
@@ -110,8 +119,23 @@ export default function EditPostPage() {
         setPost(postData)
         setTitle(postData.title)
         setContent(postData.content || '')
+        setTags(postData.tags || [])
+        setExistingImageUrl(postData.image_url || null)
         setTimeRemaining(remaining)
         setIsAuthorized(true)
+
+        // Cargar tags del grupo si el post pertenece a un grupo
+        if (postData.group_id) {
+          const { data: tagsData } = await supabase
+            .from('group_tags')
+            .select('*')
+            .eq('group_id', postData.group_id)
+            .order('created_at', { ascending: true })
+
+          if (tagsData) {
+            setGroupTags(tagsData)
+          }
+        }
       } catch {
         setError('Error al cargar el post')
       } finally {
@@ -139,6 +163,65 @@ export default function EditPostPage() {
 
     return () => clearInterval(timer)
   }, [isAuthorized, timeRemaining, router, postId, isAdmin])
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const validation = validateFile(file, {
+        maxSizeMB: 5,
+        allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      })
+
+      if (!validation.valid) {
+        setError(validation.error || 'Error al validar la imagen')
+        return
+      }
+
+      setImage(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeImage = () => {
+    setImage(null)
+    setImagePreview(null)
+    setExistingImageUrl(null)
+  }
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const validation = validateFile(file, {
+      maxSizeMB: 5,
+      allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    })
+
+    if (!validation.valid) {
+      setError(validation.error || 'Error al validar la imagen')
+      return null
+    }
+
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+    const filePath = `posts/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('images')
+      .upload(filePath, file)
+
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError)
+      return null
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('images')
+      .getPublicUrl(filePath)
+
+    return publicUrl
+  }
 
   const handleDelete = async () => {
     if (!post) return
@@ -201,11 +284,26 @@ export default function EditPostPage() {
     setError(null)
 
     try {
+      let imageUrl = existingImageUrl
+
+      // Si hay una nueva imagen, subirla
+      if (image) {
+        const uploadedUrl = await uploadImage(image)
+        if (!uploadedUrl) {
+          setError('Error al subir la imagen')
+          setSaving(false)
+          return
+        }
+        imageUrl = uploadedUrl
+      }
+
       const { error: updateError } = await supabase
         .from('posts')
         .update({
           title: title.trim(),
           content: content.trim() || null,
+          tags: tags,
+          image_url: imageUrl,
           edited_at: new Date().toISOString(),
         })
         .eq('id', postId)
@@ -286,6 +384,61 @@ export default function EditPostPage() {
               required
               disabled={saving}
             />
+          </div>
+
+          {/* Tags Field */}
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Tags (opcional) - Máximo 5
+            </label>
+            <TagInput 
+              selectedTags={tags} 
+              onChange={setTags} 
+              maxTags={5} 
+              groupTags={groupTags}
+            />
+          </div>
+
+          {/* Image Field */}
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Imagen (opcional)
+            </label>
+            {(imagePreview || existingImageUrl) ? (
+              <div className="relative w-full h-64 rounded-xl overflow-hidden border border-border">
+                <Image
+                  src={imagePreview || existingImageUrl || ''}
+                  alt="Preview"
+                  fill
+                  className="object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  disabled={saving}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg disabled:opacity-50"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-input rounded-xl cursor-pointer hover:border-primary hover:bg-muted/50 transition-all">
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
+                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <span className="text-sm text-muted-foreground">Haz click para subir una imagen</span>
+                  <span className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF hasta 5MB</span>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                  disabled={saving}
+                />
+              </label>
+            )}
           </div>
 
           <div className="mb-6">
