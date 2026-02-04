@@ -575,15 +575,15 @@ export default function GroupAdminPage() {
               {/* Slug info (read-only) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  URL del Grupo
+                  Slug del Grupo
                 </label>
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg">
                   <code className="text-sm text-gray-900 dark:text-white font-mono">
-                    /group/{slug}
+                    {slug}
                   </code>
                 </div>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  La URL del grupo no se puede modificar
+                  El slug del grupo no se puede modificar
                 </p>
               </div>
 
