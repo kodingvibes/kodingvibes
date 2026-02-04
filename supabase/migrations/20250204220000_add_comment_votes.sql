@@ -14,6 +14,12 @@ CREATE TABLE IF NOT EXISTS public.comment_votes (
 -- Enable RLS on comment_votes
 ALTER TABLE public.comment_votes ENABLE ROW LEVEL SECURITY;
 
+-- Enable RLS on existing tables (fixes security linter errors)
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.votes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
 -- Indexes for comment_votes
 CREATE INDEX IF NOT EXISTS comment_votes_comment_id_idx ON public.comment_votes(comment_id);
 CREATE INDEX IF NOT EXISTS comment_votes_user_id_idx ON public.comment_votes(user_id);
