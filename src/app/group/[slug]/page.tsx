@@ -3,11 +3,11 @@
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { 
   Users, Lock, Globe, Plus, ArrowLeft, Hash,
   TrendingUp, Clock, Settings, UserPlus, LogOut,
-  Shield, Crown, Home
+  Shield, Crown, Home, Search, ChevronLeft, ChevronRight
 } from 'lucide-react'
 import PostCard from '@/components/PostCard'
 import type { Tables } from '@/types/database'
@@ -44,6 +44,9 @@ export default function GroupPage() {
   const [userRole, setUserRole] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<'popular' | 'recent'>('recent')
   const [activeTab, setActiveTab] = useState<'posts' | 'members'>('posts')
+  const [memberSearch, setMemberSearch] = useState('')
+  const [memberPage, setMemberPage] = useState(1)
+  const MEMBERS_PER_PAGE = 12
   const supabase = createClient()
 
   useEffect(() => {
@@ -321,17 +324,19 @@ export default function GroupPage() {
             <Hash className="h-4 w-4" />
             Posts
           </button>
-          <button
-            onClick={() => setActiveTab('members')}
-            className={`flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 transition-colors ${
-              activeTab === 'members'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Users className="h-4 w-4" />
-            Miembros ({group.member_count})
-          </button>
+          {user && (
+            <button
+              onClick={() => setActiveTab('members')}
+              className={`flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 transition-colors ${
+                activeTab === 'members'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Users className="h-4 w-4" />
+              Miembros ({group.member_count})
+            </button>
+          )}
         </div>
 
         {activeTab === 'posts' && (
@@ -420,42 +425,136 @@ export default function GroupPage() {
           </>
         )}
 
-        {activeTab === 'members' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {members.map((member) => (
-              <div 
-                key={member.id} 
-                className="bg-card border border-border rounded-xl p-4 flex items-center gap-3"
-              >
-                <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {member.users?.name?.charAt(0) || member.users?.email?.charAt(0) || '?'}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">
-                    {member.users?.name || member.users?.email}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    {member.role === 'admin' && (
-                      <span className="inline-flex items-center gap-1 text-xs text-orange-500">
-                        <Crown className="h-3 w-3" />
-                        Admin
-                      </span>
-                    )}
-                    {member.role === 'moderator' && (
-                      <span className="inline-flex items-center gap-1 text-xs text-blue-500">
-                        <Shield className="h-3 w-3" />
-                        Moderador
-                      </span>
-                    )}
-                    {member.role === 'member' && (
-                      <span className="text-xs text-muted-foreground">Miembro</span>
-                    )}
-                  </div>
-                </div>
+        {activeTab === 'members' && user && (
+          <div>
+            {/* Búsqueda de miembros */}
+            <div className="mb-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Buscar por username..."
+                  value={memberSearch}
+                  onChange={(e) => {
+                    setMemberSearch(e.target.value)
+                    setMemberPage(1) // Reset a página 1 al buscar
+                  }}
+                  className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
               </div>
-            ))}
+            </div>
+
+            {/* Lista de miembros filtrada y paginada */}
+            {(() => {
+              const filteredMembers = members.filter(member => {
+                if (!memberSearch.trim()) return true
+                const username = member.users?.username || ''
+                return username.toLowerCase().includes(memberSearch.toLowerCase())
+              })
+              const totalPages = Math.ceil(filteredMembers.length / MEMBERS_PER_PAGE)
+              const paginatedMembers = filteredMembers.slice(
+                (memberPage - 1) * MEMBERS_PER_PAGE,
+                memberPage * MEMBERS_PER_PAGE
+              )
+
+              return (
+                <>
+                  {paginatedMembers.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                      {paginatedMembers.map((member) => (
+                        <div 
+                          key={member.id} 
+                          className="bg-card border border-border rounded-lg p-3 flex flex-col items-center gap-2 hover:border-primary/50 transition-colors"
+                        >
+                          <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium text-muted-foreground">
+                              {member.users?.username?.charAt(0).toUpperCase() || '?'}
+                            </span>
+                          </div>
+                          <div className="text-center min-w-0 w-full">
+                            <p className="font-medium text-foreground text-sm truncate">
+                              @{member.users?.username || 'usuario'}
+                            </p>
+                            {member.role === 'admin' && (
+                              <span className="inline-flex items-center gap-1 text-xs text-orange-500">
+                                <Crown className="h-3 w-3" />
+                                Admin
+                              </span>
+                            )}
+                            {member.role === 'moderator' && (
+                              <span className="inline-flex items-center gap-1 text-xs text-blue-500">
+                                <Shield className="h-3 w-3" />
+                                Mod
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-card rounded-xl border border-border border-dashed">
+                      <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground">
+                        {memberSearch ? 'No se encontraron miembros' : 'No hay miembros aún'}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Paginación */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 mt-6">
+                      <button
+                        onClick={() => setMemberPage(p => Math.max(1, p - 1))}
+                        disabled={memberPage === 1}
+                        className="p-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter(page => {
+                            // Mostrar primera, última, actual y adyacentes
+                            if (page === 1 || page === totalPages) return true
+                            if (Math.abs(page - memberPage) <= 1) return true
+                            return false
+                          })
+                          .map((page, idx, arr) => (
+                            <>
+                              {idx > 0 && arr[idx - 1] !== page - 1 && (
+                                <span key={`ellipsis-${page}`} className="px-2 text-muted-foreground">...</span>
+                              )}
+                              <button
+                                key={page}
+                                onClick={() => setMemberPage(page)}
+                                className={`min-w-[32px] h-8 rounded-lg text-sm font-medium transition-colors ${
+                                  memberPage === page
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted hover:bg-muted/80 text-foreground'
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            </>
+                          ))}
+                      </div>
+                      <button
+                        onClick={() => setMemberPage(p => Math.min(totalPages, p + 1))}
+                        disabled={memberPage === totalPages}
+                        className="p-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Info de resultados */}
+                  <p className="text-center text-sm text-muted-foreground mt-4">
+                    {filteredMembers.length} {filteredMembers.length === 1 ? 'miembro' : 'miembros'}
+                    {memberSearch && ` encontrados`}
+                  </p>
+                </>
+              )
+            })()}
           </div>
         )}
       </div>

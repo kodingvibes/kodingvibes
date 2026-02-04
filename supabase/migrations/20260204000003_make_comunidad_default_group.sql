@@ -129,3 +129,27 @@ CREATE POLICY "Users can leave non-default groups"
 
 -- Comentario explicativo
 COMMENT ON COLUMN groups.is_default IS 'Indica si este es el grupo principal/por defecto. Todos los usuarios están automáticamente unidos a este grupo.';
+
+-- Mejorar política de SELECT para group_members
+-- Solo usuarios autenticados pueden ver miembros
+DROP POLICY IF EXISTS "Group members are viewable by group members" ON group_members;
+DROP POLICY IF EXISTS "Anyone can view members of public groups" ON group_members;
+DROP POLICY IF EXISTS "Authenticated users can view members of public groups" ON group_members;
+
+CREATE POLICY "Authenticated users can view members of public groups"
+    ON group_members FOR SELECT
+    USING (
+        -- Debe estar autenticado
+        auth.uid() IS NOT NULL
+        AND
+        (
+            -- Puede ver miembros de grupos públicos
+            EXISTS (SELECT 1 FROM groups WHERE id = group_members.group_id AND is_public = true)
+            OR
+            -- O si es el propio usuario
+            user_id = auth.uid()
+            OR
+            -- O si el usuario es miembro del grupo (para grupos privados)
+            EXISTS (SELECT 1 FROM group_members gm WHERE gm.group_id = group_members.group_id AND gm.user_id = auth.uid())
+        )
+    );
