@@ -241,7 +241,13 @@ export default function EditPostPage() {
                 id="content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Comparte tus ideas, código o experiencias...\n\nPuedes usar Markdown:\n- **negrita**\n- *cursiva*\n- `código`\n- [links](https://ejemplo.com)"
+                placeholder={`Comparte tus ideas, código o experiencias...
+
+Puedes usar Markdown:
+- **negrita**
+- *cursiva*
+- \`código\`
+- [links](https://ejemplo.com)`}
                 className="w-full p-3 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none font-mono text-sm"
                 rows={8}
                 disabled={saving}

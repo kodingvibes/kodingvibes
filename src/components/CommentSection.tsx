@@ -589,7 +589,8 @@ export default function CommentSection({ postId }: CommentSectionProps) {
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="¿Qué opinas? Comparte tu perspectiva...\nSoporta Markdown: **negrita**, *cursiva*, `código`"
+              placeholder={`¿Qué opinas? Comparte tu perspectiva...
+Soporta Markdown: **negrita**, *cursiva*, \`código\``}
               className="w-full p-3 bg-transparent border-none focus:ring-0 resize-none text-foreground placeholder:text-muted-foreground"
               rows={3}
               required
