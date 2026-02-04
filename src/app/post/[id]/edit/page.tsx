@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
-import { ArrowLeft, Save, Clock, Eye, EyeOff, Code, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Save, Clock, Eye, EyeOff, Code, AlertCircle, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import MarkdownContent from '@/components/MarkdownContent'
 import type { Tables } from '@/types/database'
@@ -28,6 +28,9 @@ export default function EditPostPage() {
   const [timeRemaining, setTimeRemaining] = useState<number>(0)
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isGroupAdmin, setIsGroupAdmin] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const checkEditWindow = useCallback((createdAt: string): number => {
     const created = new Date(createdAt).getTime()
@@ -74,8 +77,22 @@ export default function EditPostPage() {
           return
         }
 
-        // Allow if user is post owner or admin
-        if (postData.user_id !== user.id && !userIsAdmin) {
+        // Check if user is group admin
+        let userIsGroupAdmin = false
+        if (postData.group_id) {
+          const { data: memberData } = await supabase
+            .from('group_members')
+            .select('role')
+            .eq('group_id', postData.group_id)
+            .eq('user_id', user.id)
+            .single()
+          
+          userIsGroupAdmin = memberData?.role === 'admin' || memberData?.role === 'moderator'
+        }
+        setIsGroupAdmin(userIsGroupAdmin)
+
+        // Allow if user is post owner, admin, or group admin
+        if (postData.user_id !== user.id && !userIsAdmin && !userIsGroupAdmin) {
           router.push(`/post/${postId}`)
           return
         }
@@ -122,6 +139,49 @@ export default function EditPostPage() {
 
     return () => clearInterval(timer)
   }, [isAuthorized, timeRemaining, router, postId, isAdmin])
+
+  const handleDelete = async () => {
+    if (!post) return
+    
+    setDeleting(true)
+    setError(null)
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('posts')
+        .update({
+          is_deleted: true,
+          deleted_at: new Date().toISOString(),
+        })
+        .eq('id', postId)
+
+      if (deleteError) {
+        throw deleteError
+      }
+
+      // Redirigir al grupo o a la página principal
+      if (post.group_id) {
+        const { data: groupData } = await supabase
+          .from('groups')
+          .select('slug')
+          .eq('id', post.group_id)
+          .single()
+        
+        if (groupData) {
+          router.push(`/group/${groupData.slug}`)
+        } else {
+          router.push('/')
+        }
+      } else {
+        router.push('/')
+      }
+      router.refresh()
+    } catch {
+      setError('Error al eliminar el post')
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -182,10 +242,10 @@ export default function EditPostPage() {
     <main className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
+          <Link href={`/post/${postId}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <ArrowLeft className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold text-foreground">Editar post</h1>
-          </div>
+          </Link>
           {isAdmin ? (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
               <Clock className="h-4 w-4" />
@@ -280,21 +340,34 @@ Puedes usar Markdown:
             )}
           </div>
 
-          <div className="flex justify-end gap-3">
-            <Link
-              href={`/post/${postId}`}
-              className="px-6 py-2.5 border border-border rounded-full text-foreground hover:bg-muted font-medium transition-colors"
-            >
-              Cancelar
-            </Link>
-            <button
-              type="submit"
-              disabled={saving || !title.trim() || timeRemaining <= 0}
-              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
-            >
-              <Save className="h-4 w-4" />
-              {saving ? 'Guardando...' : 'Guardar cambios'}
-            </button>
+          <div className="flex justify-between items-center">
+            {(isAdmin || isGroupAdmin) && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={saving || deleting}
+                className="px-6 py-2.5 border border-red-500 text-red-500 rounded-full font-medium hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50 transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Eliminar post
+              </button>
+            )}
+            <div className="flex gap-3 ml-auto">
+              <Link
+                href={`/post/${postId}`}
+                className="px-6 py-2.5 border border-border rounded-full text-foreground hover:bg-muted font-medium transition-colors"
+              >
+                Cancelar
+              </Link>
+              <button
+                type="submit"
+                disabled={saving || !title.trim() || timeRemaining <= 0}
+                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {saving ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
           </div>
         </form>
 
@@ -319,6 +392,35 @@ Puedes usar Markdown:
           </div>
         </div>
       </div>
+
+      {/* Diálogo de confirmación de eliminación */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-xl font-bold text-foreground mb-3">¿Eliminar post?</h3>
+            <p className="text-muted-foreground mb-6">
+              Esta acción no se puede deshacer. El post será marcado como eliminado permanentemente.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="px-6 py-2.5 border border-border rounded-full text-foreground hover:bg-muted font-medium transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-6 py-2.5 bg-red-500 text-white rounded-full font-medium hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                {deleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
