@@ -111,11 +111,17 @@ export default function Home() {
         .eq('is_deleted', false)
         .gte('vote_count', 0)
 
-      // Filter by group if specified
+      // Filter by group if specified, otherwise default to comunidad
       if (groupFilter) {
         const group = groupsData?.find(g => g.slug === groupFilter)
         if (group) {
           postsQuery = postsQuery.eq('group_id', group.id)
+        }
+      } else {
+        // Default: show only posts from comunidad group
+        const comunidadGroup = groupsData?.find(g => g.slug === 'comunidad')
+        if (comunidadGroup) {
+          postsQuery = postsQuery.eq('group_id', comunidadGroup.id)
         }
       }
 
