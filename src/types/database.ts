@@ -597,6 +597,144 @@ export type Database = {
           },
         ]
       }
+      moderation_requests: {
+        Row: {
+          id: string
+          post_id: string
+          group_id: string
+          requested_by: string
+          reason: string
+          status: string
+          reviewed_by: string | null
+          reviewed_at: string | null
+          admin_notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          group_id: string
+          requested_by: string
+          reason: string
+          status?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          group_id?: string
+          requested_by?: string
+          reason?: string
+          status?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_requests_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_requests_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_bans: {
+        Row: {
+          id: string
+          user_id: string
+          banned_by: string
+          reason: string
+          ban_type: string
+          expires_at: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+          unbanned_at: string | null
+          unbanned_by: string | null
+          unban_reason: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          banned_by: string
+          reason: string
+          ban_type: string
+          expires_at?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+          unbanned_at?: string | null
+          unbanned_by?: string | null
+          unban_reason?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          banned_by?: string
+          reason?: string
+          ban_type?: string
+          expires_at?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+          unbanned_at?: string | null
+          unbanned_by?: string | null
+          unban_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_bans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_bans_banned_by_fkey"
+            columns: ["banned_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_bans_unbanned_by_fkey"
+            columns: ["unbanned_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -616,6 +754,46 @@ export type Database = {
           reason: string
         }
         Returns: undefined
+      }
+      approve_moderation_request: {
+        Args: {
+          request_id: string
+          admin_id: string
+          notes?: string
+        }
+        Returns: undefined
+      }
+      reject_moderation_request: {
+        Args: {
+          request_id: string
+          admin_id: string
+          notes: string
+        }
+        Returns: undefined
+      }
+      ban_user: {
+        Args: {
+          target_user_id: string
+          admin_id: string
+          ban_reason: string
+          ban_type_val: string
+          expires_at_val?: string
+        }
+        Returns: string
+      }
+      unban_user: {
+        Args: {
+          target_user_id: string
+          admin_id: string
+          unban_reason_val?: string
+        }
+        Returns: undefined
+      }
+      is_user_banned: {
+        Args: {
+          check_user_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {

@@ -1,5 +1,5 @@
 // Tipos de notificaciones
-export type NotificationType = 'upvote' | 'comment' | 'reply';
+export type NotificationType = 'upvote' | 'comment' | 'reply' | 'ban' | 'unban' | 'moderation_request' | 'moderation_approved' | 'moderation_rejected';
 
 export interface Notification {
   id: string;

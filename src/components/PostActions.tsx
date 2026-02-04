@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { MoreVertical, Pencil, Trash2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { MoreVertical, Pencil, Trash2, Shield } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
@@ -24,14 +24,42 @@ export default function PostActions({
 }: PostActionsProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const supabase = createClient()
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!currentUserId) return
+      
+      const { data } = await supabase
+        .from('users')
+        .select('is_admin')
+        .eq('id', currentUserId)
+        .single()
+      
+      setIsAdmin(data?.is_admin || false)
+    }
+    
+    checkAdmin()
+  }, [currentUserId, supabase])
 
   // Verificar si el usuario actual es el dueño del post
   const isOwner = currentUserId === userId
   
   // Calcular si está dentro de los 15 minutos de edición
   const canEdit = () => {
-    if (!isOwner || isDeleted) {
+    if (isDeleted) {
+      return false
+    }
+    
+    // Admins can always edit
+    if (isAdmin) {
+      return true
+    }
+    
+    // Owners can edit within 15 minutes
+    if (!isOwner) {
       return false
     }
     
@@ -79,7 +107,11 @@ export default function PostActions({
     }
   }
 
-  if (!isOwner || isDeleted) {
+  if (!isOwner && !isAdmin) {
+    return null
+  }
+
+  if (isDeleted && !isAdmin) {
     return null
   }
 
@@ -97,7 +129,7 @@ export default function PostActions({
       </button>
 
       {isMenuOpen && (
-        <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
+        <div className="absolute right-0 mt-1 w-52 bg-card border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
           {editable && (
             <Link
               href={`/post/${postId}/edit`}
@@ -106,26 +138,34 @@ export default function PostActions({
             >
               <Pencil className="h-4 w-4" />
               <span>Editar</span>
-              <span className="ml-auto text-xs text-muted-foreground">
-                {remainingMinutes}min
-              </span>
+              {isAdmin ? (
+                <span className="ml-auto flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400">
+                  <Shield className="h-3 w-3" />
+                </span>
+              ) : (
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {remainingMinutes}min
+                </span>
+              )}
             </Link>
           )}
           
-          {!editable && (
+          {!editable && !isAdmin && (
             <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border">
               Tiempo de edición expirado
             </div>
           )}
           
-          <button
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-          >
-            <Trash2 className="h-4 w-4" />
-            <span>{isDeleting ? 'Eliminando...' : 'Eliminar'}</span>
-          </button>
+          {(isOwner || isAdmin) && (
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>{isDeleting ? 'Eliminando...' : 'Eliminar'}</span>
+            </button>
+          )}
         </div>
       )}
     </div>

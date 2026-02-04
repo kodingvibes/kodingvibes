@@ -27,6 +27,7 @@ export default function EditPostPage() {
   const [error, setError] = useState<string | null>(null)
   const [timeRemaining, setTimeRemaining] = useState<number>(0)
   const [isAuthorized, setIsAuthorized] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const checkEditWindow = useCallback((createdAt: string): number => {
     const created = new Date(createdAt).getTime()
@@ -52,6 +53,16 @@ export default function EditPostPage() {
           return
         }
 
+        // Check if user is admin
+        const { data: userData } = await supabase
+          .from('users')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single()
+
+        const userIsAdmin = userData?.is_admin || false
+        setIsAdmin(userIsAdmin)
+
         const { data: postData, error: postError } = await supabase
           .from('posts')
           .select('*')
@@ -63,15 +74,20 @@ export default function EditPostPage() {
           return
         }
 
-        if (postData.user_id !== user.id) {
+        // Allow if user is post owner or admin
+        if (postData.user_id !== user.id && !userIsAdmin) {
           router.push(`/post/${postId}`)
           return
         }
 
-        const remaining = checkEditWindow(postData.created_at)
-        if (remaining <= 0) {
-          router.push(`/post/${postId}`)
-          return
+        // Check edit window only for non-admins
+        let remaining = 0
+        if (!userIsAdmin) {
+          remaining = checkEditWindow(postData.created_at)
+          if (remaining <= 0) {
+            router.push(`/post/${postId}`)
+            return
+          }
         }
 
         setPost(postData)
@@ -90,7 +106,8 @@ export default function EditPostPage() {
   }, [postId, router, supabase, checkEditWindow])
 
   useEffect(() => {
-    if (!isAuthorized || timeRemaining <= 0) return
+    // Skip timer for admins
+    if (!isAuthorized || timeRemaining <= 0 || isAdmin) return
 
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
@@ -104,7 +121,7 @@ export default function EditPostPage() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [isAuthorized, timeRemaining, router, postId])
+  }, [isAuthorized, timeRemaining, router, postId, isAdmin])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -114,7 +131,8 @@ export default function EditPostPage() {
       return
     }
 
-    if (timeRemaining <= 0) {
+    // Check time limit only for non-admins
+    if (!isAdmin && timeRemaining <= 0) {
       setError('El tiempo de edición ha expirado')
       return
     }
@@ -168,14 +186,21 @@ export default function EditPostPage() {
             <ArrowLeft className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold text-foreground">Editar post</h1>
           </div>
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
-            timeRemaining < 60 
-              ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
-              : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-          }`}>
-            <Clock className="h-4 w-4" />
-            <span>{formatTimeRemaining(timeRemaining)} restantes</span>
-          </div>
+          {isAdmin ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+              <Clock className="h-4 w-4" />
+              <span>Sin límite de tiempo (Admin)</span>
+            </div>
+          ) : (
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+              timeRemaining < 60 
+                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
+                : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+            }`}>
+              <Clock className="h-4 w-4" />
+              <span>{formatTimeRemaining(timeRemaining)} restantes</span>
+            </div>
+          )}
         </div>
 
         {error && (

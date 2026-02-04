@@ -197,7 +197,13 @@ CREATE POLICY "Authenticated users can create posts"
 
 CREATE POLICY "Users can update own posts"
   ON public.posts FOR UPDATE
-  USING (auth.uid() = user_id);
+  USING (
+    auth.uid() = user_id
+    OR EXISTS (
+      SELECT 1 FROM public.users 
+      WHERE id = auth.uid() AND is_admin = true
+    )
+  );
 
 CREATE POLICY "Users can soft delete own posts"
   ON public.posts FOR UPDATE
