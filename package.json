@@ -10,7 +10,8 @@
     "lint": "next lint",
     "security:audit": "npm audit",
     "security:check": "npm audit --audit-level=moderate",
-    "pwa:icons": "node scripts/generate-pwa-icons.js"
+    "pwa:icons": "node scripts/generate-pwa-icons.js",
+    "images:compress": "node scripts/compress-existing-images.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -18,6 +19,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vercel/analytics": "^1.6.1",
     "@vercel/og": "^0.8.6",
+    "browser-image-compression": "^2.0.2",
     "date-fns": "^4.1.0",
     "isomorphic-dompurify": "^2.21.0",
     "lucide-react": "^0.563.0",
@@ -35,6 +37,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "dotenv": "^17.2.3",
     "eslint": "^9.19.0",
     "eslint-config-next": "^15.1.6",
     "postcss": "^8",

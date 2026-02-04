@@ -1,5 +1,6 @@
 import { formatDistanceToNow as formatDistanceToNowBase } from 'date-fns';
 import { es } from 'date-fns/locale';
+import imageCompression from 'browser-image-compression';
 
 export function formatDistanceToNow(date: string | Date): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
@@ -27,4 +28,44 @@ export function formatDistanceToNow(date: string | Date): string {
 
 export function cn(...inputs: (string | undefined | null | false)[]): string {
   return inputs.filter(Boolean).join(' ');
+}
+
+/**
+ * Comprime una imagen para reducir su tamaño antes de subirla al bucket
+ * @param file - Archivo de imagen a comprimir
+ * @param options - Opciones de compresión
+ * @returns Archivo comprimido
+ */
+export async function compressImage(
+  file: File,
+  options?: {
+    maxSizeMB?: number;
+    maxWidthOrHeight?: number;
+    useWebWorker?: boolean;
+  }
+): Promise<File> {
+  const defaultOptions = {
+    maxSizeMB: 1, // Máximo 1MB
+    maxWidthOrHeight: 1920, // Máximo 1920px de ancho o alto
+    useWebWorker: true,
+    fileType: 'image/webp', // Convertir a WebP para mejor compresión
+  };
+
+  const compressionOptions = { ...defaultOptions, ...options };
+
+  try {
+    const compressedFile = await imageCompression(file, compressionOptions);
+    
+    // Si el archivo comprimido es WebP, actualizar el nombre
+    const extension = compressionOptions.fileType === 'image/webp' ? 'webp' : file.name.split('.').pop();
+    const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
+    
+    return new File([compressedFile], `${nameWithoutExt}.${extension}`, {
+      type: compressionOptions.fileType as string,
+    });
+  } catch (error) {
+    console.error('Error comprimiendo imagen:', error);
+    // Si falla la compresión, devolver el archivo original
+    return file;
+  }
 }

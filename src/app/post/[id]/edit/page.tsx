@@ -9,6 +9,7 @@ import Image from 'next/image'
 import MarkdownContent from '@/components/MarkdownContent'
 import TagInput from '@/components/TagInput'
 import { validateFile } from '@/lib/security/validation'
+import { compressImage } from '@/lib/utils'
 import type { Tables } from '@/types/database'
 
 type Post = Tables<'posts'>
@@ -164,7 +165,7 @@ export default function EditPostPage() {
     return () => clearInterval(timer)
   }, [isAuthorized, timeRemaining, router, postId, isAdmin])
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       const validation = validateFile(file, {
@@ -177,12 +178,14 @@ export default function EditPostPage() {
         return
       }
 
-      setImage(file)
+      // Comprimir imagen antes de mostrarla
+      const compressedFile = await compressImage(file)
+      setImage(compressedFile)
       const reader = new FileReader()
       reader.onloadend = () => {
         setImagePreview(reader.result as string)
       }
-      reader.readAsDataURL(file)
+      reader.readAsDataURL(compressedFile)
     }
   }
 
@@ -194,7 +197,7 @@ export default function EditPostPage() {
 
   const uploadImage = async (file: File): Promise<string | null> => {
     const validation = validateFile(file, {
-      maxSizeMB: 5,
+      maxSizeMB: 2, // Reducido porque ya está comprimida
       allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
     })
 

@@ -235,7 +235,7 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5, groupTag
                         >
                           <span 
                             className="w-3 h-3 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: (tag as any).color }}
+                            style={{ backgroundColor: (tag as { label: string; color?: string }).color }}
                           />
                           {tag.label}
                         </button>

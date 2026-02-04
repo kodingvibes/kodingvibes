@@ -8,6 +8,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import MarkdownContent from '@/components/MarkdownContent'
 import { validateString, validateFile, checkUserRateLimit, sanitizeMarkdown } from '@/lib/security/validation'
+import { compressImage } from '@/lib/utils'
 import TagInput from '@/components/TagInput'
 import type { Tables } from '@/types/database'
 
@@ -110,7 +111,7 @@ export default function SubmitPage() {
   }, [selectedGroupId, supabase])
 
   // Handle clipboard paste for images
-  const handlePaste = useCallback((e: ClipboardEvent) => {
+  const handlePaste = useCallback(async (e: ClipboardEvent) => {
     const items = e.clipboardData?.items
     if (!items) return
 
@@ -136,12 +137,14 @@ export default function SubmitPage() {
             return
           }
 
-          setImage(file)
+          // Comprimir imagen antes de mostrarla
+          const compressedFile = await compressImage(file)
+          setImage(compressedFile)
           const reader = new FileReader()
           reader.onloadend = () => {
             setImagePreview(reader.result as string)
           }
-          reader.readAsDataURL(file)
+          reader.readAsDataURL(compressedFile)
         }
         break
       }
@@ -156,7 +159,7 @@ export default function SubmitPage() {
     }
   }, [handlePaste])
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       // OWASP File Validation
@@ -170,12 +173,14 @@ export default function SubmitPage() {
         return
       }
 
-      setImage(file)
+      // Comprimir imagen antes de mostrarla
+      const compressedFile = await compressImage(file)
+      setImage(compressedFile)
       const reader = new FileReader()
       reader.onloadend = () => {
         setImagePreview(reader.result as string)
       }
-      reader.readAsDataURL(file)
+      reader.readAsDataURL(compressedFile)
     }
   }
 
@@ -185,9 +190,9 @@ export default function SubmitPage() {
   }
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    // Validación adicional antes de subir
+    // La imagen ya viene comprimida, solo validar tamaño final
     const validation = validateFile(file, {
-      maxSizeMB: 5,
+      maxSizeMB: 2, // Reducido porque ya está comprimida
       allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
     })
 
