@@ -11,52 +11,14 @@ import type { Tables } from '@/types/database'
 interface PostWithUser extends Tables<'posts'> {
   users: { name: string | null; username: string | null; email: string } | null
   comments: { count: number }[]
+  groups?: { name: string; slug: string; color: string } | null
 }
 
 type Group = Tables<'groups'>
 
-const heroMessages = [
-  {
-    title: "El Prompt es el nuevo Push",
-    subtitle: "Comparte configuraciones, descubre workflows y deja de pelear con la sintaxis."
-  },
-  {
-    title: "De Junior a Prompt Engineer en comunidad",
-    subtitle: "Tu stack ya no es solo React. Es Claude + Cursor + ese prompt mágico que alguien más ya debuggeó."
-  },
-  {
-    title: "Agents trabajando mientras duermes",
-    subtitle: "Orquesta tu equipo de IA, comparte flujos autónomos y conecta con quienes ya no programan solos."
-  },
-  {
-    title: "El conocimiento colectivo de la IA",
-    subtitle: "¿Cómo hiciste que GPT entendiera tu base legacy? Comparte el template. Toma el de otros."
-  },
-  {
-    title: "Codea con IA, no contra ella",
-    subtitle: "Vibe coding en español. Desde tus primeros prompts hasta repos que se escriben solos."
-  },
-  {
-    title: "El futuro se lanza hoy",
-    subtitle: "Galería de proyectos hechos 80% por agents. Muestra lo tuyo, aprende el stack nuevo."
-  },
-  {
-    title: "Debugging cognitivo",
-    subtitle: "Cuando la IA alucina, la comunidad corrige. Comparte tus fails épicos y sus fixes."
-  },
-  {
-    title: "Sintaxis opcional, lógica obligatoria",
-    subtitle: "Dejar de tipear no significa dejar de pensar. Discute arquitectura mientras el boilerplate se genera solo."
-  },
-  {
-    title: "Tu stack extendido (humano + silicona)",
-    subtitle: "Conecta con devs que hablan español y orquestan IA como si nada. Bienvenido al nuevo toolchain."
-  },
-  {
-    title: "La última comunidad antes de que lo programe todo una IA",
-    subtitle: "Mientras tanto, compartimos prompts, evaluamos models y decidimos qué partes mantener humanas."
-  }
-]
+interface HeroPost extends PostWithUser {
+  groups: { name: string; slug: string; color: string } | null
+}
 
 export default function Home() {
   const router = useRouter()
@@ -68,18 +30,37 @@ export default function Home() {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [sortBy, setSortBy] = useState<'popular' | 'recent'>('recent')
-  
+
   // Groups state
   const [groups, setGroups] = useState<Group[]>([])
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
   const [showGroupDropdown, setShowGroupDropdown] = useState(false)
-  
+
+  // Hero popular posts state
+  const [heroPopularPosts, setHeroPopularPosts] = useState<HeroPost[]>([])
+  const [heroLoading, setHeroLoading] = useState(true)
+
+  // User posts state
+  const [userHasPosts, setUserHasPosts] = useState(false)
+
   const supabase = createClient()
   
   useEffect(() => {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      
+
+      // Check if user has any posts
+      if (user) {
+        const { data: userPosts } = await supabase
+          .from('posts')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('is_deleted', false)
+          .limit(1)
+
+        setUserHasPosts(!!(userPosts && userPosts.length > 0))
+      }
+
       // Fetch groups
       const { data: groupsData, error: groupsError } = await supabase
         .from('groups')
@@ -134,18 +115,50 @@ export default function Home() {
     fetchData()
   }, [groupFilter])
 
+  // Fetch popular posts for hero carousel
+  useEffect(() => {
+    const fetchHeroPopularPosts = async () => {
+      // Fetch top 5 most voted posts from all public groups
+      const { data: popularPosts, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          users:user_id (name, username, email),
+          groups:group_id (name, slug, color),
+          comments:comments (count)
+        `)
+        .eq('is_deleted', false)
+        .gte('vote_count', 1)
+        .order('vote_count', { ascending: false })
+        .limit(5)
+
+      if (error) {
+        console.error('Error fetching hero popular posts:', error)
+      } else if (popularPosts && popularPosts.length > 0) {
+        setHeroPopularPosts(popularPosts as HeroPost[])
+      }
+
+      setHeroLoading(false)
+    }
+
+    fetchHeroPopularPosts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Hero carousel rotation
   useEffect(() => {
+    if (heroPopularPosts.length === 0) return
+
     const interval = setInterval(() => {
       setIsTransitioning(true)
       setTimeout(() => {
-        setCurrentMessageIndex((prev) => (prev + 1) % heroMessages.length)
+        setCurrentMessageIndex((prev) => (prev + 1) % heroPopularPosts.length)
         setIsTransitioning(false)
       }, 500)
     }, 6000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [heroPopularPosts.length])
   
   const handleDelete = () => {
     router.refresh()
@@ -174,57 +187,153 @@ export default function Home() {
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   })
 
-  const currentMessage = heroMessages[currentMessageIndex]
+  const currentHeroPost = heroPopularPosts[currentMessageIndex]
+
+  // Helper function to format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const days = Math.floor(hours / 24)
+
+    if (days > 0) return `hace ${days} día${days > 1 ? 's' : ''}`
+    if (hours > 0) return `hace ${hours} hora${hours > 1 ? 's' : ''}`
+    return 'hace unos minutos'
+  }
+
+  // Helper function to truncate content
+  const truncateContent = (content: string | null, maxLength: number = 150) => {
+    if (!content) return ''
+    if (content.length <= maxLength) return content
+    return content.substring(0, maxLength).trim() + '...'
+  }
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-          <div className="text-center min-h-[280px] sm:min-h-[320px] flex flex-col justify-center">
-            <div 
-              className={`transition-all duration-500 ease-in-out transform ${
-                isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
-              }`}
-            >
+      {/* Hero Section - Popular Posts Carousel */}
+      <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white overflow-hidden">
+        {/* Background image with overlay */}
+        {currentHeroPost?.image_url && (
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-all duration-500"
+              style={{
+                backgroundImage: `url(${currentHeroPost.image_url})`,
+                opacity: isTransitioning ? 0 : 1
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/90 via-purple-900/85 to-pink-900/90 backdrop-blur-sm" />
+          </>
+        )}
+
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+          {heroLoading || heroPopularPosts.length === 0 ? (
+            <div className="text-center min-h-[280px] sm:min-h-[320px] flex flex-col justify-center">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight leading-tight">
-                {currentMessage.title}
+                Posts más populares
               </h1>
               <p className="text-base sm:text-lg lg:text-xl text-white/90 max-w-3xl mx-auto mb-8 leading-relaxed">
-                {currentMessage.subtitle}
+                {heroLoading ? 'Cargando posts populares...' : 'No hay posts populares aún. ¡Sé el primero en compartir!'}
               </p>
+              {!userHasPosts && (
+                <Link
+                  href="/submit"
+                  className="inline-flex items-center gap-2 bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg mx-auto"
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Crear tu primer post
+                </Link>
+              )}
             </div>
-            
-            {/* Progress indicators */}
-            <div className="flex justify-center gap-2 mb-6">
-              {heroMessages.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setIsTransitioning(true)
-                    setTimeout(() => {
-                      setCurrentMessageIndex(index)
-                      setIsTransitioning(false)
-                    }, 300)
-                  }}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    index === currentMessageIndex 
-                      ? 'w-8 bg-white' 
-                      : 'w-1.5 bg-white/40 hover:bg-white/60'
-                  }`}
-                  aria-label={`Ver mensaje ${index + 1}`}
-                />
-              ))}
+          ) : (
+            <div className="text-center min-h-[280px] sm:min-h-[320px] flex flex-col justify-center">
+              <div
+                className={`transition-all duration-500 ease-in-out transform ${
+                  isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
+                }`}
+              >
+                {currentHeroPost && (
+                  <Link href={`/post/${currentHeroPost.id}`} className="block">
+                    {/* Group badge */}
+                    {currentHeroPost.groups && (
+                      <div className="flex justify-center mb-3">
+                        <span
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white/95"
+                          style={{ backgroundColor: currentHeroPost.groups.color || '#6366f1' }}
+                        >
+                          <Hash className="h-4 w-4" />
+                          {currentHeroPost.groups.name}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Post title */}
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight leading-tight hover:text-white/90 transition-colors">
+                      {currentHeroPost.title}
+                    </h1>
+
+                    {/* Post preview */}
+                    {currentHeroPost.content && (
+                      <p className="text-base sm:text-lg lg:text-xl text-white/90 max-w-3xl mx-auto mb-4 leading-relaxed">
+                        {truncateContent(currentHeroPost.content, 150)}
+                      </p>
+                    )}
+
+                    {/* Post metadata */}
+                    <div className="flex items-center justify-center gap-4 text-sm text-white/80 mb-6">
+                      <span className="flex items-center gap-1.5">
+                        <TrendingUp className="h-4 w-4" />
+                        {currentHeroPost.vote_count} votos
+                      </span>
+                      <span>•</span>
+                      <span>
+                        @{currentHeroPost.users?.username || currentHeroPost.users?.name || 'anónimo'}
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {formatDate(currentHeroPost.created_at)}
+                      </span>
+                    </div>
+                  </Link>
+                )}
+              </div>
+
+              {/* Progress indicators */}
+              <div className="flex justify-center gap-2 mb-6">
+                {heroPopularPosts.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setIsTransitioning(true)
+                      setTimeout(() => {
+                        setCurrentMessageIndex(index)
+                        setIsTransitioning(false)
+                      }, 300)
+                    }}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      index === currentMessageIndex
+                        ? 'w-8 bg-white'
+                        : 'w-1.5 bg-white/40 hover:bg-white/60'
+                    }`}
+                    aria-label={`Ver post ${index + 1}`}
+                  />
+                ))}
+              </div>
+
+              {!userHasPosts && (
+                <Link
+                  href="/submit"
+                  className="inline-flex items-center gap-2 bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg mx-auto"
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Crear tu primer post
+                </Link>
+              )}
             </div>
-            
-            <Link
-              href="/submit"
-              className="inline-flex items-center gap-2 bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg mx-auto"
-            >
-              <Sparkles className="h-5 w-5" />
-              Crear tu primer post
-            </Link>
-          </div>
+          )}
         </div>
       </div>
 
