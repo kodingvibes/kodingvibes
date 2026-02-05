@@ -408,6 +408,7 @@ export type Database = {
           updated_at: string
           member_count: number
           post_count: number
+          event_count: number
           icon_url: string | null
           color: string
         }
@@ -424,6 +425,7 @@ export type Database = {
           updated_at?: string
           member_count?: number
           post_count?: number
+          event_count?: number
           icon_url?: string | null
           color?: string
         }
@@ -440,6 +442,7 @@ export type Database = {
           updated_at?: string
           member_count?: number
           post_count?: number
+          event_count?: number
           icon_url?: string | null
           color?: string
         }
@@ -729,6 +732,114 @@ export type Database = {
           {
             foreignKeyName: "user_bans_unbanned_by_fkey"
             columns: ["unbanned_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          id: string
+          group_id: string
+          created_by: string
+          title: string
+          description: string | null
+          event_type: string
+          start_date: string
+          end_date: string | null
+          location: string | null
+          meeting_link: string | null
+          max_attendees: number | null
+          is_public: boolean
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          created_by: string
+          title: string
+          description?: string | null
+          event_type: string
+          start_date: string
+          end_date?: string | null
+          location?: string | null
+          meeting_link?: string | null
+          max_attendees?: number | null
+          is_public?: boolean
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          created_by?: string
+          title?: string
+          description?: string | null
+          event_type?: string
+          start_date?: string
+          end_date?: string | null
+          location?: string | null
+          meeting_link?: string | null
+          max_attendees?: number | null
+          is_public?: boolean
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_attendees: {
+        Row: {
+          id: string
+          event_id: string
+          user_id: string
+          status: string
+          registered_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          user_id: string
+          status?: string
+          registered_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          user_id?: string
+          status?: string
+          registered_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_attendees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendees_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]

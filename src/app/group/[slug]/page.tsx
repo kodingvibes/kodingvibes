@@ -7,9 +7,12 @@ import { useEffect, useState, useMemo } from 'react'
 import { 
   Users, Lock, Globe, Plus, ArrowLeft, Hash,
   TrendingUp, Clock, Settings, UserPlus, LogOut,
-  Shield, Crown, Home, Search, ChevronLeft, ChevronRight
+  Shield, Crown, Home, Search, ChevronLeft, ChevronRight,
+  Calendar
 } from 'lucide-react'
 import PostCard from '@/components/PostCard'
+import EventCard from '@/components/EventCard'
+import EventForm from '@/components/EventForm'
 import type { Tables } from '@/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -30,8 +33,15 @@ type GroupMember = {
   users: { username: string | null } | null
 }
 
+type Event = Tables<'events'>
+
 interface PostWithCount extends Post {
   comments_count: number
+}
+
+interface EventWithAttendees extends Event {
+  users?: { name: string | null; username: string | null } | null
+  attendee_count?: number
 }
 
 export default function GroupPage() {
@@ -47,9 +57,12 @@ export default function GroupPage() {
   const [isMember, setIsMember] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<'popular' | 'recent'>('recent')
-  const [activeTab, setActiveTab] = useState<'posts' | 'members'>('posts')
+  const [activeTab, setActiveTab] = useState<'posts' | 'members' | 'events'>('posts')
   const [memberSearch, setMemberSearch] = useState('')
   const [memberPage, setMemberPage] = useState(1)
+  const [events, setEvents] = useState<EventWithAttendees[]>([])
+  const [showEventForm, setShowEventForm] = useState(false)
+  const [eventFilter, setEventFilter] = useState<'upcoming' | 'past' | 'all'>('upcoming')
   const MEMBERS_PER_PAGE = 12
   const supabase = createClient()
 
@@ -140,6 +153,24 @@ export default function GroupPage() {
         }))
 
         setPosts(postsWithCount)
+
+        // Fetch events
+        const { data: eventsData } = await supabase
+          .from('events')
+          .select(`
+            *,
+            users:created_by (name, username),
+            attendees:event_attendees (count)
+          `)
+          .eq('group_id', groupData.id)
+          .order('start_date', { ascending: true })
+        
+        const eventsWithCount = (eventsData || []).map(event => ({
+          ...event,
+          attendee_count: event.attendees?.[0]?.count || 0
+        }))
+        
+        setEvents(eventsWithCount)
       }
 
       setLoading(false)
@@ -204,6 +235,27 @@ export default function GroupPage() {
     setIsMember(false)
     setUserRole(null)
     setPosts([])
+    setEvents([])
+  }
+
+  const refreshEvents = async () => {
+    if (!group) return
+    const { data: eventsData } = await supabase
+      .from('events')
+      .select(`
+        *,
+        users:created_by (name, username),
+        attendees:event_attendees (count)
+      `)
+      .eq('group_id', group.id)
+      .order('start_date', { ascending: true })
+    
+    const eventsWithCount = (eventsData || []).map(event => ({
+      ...event,
+      attendee_count: event.attendees?.[0]?.count || 0
+    }))
+    
+    setEvents(eventsWithCount)
   }
 
   const sortedPosts = [...posts].sort((a, b) => {
@@ -368,6 +420,17 @@ export default function GroupPage() {
               Miembros ({group.member_count})
             </button>
           )}
+          <button
+            onClick={() => setActiveTab('events')}
+            className={`flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 transition-colors ${
+              activeTab === 'events'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Calendar className="h-4 w-4" />
+            Eventos ({group.event_count || 0})
+          </button>
         </div>
 
         {activeTab === 'posts' && (
@@ -587,6 +650,133 @@ export default function GroupPage() {
               )
             })()}
           </div>
+        )}
+
+        {activeTab === 'events' && (
+          <div>
+            {/* Filtros */}
+            <div className="flex items-center justify-between gap-2 mb-6">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setEventFilter('upcoming')}
+                  className={`px-4 py-2 rounded-full font-medium text-sm transition-colors ${
+                    eventFilter === 'upcoming'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  Próximos
+                </button>
+                <button
+                  onClick={() => setEventFilter('past')}
+                  className={`px-4 py-2 rounded-full font-medium text-sm transition-colors ${
+                    eventFilter === 'past'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  Pasados
+                </button>
+                <button
+                  onClick={() => setEventFilter('all')}
+                  className={`px-4 py-2 rounded-full font-medium text-sm transition-colors ${
+                    eventFilter === 'all'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  Todos
+                </button>
+              </div>
+
+              {isMember && (
+                <button
+                  onClick={() => setShowEventForm(true)}
+                  className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full font-medium hover:opacity-90 transition-opacity text-sm"
+                >
+                  <Plus className="h-4 w-4" />
+                  Nuevo evento
+                </button>
+              )}
+            </div>
+
+            {/* Lista de eventos */}
+            {(() => {
+              const filteredEvents = events.filter(event => {
+                if (eventFilter === 'all') return true
+                if (eventFilter === 'upcoming') {
+                  return event.status === 'upcoming' || event.status === 'ongoing'
+                }
+                if (eventFilter === 'past') {
+                  return event.status === 'completed' || event.status === 'cancelled'
+                }
+                return true
+              })
+
+              return (
+                <>
+                  {!canViewContent ? (
+                    <div className="text-center py-16 bg-card rounded-xl border border-border border-dashed">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Lock className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        Canal privado
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Únete a este canal para ver los eventos
+                      </p>
+                      <button
+                        onClick={handleJoinGroup}
+                        className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2 rounded-full font-medium hover:opacity-90 transition-opacity"
+                      >
+                        <UserPlus className="h-5 w-5" />
+                        Unirse al canal
+                      </button>
+                    </div>
+                  ) : filteredEvents.length > 0 ? (
+                    <div className="space-y-4">
+                      {filteredEvents.map((event) => (
+                        <EventCard key={event.id} event={event} groupSlug={slug} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-16 bg-card rounded-xl border border-border border-dashed">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Calendar className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-muted-foreground text-lg mb-4">
+                        {eventFilter === 'upcoming' 
+                          ? 'No hay eventos próximos' 
+                          : eventFilter === 'past'
+                          ? 'No hay eventos pasados'
+                          : 'No hay eventos aún'}
+                      </p>
+                      {isMember && eventFilter !== 'past' && (
+                        <button
+                          onClick={() => setShowEventForm(true)}
+                          className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Crear el primer evento
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </>
+              )
+            })()}
+          </div>
+        )}
+
+        {showEventForm && group && user && (
+          <EventForm
+            groupId={group.id}
+            groupSlug={slug}
+            userId={user.id}
+            onClose={() => setShowEventForm(false)}
+            onSuccess={refreshEvents}
+          />
         )}
       </div>
     </main>
