@@ -39,13 +39,28 @@ export default function Home() {
   // Hero popular posts state
   const [heroPopularPosts, setHeroPopularPosts] = useState<HeroPost[]>([])
   const [heroLoading, setHeroLoading] = useState(true)
-  
+
+  // User posts state
+  const [userHasPosts, setUserHasPosts] = useState(false)
+
   const supabase = createClient()
   
   useEffect(() => {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      
+
+      // Check if user has any posts
+      if (user) {
+        const { data: userPosts } = await supabase
+          .from('posts')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('is_deleted', false)
+          .limit(1)
+
+        setUserHasPosts(!!(userPosts && userPosts.length > 0))
+      }
+
       // Fetch groups
       const { data: groupsData, error: groupsError } = await supabase
         .from('groups')
@@ -230,13 +245,15 @@ export default function Home() {
               <p className="text-base sm:text-lg lg:text-xl text-white/90 max-w-3xl mx-auto mb-8 leading-relaxed">
                 {heroLoading ? 'Cargando posts populares...' : 'No hay posts populares aún. ¡Sé el primero en compartir!'}
               </p>
-              <Link
-                href="/submit"
-                className="inline-flex items-center gap-2 bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg mx-auto"
-              >
-                <Sparkles className="h-5 w-5" />
-                Crear tu primer post
-              </Link>
+              {!userHasPosts && (
+                <Link
+                  href="/submit"
+                  className="inline-flex items-center gap-2 bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg mx-auto"
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Crear tu primer post
+                </Link>
+              )}
             </div>
           ) : (
             <div className="text-center min-h-[280px] sm:min-h-[320px] flex flex-col justify-center">
@@ -314,13 +331,15 @@ export default function Home() {
                 ))}
               </div>
 
-              <Link
-                href="/submit"
-                className="inline-flex items-center gap-2 bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg mx-auto"
-              >
-                <Sparkles className="h-5 w-5" />
-                Crear tu primer post
-              </Link>
+              {!userHasPosts && (
+                <Link
+                  href="/submit"
+                  className="inline-flex items-center gap-2 bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg mx-auto"
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Crear tu primer post
+                </Link>
+              )}
             </div>
           )}
         </div>
