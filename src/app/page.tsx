@@ -93,14 +93,11 @@ export default function Home() {
 
       if (groupsData) {
         setGroups(groupsData)
-        
-        // Set selected group from URL or default to Comunidad
+
+        // Set selected group from URL, default to null (all channels)
         if (groupFilter) {
           const group = groupsData.find(g => g.slug === groupFilter)
           if (group) setSelectedGroup(group)
-        } else {
-          const comunidadGroup = groupsData.find(g => g.slug === 'comunidad')
-          if (comunidadGroup) setSelectedGroup(comunidadGroup)
         }
       }
 
@@ -115,19 +112,14 @@ export default function Home() {
         .eq('is_deleted', false)
         .gte('vote_count', 0)
 
-      // Filter by group if specified, otherwise default to comunidad
+      // Filter by group if specified, otherwise show all channels
       if (groupFilter) {
         const group = groupsData?.find(g => g.slug === groupFilter)
         if (group) {
           postsQuery = postsQuery.eq('group_id', group.id)
         }
-      } else {
-        // Default: show only posts from comunidad group
-        const comunidadGroup = groupsData?.find(g => g.slug === 'comunidad')
-        if (comunidadGroup) {
-          postsQuery = postsQuery.eq('group_id', comunidadGroup.id)
-        }
       }
+      // If no group filter, show posts from all channels (no filter applied)
 
       const { data: postsData, error: postsError } = await postsQuery.order('vote_count', { ascending: false })
       
