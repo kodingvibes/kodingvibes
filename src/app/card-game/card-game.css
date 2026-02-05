@@ -1,0 +1,573 @@
+/* ============================================
+   NetRun - Cyberpunk Card Game Styles
+   ============================================ */
+
+/* Cyberpunk color variables */
+.netrun-theme {
+  --neon-cyan: #00ffff;
+  --neon-magenta: #ff00ff;
+  --neon-green: #00ff41;
+  --neon-yellow: #ffff00;
+  --neon-red: #ff0044;
+  --neon-blue: #4488ff;
+  --cyber-bg: #0a0a1a;
+  --cyber-surface: #12122a;
+  --cyber-border: #1a1a3e;
+  --cyber-text: #e0e0ff;
+  --cyber-muted: #6666aa;
+}
+
+/* Scanline overlay */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Neon glow effects */
+.neon-glow-cyan {
+  box-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan), 0 0 20px rgba(0, 255, 255, 0.3);
+}
+
+.neon-glow-magenta {
+  box-shadow: 0 0 5px var(--neon-magenta), 0 0 10px var(--neon-magenta), 0 0 20px rgba(255, 0, 255, 0.3);
+}
+
+.neon-glow-green {
+  box-shadow: 0 0 5px var(--neon-green), 0 0 10px var(--neon-green), 0 0 20px rgba(0, 255, 65, 0.3);
+}
+
+.neon-glow-red {
+  box-shadow: 0 0 5px var(--neon-red), 0 0 10px var(--neon-red), 0 0 20px rgba(255, 0, 68, 0.3);
+}
+
+.neon-text-cyan {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 5px var(--neon-cyan), 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.neon-text-magenta {
+  color: var(--neon-magenta);
+  text-shadow: 0 0 5px var(--neon-magenta), 0 0 10px rgba(255, 0, 255, 0.5);
+}
+
+.neon-text-green {
+  color: var(--neon-green);
+  text-shadow: 0 0 5px var(--neon-green), 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
+.neon-text-yellow {
+  color: var(--neon-yellow);
+  text-shadow: 0 0 5px var(--neon-yellow), 0 0 10px rgba(255, 255, 0, 0.5);
+}
+
+.neon-text-red {
+  color: var(--neon-red);
+  text-shadow: 0 0 5px var(--neon-red), 0 0 10px rgba(255, 0, 68, 0.5);
+}
+
+/* Card styles */
+.game-card {
+  position: relative;
+  width: 140px;
+  height: 200px;
+  border-radius: 10px;
+  perspective: 1000px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.game-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.game-card.flipped .game-card-inner {
+  transform: rotateY(180deg);
+}
+
+.game-card-front,
+.game-card-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.game-card-back {
+  transform: rotateY(180deg);
+  background: linear-gradient(135deg, #1a1a3e, #0a0a2e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-card-back::before {
+  content: '//NR';
+  font-family: monospace;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 10px var(--neon-cyan);
+}
+
+/* Card hover 3D tilt */
+.game-card:hover .game-card-inner {
+  transform: translateY(-8px);
+}
+
+.game-card.flipped:hover .game-card-inner {
+  transform: rotateY(180deg) translateY(-8px);
+}
+
+/* Rarity borders */
+.rarity-common {
+  border: 1px solid #444466;
+}
+
+.rarity-uncommon {
+  border: 1px solid var(--neon-green);
+  box-shadow: 0 0 5px rgba(0, 255, 65, 0.2);
+}
+
+.rarity-rare {
+  border: 1px solid var(--neon-blue);
+  box-shadow: 0 0 8px rgba(68, 136, 255, 0.3);
+}
+
+.rarity-legendary {
+  border: 2px solid var(--neon-yellow);
+  box-shadow: 0 0 10px rgba(255, 255, 0, 0.3), 0 0 20px rgba(255, 255, 0, 0.1);
+  animation: legendary-pulse 2s ease-in-out infinite;
+}
+
+@keyframes legendary-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 255, 0, 0.3), 0 0 20px rgba(255, 255, 0, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(255, 255, 0, 0.5), 0 0 30px rgba(255, 255, 0, 0.2);
+  }
+}
+
+/* Card playable glow */
+.card-playable {
+  animation: playable-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes playable-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.6), 0 0 25px rgba(0, 255, 255, 0.3);
+  }
+}
+
+/* Card exhausted */
+.card-exhausted {
+  opacity: 0.6;
+  filter: grayscale(0.5);
+}
+
+/* Glitch animation */
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+.glitch-text {
+  animation: glitch 0.3s ease-in-out;
+}
+
+/* Game board */
+.game-board {
+  background: linear-gradient(180deg, #080818 0%, #0a0a2a 50%, #080818 100%);
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.game-board::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(0, 255, 255, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(255, 0, 255, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Grid pattern background */
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Field zones */
+.field-zone {
+  min-height: 140px;
+  border: 1px dashed rgba(0, 255, 255, 0.15);
+  border-radius: 12px;
+  background: rgba(0, 255, 255, 0.02);
+  transition: all 0.3s ease;
+}
+
+.field-zone.active {
+  border-color: rgba(0, 255, 255, 0.3);
+  background: rgba(0, 255, 255, 0.05);
+}
+
+/* Drop target highlight */
+.field-zone.drop-target {
+  border-color: var(--neon-green);
+  background: rgba(0, 255, 65, 0.08);
+  box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.1);
+}
+
+/* Attack target highlight */
+.attack-target {
+  animation: attack-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes attack-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(255, 0, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(255, 0, 68, 0.6), 0 0 25px rgba(255, 0, 68, 0.3);
+  }
+}
+
+/* Combat animation */
+@keyframes attack-slash {
+  0% { transform: translateX(0) scale(1); opacity: 1; }
+  50% { transform: translateX(30px) scale(1.1); opacity: 0.8; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+.attacking {
+  animation: attack-slash 0.4s ease-in-out;
+}
+
+/* Damage flash */
+@keyframes damage-flash {
+  0%, 100% { filter: brightness(1); }
+  25% { filter: brightness(2) hue-rotate(30deg); }
+  50% { filter: brightness(0.5); }
+  75% { filter: brightness(1.5) hue-rotate(-30deg); }
+}
+
+.damage-flash {
+  animation: damage-flash 0.5s ease-in-out;
+}
+
+/* Card play animation */
+@keyframes card-play {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  50% { transform: translateY(-40px) scale(1.2); opacity: 0.8; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.card-playing {
+  animation: card-play 0.5s ease-out;
+}
+
+/* Card destroy animation */
+@keyframes card-destroy {
+  0% { transform: scale(1) rotateZ(0); opacity: 1; filter: brightness(1); }
+  50% { transform: scale(1.2) rotateZ(5deg); opacity: 0.8; filter: brightness(3); }
+  100% { transform: scale(0) rotateZ(45deg); opacity: 0; filter: brightness(0); }
+}
+
+.card-destroying {
+  animation: card-destroy 0.6s ease-in forwards;
+}
+
+/* HP bar */
+.hp-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
+  position: relative;
+}
+
+.hp-bar-fill.hp-high {
+  background: linear-gradient(90deg, var(--neon-green), #00cc33);
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+}
+
+.hp-bar-fill.hp-medium {
+  background: linear-gradient(90deg, var(--neon-yellow), #ccaa00);
+  box-shadow: 0 0 10px rgba(255, 255, 0, 0.3);
+}
+
+.hp-bar-fill.hp-low {
+  background: linear-gradient(90deg, var(--neon-red), #cc0033);
+  box-shadow: 0 0 10px rgba(255, 0, 68, 0.3);
+  animation: hp-critical 1s ease-in-out infinite;
+}
+
+@keyframes hp-critical {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* RAM indicator */
+.ram-pip {
+  width: 12px;
+  height: 16px;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.ram-pip.filled {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 5px var(--neon-cyan);
+}
+
+.ram-pip.empty {
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.ram-pip.max {
+  background: rgba(0, 255, 255, 0.05);
+  border: 1px dashed rgba(0, 255, 255, 0.1);
+}
+
+/* Combat log */
+.combat-log {
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--neon-cyan) transparent;
+}
+
+.combat-log::-webkit-scrollbar {
+  width: 4px;
+}
+
+.combat-log::-webkit-scrollbar-thumb {
+  background: var(--neon-cyan);
+  border-radius: 2px;
+}
+
+/* Turn indicator */
+@keyframes turn-glow {
+  0%, 100% { text-shadow: 0 0 5px currentColor; }
+  50% { text-shadow: 0 0 15px currentColor, 0 0 25px currentColor; }
+}
+
+.turn-indicator {
+  animation: turn-glow 2s ease-in-out infinite;
+}
+
+/* Button cyberpunk style */
+.cyber-btn {
+  position: relative;
+  padding: 0.5rem 1.5rem;
+  background: transparent;
+  border: 1px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  font-family: monospace;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+
+.cyber-btn:hover {
+  background: rgba(0, 255, 255, 0.1);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 255, 255, 0.1);
+}
+
+.cyber-btn:active {
+  transform: scale(0.95);
+}
+
+.cyber-btn-magenta {
+  border-color: var(--neon-magenta);
+  color: var(--neon-magenta);
+}
+
+.cyber-btn-magenta:hover {
+  background: rgba(255, 0, 255, 0.1);
+  box-shadow: 0 0 10px rgba(255, 0, 255, 0.3), inset 0 0 10px rgba(255, 0, 255, 0.1);
+}
+
+.cyber-btn-red {
+  border-color: var(--neon-red);
+  color: var(--neon-red);
+}
+
+.cyber-btn-red:hover {
+  background: rgba(255, 0, 68, 0.1);
+  box-shadow: 0 0 10px rgba(255, 0, 68, 0.3);
+}
+
+.cyber-btn-green {
+  border-color: var(--neon-green);
+  color: var(--neon-green);
+}
+
+.cyber-btn-green:hover {
+  background: rgba(0, 255, 65, 0.1);
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+}
+
+/* Hand area */
+.hand-area {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.hand-area::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hand card hover spread */
+.hand-area .game-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: 0 -10px;
+}
+
+.hand-area .game-card:hover {
+  z-index: 10;
+  margin: 0 4px;
+}
+
+/* Type badge */
+.type-badge {
+  font-family: monospace;
+  font-size: 0.55rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Divider line */
+.board-divider {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--neon-cyan) 20%,
+    var(--neon-magenta) 50%,
+    var(--neon-cyan) 80%,
+    transparent 100%
+  );
+  opacity: 0.5;
+}
+
+/* Lobby styles */
+.lobby-room {
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  background: rgba(0, 255, 255, 0.03);
+  transition: all 0.3s ease;
+}
+
+.lobby-room:hover {
+  border-color: rgba(0, 255, 255, 0.4);
+  background: rgba(0, 255, 255, 0.06);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
+}
+
+/* Matchmaking spinner */
+@keyframes cyber-spin {
+  0% { transform: rotate(0deg); border-color: var(--neon-cyan) transparent transparent transparent; }
+  25% { border-color: var(--neon-magenta) transparent transparent transparent; }
+  50% { border-color: var(--neon-green) transparent transparent transparent; }
+  75% { border-color: var(--neon-yellow) transparent transparent transparent; }
+  100% { transform: rotate(360deg); border-color: var(--neon-cyan) transparent transparent transparent; }
+}
+
+.cyber-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid transparent;
+  border-radius: 50%;
+  animation: cyber-spin 1.5s linear infinite;
+}
+
+/* Modal overlay */
+.cyber-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.cyber-modal {
+  background: linear-gradient(135deg, #12122a, #1a1a3e);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+}
+
+/* Responsive card sizing */
+@media (max-width: 768px) {
+  .game-card {
+    width: 100px;
+    height: 145px;
+  }
+
+  .hand-area .game-card {
+    margin: 0 -15px;
+  }
+
+  .field-zone {
+    min-height: 110px;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-card {
+    width: 80px;
+    height: 116px;
+  }
+}

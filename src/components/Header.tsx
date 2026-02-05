@@ -5,7 +5,7 @@ import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Plus, Sun, Moon, LogOut, User as UserIcon, Settings, Hash, Crown } from 'lucide-react'
+import { Plus, Sun, Moon, LogOut, User as UserIcon, Settings, Hash, Crown, Gamepad2 } from 'lucide-react'
 import { useTheme } from '@/providers/theme-provider'
 import { LogoFull } from '@/components/icons/Logo'
 import { NotificationBell } from '@/components/NotificationBell'
@@ -93,6 +93,13 @@ export default function Header() {
                 >
                   <Hash className="h-4 w-4" />
                   Canales
+                </Link>
+                <Link
+                  href="/card-game"
+                  className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-muted transition-colors text-sm font-medium text-foreground"
+                >
+                  <Gamepad2 className="h-4 w-4" />
+                  NetRun
                 </Link>
               </div>
 
