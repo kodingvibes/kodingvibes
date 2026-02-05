@@ -3,17 +3,38 @@ import { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
 
+/** Convierte un color hex (#RRGGBB) a rgba(). Retorna indigo como fallback si el formato no es válido. */
 function hexToRgba(hex: string, alpha: number): string {
+  if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) {
+    return `rgba(99,102,241,${alpha})`;
+  }
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+/** Imagen mínima que siempre es válida para PNG — se usa como fallback en errores. */
+function fallbackImage() {
+  return new ImageResponse(
+    <div style={{ width: 1200, height: 630, backgroundColor: '#0a0a0e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ color: '#ffffff', fontSize: '28px', fontWeight: '700', fontFamily: 'sans-serif' }}>KodingVibes</span>
+    </div>,
+    {
+      width: 1200,
+      height: 630,
+      headers: {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=600, stale-while-revalidate=3600',
+      },
+    }
+  );
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Get post ID and title from query params
     const postId = searchParams.get('id');
     let title = searchParams.get('title') || 'KodingVibes';
@@ -73,15 +94,21 @@ export async function GET(request: NextRequest) {
       try {
         const imgResponse = await fetch(imageUrl);
         if (imgResponse.ok) {
-          const contentType = imgResponse.headers.get('content-type') || 'image/jpeg';
-          const buffer = await imgResponse.arrayBuffer();
-          if (buffer.byteLength <= 4 * 1024 * 1024) {
-            const bytes = new Uint8Array(buffer);
-            let binary = '';
-            for (let i = 0; i < bytes.length; i += 8192) {
-              binary += String.fromCharCode(...bytes.slice(i, Math.min(i + 8192, bytes.length)));
+          // Strip parameters (e.g. "; charset=utf-8") so the data URL stays well-formed
+          const contentType = (imgResponse.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
+
+          // Only embed raster formats that Satori's rasterizer can decode
+          const supported = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+          if (supported.includes(contentType)) {
+            const buffer = await imgResponse.arrayBuffer();
+            if (buffer.byteLength <= 4 * 1024 * 1024) {
+              const bytes = new Uint8Array(buffer);
+              let binary = '';
+              for (let i = 0; i < bytes.length; i += 8192) {
+                binary += String.fromCharCode(...bytes.slice(i, Math.min(i + 8192, bytes.length)));
+              }
+              imageData = `data:${contentType};base64,${btoa(binary)}`;
             }
-            imageData = `data:${contentType};base64,${btoa(binary)}`;
           }
         }
       } catch (_e) {
@@ -89,8 +116,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Validate groupColor is usable before passing to the renderer
+    const safeGroupColor = (groupColor && /^#[0-9a-fA-F]{6}$/.test(groupColor)) ? groupColor : null;
+
     // Generate the image
-    const imageResponse = (
+    const ogImage = (
       <div
         style={{
           height: '100%',
@@ -99,7 +129,6 @@ export async function GET(request: NextRequest) {
           flexDirection: 'column',
           backgroundColor: '#0a0a0e',
           position: 'relative',
-          overflow: 'hidden',
         }}
       >
         {/* ─── BACKGROUND DEPTH LAYER ─── */}
@@ -185,7 +214,6 @@ export async function GET(request: NextRequest) {
             height: '6px',
             borderRadius: '50%',
             backgroundColor: 'rgba(99,102,241,0.45)',
-            boxShadow: '0 0 6px rgba(99,102,241,0.4)',
           }}
         />
         <div
@@ -208,7 +236,6 @@ export async function GET(request: NextRequest) {
             height: '5px',
             borderRadius: '50%',
             backgroundColor: 'rgba(233,69,96,0.4)',
-            boxShadow: '0 0 5px rgba(233,69,96,0.3)',
           }}
         />
         <div
@@ -254,7 +281,6 @@ export async function GET(request: NextRequest) {
             width: '130px',
             height: '1px',
             background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.25), transparent)',
-            transform: 'rotate(-38deg)',
           }}
         />
         <div
@@ -265,7 +291,6 @@ export async function GET(request: NextRequest) {
             width: '90px',
             height: '1px',
             background: 'linear-gradient(90deg, transparent, rgba(168,85,247,0.2), transparent)',
-            transform: 'rotate(25deg)',
           }}
         />
 
@@ -315,7 +340,6 @@ export async function GET(request: NextRequest) {
                 height: '8px',
                 borderRadius: '50%',
                 background: '#22c55e',
-                boxShadow: '0 0 6px rgba(34,197,94,0.65)',
               }}
             />
             <span style={{ color: '#a5b4fc', fontSize: '14px', fontWeight: '600' }}>
@@ -345,10 +369,8 @@ export async function GET(request: NextRequest) {
                 flexShrink: 0,
                 display: 'flex',
                 borderRadius: '20px',
-                overflow: 'hidden',
                 position: 'relative',
                 border: '1px solid rgba(255,255,255,0.1)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
               }}
             >
               <img
@@ -356,7 +378,6 @@ export async function GET(request: NextRequest) {
                 style={{
                   width: '440px',
                   height: '340px',
-                  objectFit: 'cover',
                 }}
               />
               {/* Gradiente inferior para blend con fondo oscuro */}
@@ -388,8 +409,8 @@ export async function GET(request: NextRequest) {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '10px',
-                  background: groupColor ? hexToRgba(groupColor, 0.1) : 'rgba(99,102,241,0.08)',
-                  border: `1px solid ${groupColor ? hexToRgba(groupColor, 0.25) : 'rgba(99,102,241,0.2)'}`,
+                  background: safeGroupColor ? hexToRgba(safeGroupColor, 0.1) : 'rgba(99,102,241,0.08)',
+                  border: `1px solid ${safeGroupColor ? hexToRgba(safeGroupColor, 0.25) : 'rgba(99,102,241,0.2)'}`,
                   borderRadius: '30px',
                   padding: '8px 22px',
                   marginBottom: '24px',
@@ -400,13 +421,12 @@ export async function GET(request: NextRequest) {
                     width: '8px',
                     height: '8px',
                     borderRadius: '50%',
-                    background: groupColor || '#6366f1',
-                    boxShadow: `0 0 8px ${groupColor ? hexToRgba(groupColor, 0.7) : 'rgba(99,102,241,0.7)'}`,
+                    background: safeGroupColor || '#6366f1',
                   }}
                 />
                 <span
                   style={{
-                    color: groupColor || '#a5b4fc',
+                    color: safeGroupColor || '#a5b4fc',
                     fontSize: '14px',
                     fontWeight: '700',
                     letterSpacing: '0.12em',
@@ -425,13 +445,12 @@ export async function GET(request: NextRequest) {
                   textAlign: 'left',
                   lineHeight: '1.2',
                   letterSpacing: '-0.03em',
-                  textShadow: '0 0 50px rgba(99,102,241,0.25), 0 2px 6px rgba(0,0,0,0.5)',
                 }}
               >
-                {title.length > 62 ? title.substring(0, 62) + '…' : title}
+                {title.length > 62 ? title.substring(0, 62) + '...' : title}
               </div>
 
-              {/* Línea acento con glow */}
+              {/* Línea acento */}
               <div
                 style={{
                   marginTop: '28px',
@@ -439,7 +458,6 @@ export async function GET(request: NextRequest) {
                   height: '3px',
                   background: 'linear-gradient(90deg, #6366f1, #a855f7, transparent)',
                   borderRadius: '2px',
-                  boxShadow: '0 0 12px rgba(99,102,241,0.5), 0 0 32px rgba(99,102,241,0.15)',
                 }}
               />
 
@@ -460,7 +478,6 @@ export async function GET(request: NextRequest) {
                     color: '#a855f7',
                     fontSize: '20px',
                     fontWeight: '600',
-                    textShadow: '0 0 8px rgba(168,85,247,0.5)',
                   }}
                 >
                   →
@@ -486,8 +503,8 @@ export async function GET(request: NextRequest) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
-                background: groupColor ? hexToRgba(groupColor, 0.1) : 'rgba(99,102,241,0.08)',
-                border: `1px solid ${groupColor ? hexToRgba(groupColor, 0.25) : 'rgba(99,102,241,0.2)'}`,
+                background: safeGroupColor ? hexToRgba(safeGroupColor, 0.1) : 'rgba(99,102,241,0.08)',
+                border: `1px solid ${safeGroupColor ? hexToRgba(safeGroupColor, 0.25) : 'rgba(99,102,241,0.2)'}`,
                 borderRadius: '30px',
                 padding: '8px 22px',
                 marginBottom: '30px',
@@ -498,13 +515,12 @@ export async function GET(request: NextRequest) {
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
-                  background: groupColor || '#6366f1',
-                  boxShadow: `0 0 8px ${groupColor ? hexToRgba(groupColor, 0.7) : 'rgba(99,102,241,0.7)'}`,
+                  background: safeGroupColor || '#6366f1',
                 }}
               />
               <span
                 style={{
-                  color: groupColor || '#a5b4fc',
+                  color: safeGroupColor || '#a5b4fc',
                   fontSize: '14px',
                   fontWeight: '700',
                   letterSpacing: '0.12em',
@@ -523,14 +539,13 @@ export async function GET(request: NextRequest) {
                 textAlign: 'center',
                 lineHeight: '1.18',
                 letterSpacing: '-0.03em',
-                textShadow: '0 0 60px rgba(99,102,241,0.3), 0 2px 6px rgba(0,0,0,0.5)',
                 maxWidth: '940px',
               }}
             >
-              {title.length > 72 ? title.substring(0, 72) + '…' : title}
+              {title.length > 72 ? title.substring(0, 72) + '...' : title}
             </div>
 
-            {/* Línea acento con glow */}
+            {/* Línea acento */}
             <div
               style={{
                 marginTop: '38px',
@@ -538,7 +553,6 @@ export async function GET(request: NextRequest) {
                 height: '3px',
                 background: 'linear-gradient(90deg, transparent, #6366f1, #a855f7, transparent)',
                 borderRadius: '2px',
-                boxShadow: '0 0 14px rgba(99,102,241,0.55), 0 0 36px rgba(99,102,241,0.2)',
               }}
             />
 
@@ -559,7 +573,6 @@ export async function GET(request: NextRequest) {
                   color: '#a855f7',
                   fontSize: '20px',
                   fontWeight: '600',
-                  textShadow: '0 0 8px rgba(168,85,247,0.5)',
                 }}
               >
                 →
@@ -581,18 +594,17 @@ export async function GET(request: NextRequest) {
         />
       </div>
     );
-    
-    return new ImageResponse(imageResponse, {
+
+    return new ImageResponse(ogImage, {
       width: 1200,
       height: 630,
       headers: {
+        'Content-Type': 'image/png',
         'Cache-Control': 'public, max-age=600, stale-while-revalidate=3600',
       },
     });
   } catch (e) {
     console.error('Error generating OG image:', e);
-    return new Response(`Failed to generate the image: ${e}`, {
-      status: 500,
-    });
+    return fallbackImage();
   }
 }
