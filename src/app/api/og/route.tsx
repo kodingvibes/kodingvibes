@@ -282,7 +282,6 @@ export async function GET(request: NextRequest) {
             justifyContent: 'space-between',
             padding: '0 56px',
             borderBottom: '1px solid rgba(255,255,255,0.07)',
-            zIndex: 1,
           }}
         >
           {/* Logo group */}
@@ -336,8 +335,6 @@ export async function GET(request: NextRequest) {
               alignItems: 'center',
               padding: '0 56px',
               gap: '52px',
-              position: 'relative',
-              zIndex: 1,
             }}
           >
             {/* Imagen del post */}
@@ -346,6 +343,7 @@ export async function GET(request: NextRequest) {
                 width: '440px',
                 height: '340px',
                 flexShrink: 0,
+                display: 'flex',
                 borderRadius: '20px',
                 overflow: 'hidden',
                 position: 'relative',
@@ -480,8 +478,6 @@ export async function GET(request: NextRequest) {
               alignItems: 'center',
               justifyContent: 'center',
               padding: '0 90px',
-              position: 'relative',
-              zIndex: 1,
             }}
           >
             {/* Pill tag – nombre del canal/grupo */}
