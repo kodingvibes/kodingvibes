@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     description: "Una comunidad estilo Reddit para compartir conocimiento, código y experiencias de desarrollo en español.",
     images: [
       {
-        url: "/api/og",
+        url: "/api/og?v=2",
         width: 1200,
         height: 630,
         alt: "KodingVibes - Comunidad de Desarrolladores",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "KodingVibes - Comunidad de Desarrolladores",
     description: "Una comunidad estilo Reddit para compartir conocimiento, código y experiencias de desarrollo en español.",
-    images: ["/api/og"],
+    images: ["/api/og?v=2"],
     creator: "@kodingvibes",
   },
   robots: {

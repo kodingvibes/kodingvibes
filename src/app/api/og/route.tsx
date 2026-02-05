@@ -59,7 +59,10 @@ function fallbackImage() {
       height: 630,
       headers: {
         'Content-Type': 'image/png',
-        'Cache-Control': 'public, max-age=600, stale-while-revalidate=3600',
+        // TEMPORAL: Sin caché para forzar regeneración
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     }
   );
@@ -616,7 +619,11 @@ export async function GET(request: NextRequest) {
       height: 630,
       headers: {
         'Content-Type': 'image/png',
-        'Cache-Control': 'public, max-age=600, stale-while-revalidate=3600',
+        // TEMPORAL: Caché deshabilitado para forzar regeneración de imágenes con el nuevo sanitizer
+        // TODO: Restaurar a 'public, max-age=600, stale-while-revalidate=3600' después de 48h
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     });
   } catch (e) {
