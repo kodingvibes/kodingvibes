@@ -3,6 +3,40 @@ import { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
 
+/**
+ * Sanitiza texto para evitar que caracteres Unicode problemáticos causen errores
+ * en la carga dinámica de fuentes de Satori/ImageResponse. Elimina todos los
+ * diacríticos, símbolos, emojis y caracteres especiales, dejando solo ASCII básico
+ * (a-z, A-Z, 0-9, espacios y puntuación básica).
+ */
+function sanitizeText(text: string): string {
+  if (!text) return '';
+
+  return text
+    // Reemplazar flechas comunes con equivalentes ASCII
+    .replace(/→|➔|➜|➡|⇒|⟹/g, '>>')
+    .replace(/←|⬅|⟸|⇐/g, '<<')
+    .replace(/↑|⬆/g, '^')
+    .replace(/↓|⬇/g, 'v')
+    // Reemplazar comillas tipográficas con comillas ASCII
+    .replace(/[""]/g, '"')
+    .replace(/['']/g, "'")
+    // Reemplazar guiones especiales
+    .replace(/—|–/g, '-')
+    // Reemplazar puntos suspensivos
+    .replace(/…/g, '...')
+    // Normalizar y remover todos los diacríticos (á->a, é->e, ñ->n, etc.)
+    // NFD descompone caracteres acentuados en base + diacrítico
+    .normalize('NFD')
+    // Eliminar todos los diacríticos (combining marks)
+    .replace(/[\u0300-\u036f]/g, '')
+    // Eliminar cualquier carácter no-ASCII que quede
+    .replace(/[^\x00-\x7F]/g, '')
+    // Limpiar espacios múltiples
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /** Convierte un color hex (#RRGGBB) a rgba(). Retorna indigo como fallback si el formato no es válido. */
 function hexToRgba(hex: string, alpha: number): string {
   if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) {
@@ -37,7 +71,7 @@ export async function GET(request: NextRequest) {
 
     // Get post ID and title from query params
     const postId = searchParams.get('id');
-    let title = searchParams.get('title') || 'KodingVibes';
+    let title = sanitizeText(searchParams.get('title') || 'KodingVibes');
     let imageUrl = searchParams.get('image') || null;
     let groupName: string | null = null;
     let groupColor: string | null = null;
@@ -60,7 +94,7 @@ export async function GET(request: NextRequest) {
             const data = await response.json();
             if (data && data.length > 0) {
               if (data[0].title && title === 'KodingVibes') {
-                title = data[0].title;
+                title = sanitizeText(data[0].title);
               }
               if (data[0].image_url && !imageUrl) {
                 imageUrl = data[0].image_url;
@@ -71,7 +105,7 @@ export async function GET(request: NextRequest) {
                 if (groupResponse.ok) {
                   const groupData = await groupResponse.json();
                   if (groupData && groupData.length > 0) {
-                    groupName = groupData[0].name;
+                    groupName = sanitizeText(groupData[0].name);
                     groupColor = groupData[0].color;
                   }
                 }
