@@ -66,7 +66,17 @@ export async function GET(request: NextRequest) {
         // Continue with default values
       }
     }
-    
+
+    // Validate image URL is reachable before embedding it
+    if (imageUrl) {
+      try {
+        const imgCheck = await fetch(imageUrl, { method: 'HEAD' });
+        if (!imgCheck.ok) imageUrl = null;
+      } catch {
+        imageUrl = null;
+      }
+    }
+
     // Generate the image
     const imageResponse = (
       <div
@@ -303,105 +313,251 @@ export async function GET(request: NextRequest) {
           </div>
         </div>
 
-        {/* ─── MAIN CONTENT (centrado verticalmente) ─── */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '0 90px',
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          {/* Pill tag – nombre del canal/grupo */}
+        {/* ─── MAIN CONTENT ─── */}
+        {imageUrl ? (
+          /* Layout split: imagen izquierda, texto derecha */
           <div
             style={{
+              flex: 1,
               display: 'flex',
+              flexDirection: 'row',
               alignItems: 'center',
-              gap: '10px',
-              background: groupColor ? hexToRgba(groupColor, 0.1) : 'rgba(99,102,241,0.08)',
-              border: `1px solid ${groupColor ? hexToRgba(groupColor, 0.25) : 'rgba(99,102,241,0.2)'}`,
-              borderRadius: '30px',
-              padding: '8px 22px',
-              marginBottom: '30px',
+              padding: '0 56px',
+              gap: '52px',
+              position: 'relative',
+              zIndex: 1,
             }}
           >
+            {/* Imagen del post */}
             <div
               style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: groupColor || '#6366f1',
-                boxShadow: `0 0 8px ${groupColor ? hexToRgba(groupColor, 0.7) : 'rgba(99,102,241,0.7)'}`,
+                flex: '0 0 440px',
+                height: '340px',
+                borderRadius: '20px',
+                overflow: 'hidden',
+                position: 'relative',
+                border: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+              }}
+            >
+              <img
+                src={imageUrl}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
+              {/* Gradiente inferior para blend con fondo oscuro */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '0',
+                  left: '0',
+                  right: '0',
+                  height: '45%',
+                  background: 'linear-gradient(to top, rgba(10,10,14,0.55), transparent)',
+                }}
+              />
+            </div>
+
+            {/* Contenido textual */}
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                justifyContent: 'center',
+              }}
+            >
+              {/* Pill tag – nombre del canal/grupo */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  background: groupColor ? hexToRgba(groupColor, 0.1) : 'rgba(99,102,241,0.08)',
+                  border: `1px solid ${groupColor ? hexToRgba(groupColor, 0.25) : 'rgba(99,102,241,0.2)'}`,
+                  borderRadius: '30px',
+                  padding: '8px 22px',
+                  marginBottom: '24px',
+                }}
+              >
+                <div
+                  style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: groupColor || '#6366f1',
+                    boxShadow: `0 0 8px ${groupColor ? hexToRgba(groupColor, 0.7) : 'rgba(99,102,241,0.7)'}`,
+                  }}
+                />
+                <span
+                  style={{
+                    color: groupColor || '#a5b4fc',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    letterSpacing: '0.12em',
+                  }}
+                >
+                  {(groupName || 'KodingVibes').toUpperCase()}
+                </span>
+              </div>
+
+              {/* Título */}
+              <div
+                style={{
+                  fontSize: '46px',
+                  fontWeight: '800',
+                  color: '#ffffff',
+                  textAlign: 'left',
+                  lineHeight: '1.2',
+                  letterSpacing: '-0.03em',
+                  textShadow: '0 0 50px rgba(99,102,241,0.25), 0 2px 6px rgba(0,0,0,0.5)',
+                }}
+              >
+                {title.length > 62 ? title.substring(0, 62) + '…' : title}
+              </div>
+
+              {/* Línea acento con glow */}
+              <div
+                style={{
+                  marginTop: '28px',
+                  width: '80px',
+                  height: '3px',
+                  background: 'linear-gradient(90deg, #6366f1, #a855f7, transparent)',
+                  borderRadius: '2px',
+                  boxShadow: '0 0 12px rgba(99,102,241,0.5), 0 0 32px rgba(99,102,241,0.15)',
+                }}
+              />
+
+              {/* CTA persuasivo */}
+              <div
+                style={{
+                  marginTop: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                }}
+              >
+                <span style={{ color: '#94a3b8', fontSize: '18px', fontWeight: '500' }}>
+                  Únete a la conversación
+                </span>
+                <span
+                  style={{
+                    color: '#a855f7',
+                    fontSize: '20px',
+                    fontWeight: '600',
+                    textShadow: '0 0 8px rgba(168,85,247,0.5)',
+                  }}
+                >
+                  →
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Layout centrado: sin imagen */
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0 90px',
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            {/* Pill tag – nombre del canal/grupo */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                background: groupColor ? hexToRgba(groupColor, 0.1) : 'rgba(99,102,241,0.08)',
+                border: `1px solid ${groupColor ? hexToRgba(groupColor, 0.25) : 'rgba(99,102,241,0.2)'}`,
+                borderRadius: '30px',
+                padding: '8px 22px',
+                marginBottom: '30px',
+              }}
+            >
+              <div
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: groupColor || '#6366f1',
+                  boxShadow: `0 0 8px ${groupColor ? hexToRgba(groupColor, 0.7) : 'rgba(99,102,241,0.7)'}`,
+                }}
+              />
+              <span
+                style={{
+                  color: groupColor || '#a5b4fc',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  letterSpacing: '0.12em',
+                }}
+              >
+                {(groupName || 'KodingVibes').toUpperCase()}
+              </span>
+            </div>
+
+            {/* Título principal */}
+            <div
+              style={{
+                fontSize: '56px',
+                fontWeight: '800',
+                color: '#ffffff',
+                textAlign: 'center',
+                lineHeight: '1.18',
+                letterSpacing: '-0.03em',
+                textShadow: '0 0 60px rgba(99,102,241,0.3), 0 2px 6px rgba(0,0,0,0.5)',
+                maxWidth: '940px',
+              }}
+            >
+              {title.length > 72 ? title.substring(0, 72) + '…' : title}
+            </div>
+
+            {/* Línea acento con glow */}
+            <div
+              style={{
+                marginTop: '38px',
+                width: '100px',
+                height: '3px',
+                background: 'linear-gradient(90deg, transparent, #6366f1, #a855f7, transparent)',
+                borderRadius: '2px',
+                boxShadow: '0 0 14px rgba(99,102,241,0.55), 0 0 36px rgba(99,102,241,0.2)',
               }}
             />
-            <span
+
+            {/* CTA persuasivo */}
+            <div
               style={{
-                color: groupColor || '#a5b4fc',
-                fontSize: '14px',
-                fontWeight: '700',
-                letterSpacing: '0.12em',
+                marginTop: '30px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
               }}
             >
-              {(groupName || 'KodingVibes').toUpperCase()}
-            </span>
+              <span style={{ color: '#94a3b8', fontSize: '18px', fontWeight: '500' }}>
+                Únete a la conversación
+              </span>
+              <span
+                style={{
+                  color: '#a855f7',
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  textShadow: '0 0 8px rgba(168,85,247,0.5)',
+                }}
+              >
+                →
+              </span>
+            </div>
           </div>
-
-          {/* Título principal */}
-          <div
-            style={{
-              fontSize: '56px',
-              fontWeight: '800',
-              color: '#ffffff',
-              textAlign: 'center',
-              lineHeight: '1.18',
-              letterSpacing: '-0.03em',
-              textShadow: '0 0 60px rgba(99,102,241,0.3), 0 2px 6px rgba(0,0,0,0.5)',
-              maxWidth: '940px',
-            }}
-          >
-            {title.length > 72 ? title.substring(0, 72) + '…' : title}
-          </div>
-
-          {/* Línea acento con glow */}
-          <div
-            style={{
-              marginTop: '38px',
-              width: '100px',
-              height: '3px',
-              background: 'linear-gradient(90deg, transparent, #6366f1, #a855f7, transparent)',
-              borderRadius: '2px',
-              boxShadow: '0 0 14px rgba(99,102,241,0.55), 0 0 36px rgba(99,102,241,0.2)',
-            }}
-          />
-
-          {/* CTA persuasivo */}
-          <div
-            style={{
-              marginTop: '30px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-            }}
-          >
-            <span style={{ color: '#94a3b8', fontSize: '18px', fontWeight: '500' }}>
-              Únete a la conversación
-            </span>
-            <span
-              style={{
-                color: '#a855f7',
-                fontSize: '20px',
-                fontWeight: '600',
-                textShadow: '0 0 8px rgba(168,85,247,0.5)',
-              }}
-            >
-              →
-            </span>
-          </div>
-        </div>
+        )}
 
         {/* ─── BOTTOM ACCENT BAR ─── */}
         <div
