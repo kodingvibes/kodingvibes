@@ -3,6 +3,13 @@ import { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
 
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -11,21 +18,23 @@ export async function GET(request: NextRequest) {
     const postId = searchParams.get('id');
     let title = searchParams.get('title') || 'KodingVibes';
     let imageUrl = searchParams.get('image') || null;
-    
+    let groupName: string | null = null;
+    let groupColor: string | null = null;
+
     // If we have a post ID, try to fetch the post data from Supabase
     if (postId) {
       try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-        
+
         if (supabaseUrl && supabaseKey) {
-          const response = await fetch(`${supabaseUrl}/rest/v1/posts?id=eq.${postId}&select=title,image_url&is_deleted=eq.false`, {
-            headers: {
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${supabaseKey}`,
-            },
-          });
-          
+          const headers = {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+          };
+
+          const response = await fetch(`${supabaseUrl}/rest/v1/posts?id=eq.${postId}&select=title,image_url,group_id&is_deleted=eq.false`, { headers });
+
           if (response.ok) {
             const data = await response.json();
             if (data && data.length > 0) {
@@ -34,6 +43,17 @@ export async function GET(request: NextRequest) {
               }
               if (data[0].image_url && !imageUrl) {
                 imageUrl = data[0].image_url;
+              }
+              // Fetch group name and color if the post belongs to a group
+              if (data[0].group_id) {
+                const groupResponse = await fetch(`${supabaseUrl}/rest/v1/groups?id=eq.${data[0].group_id}&select=name,color`, { headers });
+                if (groupResponse.ok) {
+                  const groupData = await groupResponse.json();
+                  if (groupData && groupData.length > 0) {
+                    groupName = groupData[0].name;
+                    groupColor = groupData[0].color;
+                  }
+                }
               }
             }
           }
@@ -296,14 +316,14 @@ export async function GET(request: NextRequest) {
             zIndex: 1,
           }}
         >
-          {/* Pill tag – contexto de comunidad */}
+          {/* Pill tag – nombre del canal/grupo */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
-              background: 'rgba(99,102,241,0.08)',
-              border: '1px solid rgba(99,102,241,0.2)',
+              background: groupColor ? hexToRgba(groupColor, 0.1) : 'rgba(99,102,241,0.08)',
+              border: `1px solid ${groupColor ? hexToRgba(groupColor, 0.25) : 'rgba(99,102,241,0.2)'}`,
               borderRadius: '30px',
               padding: '8px 22px',
               marginBottom: '30px',
@@ -314,19 +334,19 @@ export async function GET(request: NextRequest) {
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                background: '#6366f1',
-                boxShadow: '0 0 8px rgba(99,102,241,0.7)',
+                background: groupColor || '#6366f1',
+                boxShadow: `0 0 8px ${groupColor ? hexToRgba(groupColor, 0.7) : 'rgba(99,102,241,0.7)'}`,
               }}
             />
             <span
               style={{
-                color: '#a5b4fc',
+                color: groupColor || '#a5b4fc',
                 fontSize: '14px',
                 fontWeight: '700',
                 letterSpacing: '0.12em',
               }}
             >
-              COMUNIDAD DE DESARROLLADORES
+              {(groupName || 'KodingVibes').toUpperCase()}
             </span>
           </div>
 
