@@ -206,8 +206,22 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-background">
       {/* Hero Section - Popular Posts Carousel */}
-      <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+      <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white overflow-hidden">
+        {/* Background image with overlay */}
+        {currentHeroPost?.image_url && (
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-all duration-500"
+              style={{
+                backgroundImage: `url(${currentHeroPost.image_url})`,
+                opacity: isTransitioning ? 0 : 1
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/90 via-purple-900/85 to-pink-900/90 backdrop-blur-sm" />
+          </>
+        )}
+
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
           {heroLoading || heroPopularPosts.length === 0 ? (
             <div className="text-center min-h-[280px] sm:min-h-[320px] flex flex-col justify-center">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight leading-tight">
