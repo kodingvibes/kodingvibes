@@ -67,13 +67,25 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Validate image URL is reachable before embedding it
+    // Fetch image and convert to base64 data URL for reliable Satori rendering
+    let imageData: string | null = null;
     if (imageUrl) {
       try {
-        const imgCheck = await fetch(imageUrl, { method: 'HEAD' });
-        if (!imgCheck.ok) imageUrl = null;
-      } catch {
-        imageUrl = null;
+        const imgResponse = await fetch(imageUrl);
+        if (imgResponse.ok) {
+          const contentType = imgResponse.headers.get('content-type') || 'image/jpeg';
+          const buffer = await imgResponse.arrayBuffer();
+          if (buffer.byteLength <= 4 * 1024 * 1024) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i += 8192) {
+              binary += String.fromCharCode(...bytes.slice(i, Math.min(i + 8192, bytes.length)));
+            }
+            imageData = `data:${contentType};base64,${btoa(binary)}`;
+          }
+        }
+      } catch (_e) {
+        // Image fetch failed – render without image
       }
     }
 
@@ -314,7 +326,7 @@ export async function GET(request: NextRequest) {
         </div>
 
         {/* ─── MAIN CONTENT ─── */}
-        {imageUrl ? (
+        {imageData ? (
           /* Layout split: imagen izquierda, texto derecha */
           <div
             style={{
@@ -331,8 +343,9 @@ export async function GET(request: NextRequest) {
             {/* Imagen del post */}
             <div
               style={{
-                flex: '0 0 440px',
+                width: '440px',
                 height: '340px',
+                flexShrink: 0,
                 borderRadius: '20px',
                 overflow: 'hidden',
                 position: 'relative',
@@ -341,10 +354,10 @@ export async function GET(request: NextRequest) {
               }}
             >
               <img
-                src={imageUrl}
+                src={imageData}
                 style={{
-                  width: '100%',
-                  height: '100%',
+                  width: '440px',
+                  height: '340px',
                   objectFit: 'cover',
                 }}
               />
@@ -355,8 +368,8 @@ export async function GET(request: NextRequest) {
                   bottom: '0',
                   left: '0',
                   right: '0',
-                  height: '45%',
-                  background: 'linear-gradient(to top, rgba(10,10,14,0.55), transparent)',
+                  height: '153px',
+                  background: 'linear-gradient(180deg, transparent, rgba(10,10,14,0.55))',
                 }}
               />
             </div>
