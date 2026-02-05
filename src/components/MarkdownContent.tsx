@@ -1,13 +1,57 @@
 'use client'
 
+import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { Copy, Check } from 'lucide-react'
 
 interface MarkdownContentProps {
   content: string
   className?: string
+}
+
+function CodeBlock({ language, children }: { language: string; children: React.ReactNode }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(String(children).replace(/\n$/, ''))
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      console.error('Failed to copy code to clipboard')
+    }
+  }
+
+  return (
+    <span className="block my-4 rounded-lg overflow-hidden border border-border">
+      <span className="flex items-center justify-between bg-muted/80 px-4 py-2 border-b border-border">
+        <span className="text-xs text-muted-foreground">{language}</span>
+        <button
+          onClick={handleCopy}
+          aria-label="Copy code"
+          className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted/60"
+        >
+          {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+        </button>
+      </span>
+      <SyntaxHighlighter
+        style={oneDark}
+        language={language}
+        PreTag="span"
+        customStyle={{
+          margin: 0,
+          borderRadius: 0,
+          padding: '1rem',
+          display: 'block',
+        }}
+      >
+        {String(children).replace(/\n$/, '')}
+      </SyntaxHighlighter>
+    </span>
+  )
 }
 
 export default function MarkdownContent({ content, className = '' }: MarkdownContentProps) {
@@ -21,38 +65,21 @@ export default function MarkdownContent({ content, className = '' }: MarkdownCon
             <a {...props} target="_blank" rel="noopener noreferrer" />
           ),
 
+          // Neutralizar el fondo que prose aplica al <pre> generado por react-markdown
+          pre: ({ children, ...props }) => (
+            <pre style={{ background: 'transparent', margin: 0, padding: 0 }} {...props}>{children}</pre>
+          ),
+
           // Personalizar código con syntax highlighting
           code: ({ className, children, ...props }: { className?: string; children?: React.ReactNode }) => {
             const match = /language-(\w+)/.exec(className || '')
-            
+
             // Si tiene language-*, es un bloque de código
             if (match) {
-              const language = match[1]
-              return (
-                <span className="block my-4 rounded-lg overflow-hidden border border-border">
-                  <span className="block bg-muted/80 px-4 py-2 text-xs text-muted-foreground border-b border-border">
-                    {language}
-                  </span>
-                  <SyntaxHighlighter
-                    {...props}
-                    style={oneDark}
-                    language={language}
-                    PreTag="span"
-                    customStyle={{
-                      margin: 0,
-                      borderRadius: '0 0 0.5rem 0.5rem',
-                      padding: '1rem',
-                      display: 'block',
-                    }}
-                  >
-                    {String(children).replace(/\n$/, '')}
-                  </SyntaxHighlighter>
-                </span>
-              )
+              return <CodeBlock language={match[1]}>{children}</CodeBlock>
             }
-            
+
             // Sin language-* es código inline
-            // Eliminar backticks del contenido si existen
             const cleanContent = String(children).replace(/^`|`$/g, '')
             return (
               <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono border border-border text-primary" {...props}>
