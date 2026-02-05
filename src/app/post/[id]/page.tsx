@@ -198,6 +198,7 @@ export default async function PostPage({ params }: PostPageProps) {
                   userId={post.user_id}
                   createdAt={post.created_at}
                   isDeleted={post.is_deleted}
+                  title={post.title}
                 />
               </div>
 
@@ -284,6 +285,7 @@ export default async function PostPage({ params }: PostPageProps) {
                   userId={post.user_id}
                   createdAt={post.created_at}
                   isDeleted={post.is_deleted}
+                  title={post.title}
                 />
               </div>
 

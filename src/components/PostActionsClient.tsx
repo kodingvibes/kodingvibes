@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { MoreVertical, Pencil, Trash2, Shield } from 'lucide-react'
+import { MoreVertical, Pencil, Trash2, Shield, Share2, Link as LinkIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -11,20 +11,25 @@ interface PostActionsClientProps {
   userId: string
   createdAt: string
   isDeleted: boolean
+  title?: string
 }
 
 export default function PostActionsClient({ 
   postId, 
   userId, 
   createdAt, 
-  isDeleted
+  isDeleted,
+  title
 }: PostActionsClientProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [copied, setCopied] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  
+  const postUrl = `https://www.kodingvibes.com/post/${postId}`
 
   useEffect(() => {
     const getUser = async () => {
@@ -99,59 +104,99 @@ export default function PostActionsClient({
     }
   }
 
-  if (!isOwner && !isAdmin) return null
+  const handleShare = async () => {
+    try {
+      // Preload OG image to ensure it's ready for social sharing
+      const ogUrl = `https://www.kodingvibes.com/api/og?id=${postId}${title ? `&title=${encodeURIComponent(title.substring(0, 80))}` : ''}`
+      
+      // Try to preload the OG image in background (this warms up the cache)
+      fetch(ogUrl, { method: 'GET', mode: 'no-cors' }).catch(() => {
+        // Silently fail if preloading doesn't work
+      })
+
+      await navigator.clipboard.writeText(postUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Error copying to clipboard:', err)
+    }
+  }
+
+  // If post is deleted and user is not admin, show nothing
   if (isDeleted && !isAdmin) return null
 
   const editable = canEdit()
   const remainingMinutes = Math.max(0, Math.ceil(15 - (new Date().getTime() - new Date(createdAt).getTime()) / (1000 * 60)))
+  
+  // Check if we should show the menu at all
+  const hasMenuActions = (isOwner || isAdmin) && !isDeleted
 
   return (
-    <div className="relative ml-auto">
+    <div className="flex items-center gap-1 ml-auto">
+      {/* Share button - visible to everyone */}
       <button
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        onClick={handleShare}
         className="p-1.5 rounded-full hover:bg-muted transition-colors"
-        aria-label="Opciones del post"
+        aria-label={copied ? 'Enlace copiado' : 'Compartir post'}
+        title={copied ? '¡Enlace copiado!' : 'Copiar enlace del post'}
       >
-        <MoreVertical className="h-4 w-4 text-muted-foreground" />
+        {copied ? (
+          <LinkIcon className="h-4 w-4 text-green-500" />
+        ) : (
+          <Share2 className="h-4 w-4 text-muted-foreground hover:text-primary" />
+        )}
       </button>
 
-      {isMenuOpen && (
-        <div className="absolute right-0 mt-1 w-52 bg-card border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
-          {editable && (
-            <Link
-              href={`/post/${postId}/edit`}
-              onClick={() => setIsMenuOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-            >
-              <Pencil className="h-4 w-4" />
-              <span>Editar</span>
-              {isAdmin ? (
-                <span className="ml-auto flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400">
-                  <Shield className="h-3 w-3" />
-                </span>
-              ) : (
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {remainingMinutes}min
-                </span>
+      {/* Menu button - only for owners/admins */}
+      {hasMenuActions && (
+        <div className="relative">
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="p-1.5 rounded-full hover:bg-muted transition-colors"
+            aria-label="Opciones del post"
+          >
+            <MoreVertical className="h-4 w-4 text-muted-foreground" />
+          </button>
+
+          {isMenuOpen && (
+            <div className="absolute right-0 mt-1 w-52 bg-card border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
+              {editable && (
+                <Link
+                  href={`/post/${postId}/edit`}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span>Editar</span>
+                  {isAdmin ? (
+                    <span className="ml-auto flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400">
+                      <Shield className="h-3 w-3" />
+                    </span>
+                  ) : (
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      {remainingMinutes}min
+                    </span>
+                  )}
+                </Link>
               )}
-            </Link>
-          )}
-          
-          {!editable && !isAdmin && (
-            <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border">
-              Tiempo de edición expirado
+              
+              {!editable && !isAdmin && (
+                <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border">
+                  Tiempo de edición expirado
+                </div>
+              )}
+              
+              {(isOwner || isAdmin) && (
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>{isDeleting ? 'Eliminando...' : 'Eliminar'}</span>
+                </button>
+              )}
             </div>
-          )}
-          
-          {(isOwner || isAdmin) && (
-            <button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span>{isDeleting ? 'Eliminando...' : 'Eliminar'}</span>
-            </button>
           )}
         </div>
       )}
