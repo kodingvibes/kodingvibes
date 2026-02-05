@@ -471,16 +471,7 @@ export async function GET(request: NextRequest) {
                 }}
               >
                 <span style={{ color: '#94a3b8', fontSize: '18px', fontWeight: '500' }}>
-                  Únete a la conversación
-                </span>
-                <span
-                  style={{
-                    color: '#a855f7',
-                    fontSize: '20px',
-                    fontWeight: '600',
-                  }}
-                >
-                  →
+                  Unete a la conversacion &gt;&gt;
                 </span>
               </div>
             </div>
@@ -566,16 +557,7 @@ export async function GET(request: NextRequest) {
               }}
             >
               <span style={{ color: '#94a3b8', fontSize: '18px', fontWeight: '500' }}>
-                Únete a la conversación
-              </span>
-              <span
-                style={{
-                  color: '#a855f7',
-                  fontSize: '20px',
-                  fontWeight: '600',
-                }}
-              >
-                →
+                Unete a la conversacion &gt;&gt;
               </span>
             </div>
           </div>
