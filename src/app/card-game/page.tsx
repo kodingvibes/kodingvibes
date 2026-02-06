@@ -37,9 +37,9 @@ export default function CardGameHub() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-4 md:py-8">
         {/* Hero section */}
-        <div className="text-center mb-12 relative z-10">
+        <div className="text-center mb-6 md:mb-12 relative z-10">
           <h2 className="text-4xl md:text-6xl font-bold font-mono mb-4">
             <span className="neon-text-cyan">NET</span>
             <span className="neon-text-magenta">RUN</span>
@@ -169,8 +169,8 @@ export default function CardGameHub() {
         </div>
 
         {/* Stats footer */}
-        <div className="mt-12 text-center">
-          <div className="inline-flex gap-8 p-4 rounded-lg border border-gray-700/20 bg-black/20">
+        <div className="mt-8 md:mt-12 text-center">
+          <div className="inline-flex flex-wrap justify-center gap-4 md:gap-8 p-3 md:p-4 rounded-lg border border-gray-700/20 bg-black/20">
             <div>
               <p className="text-lg font-mono font-bold neon-text-cyan">{ALL_CARDS.length}</p>
               <p className="text-[9px] font-mono" style={{ color: 'var(--cyber-muted)' }}>CARTAS</p>

@@ -58,9 +58,10 @@ export default function GameCard({
   const exhausted = inst?.isExhausted ?? isExhausted
 
   const typeColor = getTypeColor(def.type)
+  const isSmall = size === 'sm'
 
   const sizeClasses = {
-    sm: 'game-card text-[8px] scale-[0.7]',
+    sm: 'game-card game-card-sm',
     md: 'game-card',
     lg: 'game-card scale-[1.3]',
   }
@@ -87,16 +88,22 @@ export default function GameCard({
           }}
         >
           {/* Top bar: cost + type */}
-          <div className="flex items-center justify-between px-1.5 pt-1.5">
+          <div className={`flex items-center justify-between ${isSmall ? 'px-1 pt-1' : 'px-1.5 pt-1.5'}`}>
             <span
-              className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold"
+              className={`rounded flex items-center justify-center font-bold ${
+                isSmall ? 'w-4 h-4 text-[8px]' : 'w-5 h-5 text-[10px]'
+              }`}
               style={{ background: 'rgba(0,255,255,0.15)', color: '#00ffff' }}
             >
               {def.ramCost}
             </span>
             <span
               className="type-badge"
-              style={{ background: typeColor.bg, color: typeColor.text }}
+              style={{
+                background: typeColor.bg,
+                color: typeColor.text,
+                fontSize: isSmall ? '0.45rem' : undefined,
+              }}
             >
               {getTypeLabel(def.type)}
             </span>
@@ -104,19 +111,23 @@ export default function GameCard({
 
           {/* Art area */}
           <div
-            className="flex-1 flex items-center justify-center relative mx-2 my-1 rounded"
+            className={`flex-1 flex items-center justify-center relative rounded ${
+              isSmall ? 'mx-1 my-0.5' : 'mx-2 my-1'
+            }`}
             style={{
               background: `linear-gradient(135deg, ${def.artColors[0]}44, ${def.artColors[1]}44)`,
             }}
           >
-            <span className="text-3xl md:text-4xl drop-shadow-lg select-none">{def.artIcon}</span>
+            <span className={`${isSmall ? 'text-lg' : 'text-3xl md:text-4xl'} drop-shadow-lg select-none`}>
+              {def.artIcon}
+            </span>
             {/* Rarity indicator */}
-            {def.rarity === 'legendary' && (
+            {!isSmall && def.rarity === 'legendary' && (
               <div className="absolute top-0.5 right-0.5">
                 <span className="text-[8px]">⭐</span>
               </div>
             )}
-            {def.rarity === 'rare' && (
+            {!isSmall && def.rarity === 'rare' && (
               <div className="absolute top-0.5 right-0.5">
                 <span className="text-[8px]">💠</span>
               </div>
@@ -124,29 +135,37 @@ export default function GameCard({
           </div>
 
           {/* Name */}
-          <div className="px-1.5 mb-0.5">
+          <div className={isSmall ? 'px-1 mb-0' : 'px-1.5 mb-0.5'}>
             <p
-              className="text-[9px] font-bold truncate leading-tight"
+              className={`font-bold truncate leading-tight ${isSmall ? 'text-[6px]' : 'text-[9px]'}`}
               style={{ color: def.artColors[0] }}
             >
               {def.name}
             </p>
           </div>
 
-          {/* Ability text */}
-          <div className="px-1.5 mb-1">
-            <p className="text-[7px] leading-tight text-gray-400 line-clamp-2">
-              {def.ability}
-            </p>
-          </div>
+          {/* Ability text - hidden for small cards */}
+          {!isSmall && (
+            <div className="px-1.5 mb-1">
+              <p className="text-[7px] leading-tight text-gray-400 line-clamp-2">
+                {def.ability}
+              </p>
+            </div>
+          )}
 
           {/* Stats bar */}
           {def.type !== 'event' && (
-            <div className="flex items-center justify-between px-1.5 pb-1.5">
-              <span className="flex items-center gap-0.5 text-[10px] font-bold" style={{ color: '#ff4444' }}>
+            <div className={`flex items-center justify-between ${isSmall ? 'px-1 pb-1' : 'px-1.5 pb-1.5'}`}>
+              <span
+                className={`flex items-center gap-0.5 font-bold ${isSmall ? 'text-[7px]' : 'text-[10px]'}`}
+                style={{ color: '#ff4444' }}
+              >
                 ⚔️ {strength}
               </span>
-              <span className="flex items-center gap-0.5 text-[10px] font-bold" style={{ color: '#4488ff' }}>
+              <span
+                className={`flex items-center gap-0.5 font-bold ${isSmall ? 'text-[7px]' : 'text-[10px]'}`}
+                style={{ color: '#4488ff' }}
+              >
                 🛡️ {firewall}
               </span>
             </div>

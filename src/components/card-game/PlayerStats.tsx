@@ -30,28 +30,31 @@ export default function PlayerStats({
 
   return (
     <div
-      className={`rounded-lg p-2 md:p-3 font-mono transition-all duration-300 ${
+      className={`rounded-lg p-1.5 md:p-2 font-mono transition-all duration-300 ${
         isActive
           ? 'border border-cyan-500/30 bg-cyan-500/5'
           : 'border border-gray-700/30 bg-gray-900/30'
       }`}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
         {/* Name + HP */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-1.5 mb-0.5">
             <span
-              className={`text-xs font-bold truncate ${
+              className={`text-[10px] md:text-xs font-bold truncate ${
                 side === 'player' ? 'neon-text-cyan' : 'neon-text-magenta'
               }`}
             >
               {isActive && '▶ '}{name}
             </span>
             {shield > 0 && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">
-                🛡️ {shield}
+              <span className="text-[8px] md:text-[10px] px-1 py-0 rounded bg-blue-500/20 text-blue-400">
+                🛡 {shield}
               </span>
             )}
+            <span className="text-[8px] md:text-[10px] ml-auto" style={{ color: 'var(--cyber-muted)' }}>
+              {hp}/{maxHp}
+            </span>
           </div>
           {/* HP bar */}
           <div className="hp-bar">
@@ -60,17 +63,12 @@ export default function PlayerStats({
               style={{ width: `${hpPercent}%` }}
             />
           </div>
-          <div className="flex items-center justify-between mt-0.5">
-            <span className="text-[10px]" style={{ color: 'var(--cyber-muted)' }}>
-              SYS: {hp}/{maxHp}
-            </span>
-          </div>
         </div>
 
         {/* RAM pips */}
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-[9px]" style={{ color: 'var(--neon-cyan)' }}>RAM</span>
-          <div className="flex gap-0.5">
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-[7px] md:text-[9px]" style={{ color: 'var(--neon-cyan)' }}>RAM</span>
+          <div className="flex gap-px md:gap-0.5">
             {Array.from({ length: maxRam }).map((_, i) => (
               <div
                 key={i}
@@ -78,15 +76,12 @@ export default function PlayerStats({
               />
             ))}
           </div>
-          <span className="text-[9px]" style={{ color: 'var(--cyber-muted)' }}>
-            {ram}/{maxRam}
-          </span>
         </div>
 
         {/* Deck + Hand count */}
-        <div className="flex flex-col items-center gap-0.5 text-[10px]" style={{ color: 'var(--cyber-muted)' }}>
-          <span>📚 {deckCount}</span>
-          <span>🃏 {handCount}</span>
+        <div className="flex flex-col items-center gap-0 text-[8px] md:text-[10px]" style={{ color: 'var(--cyber-muted)' }}>
+          <span>📚{deckCount}</span>
+          <span>🃏{handCount}</span>
         </div>
       </div>
     </div>

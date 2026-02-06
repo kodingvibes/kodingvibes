@@ -1,5 +1,6 @@
 /* ============================================
    NetRun - Cyberpunk Card Game Styles
+   Responsive viewport-fit design
    ============================================ */
 
 /* Cyberpunk color variables */
@@ -75,7 +76,9 @@
   text-shadow: 0 0 5px var(--neon-red), 0 0 10px rgba(255, 0, 68, 0.5);
 }
 
-/* Card styles */
+/* ============================================
+   Card styles - Desktop-first sizing
+   ============================================ */
 .game-card {
   position: relative;
   width: 140px;
@@ -84,6 +87,13 @@
   perspective: 1000px;
   cursor: pointer;
   flex-shrink: 0;
+}
+
+/* Small card variant for field display */
+.game-card-sm {
+  width: 100px;
+  height: 145px;
+  border-radius: 8px;
 }
 
 .game-card-inner {
@@ -103,7 +113,7 @@
   position: absolute;
   inset: 0;
   backface-visibility: hidden;
-  border-radius: 10px;
+  border-radius: inherit;
   overflow: hidden;
 }
 
@@ -124,13 +134,17 @@
   text-shadow: 0 0 10px var(--neon-cyan);
 }
 
-/* Card hover 3D tilt */
+.game-card-sm .game-card-back::before {
+  font-size: 0.8rem;
+}
+
+/* Card hover lift */
 .game-card:hover .game-card-inner {
-  transform: translateY(-8px);
+  transform: translateY(-4px);
 }
 
 .game-card.flipped:hover .game-card-inner {
-  transform: rotateY(180deg) translateY(-8px);
+  transform: rotateY(180deg) translateY(-4px);
 }
 
 /* Rarity borders */
@@ -197,10 +211,11 @@
   animation: glitch 0.3s ease-in-out;
 }
 
-/* Game board */
+/* ============================================
+   Game board - viewport-fit layout
+   ============================================ */
 .game-board {
   background: linear-gradient(180deg, #080818 0%, #0a0a2a 50%, #080818 100%);
-  min-height: 100vh;
   position: relative;
   overflow: hidden;
 }
@@ -223,7 +238,9 @@
   background-size: 40px 40px;
 }
 
-/* Field zones */
+/* ============================================
+   Field zones
+   ============================================ */
 .field-zone {
   min-height: 140px;
   border: 1px dashed rgba(0, 255, 255, 0.15);
@@ -232,13 +249,24 @@
   transition: all 0.3s ease;
 }
 
-.field-zone.active {
+/* Compact field zone for viewport-fit board */
+.field-zone-compact {
+  border: 1px dashed rgba(0, 255, 255, 0.15);
+  border-radius: 8px;
+  background: rgba(0, 255, 255, 0.02);
+  transition: all 0.3s ease;
+  min-height: 0;
+}
+
+.field-zone.active,
+.field-zone-compact.active {
   border-color: rgba(0, 255, 255, 0.3);
   background: rgba(0, 255, 255, 0.05);
 }
 
 /* Drop target highlight */
-.field-zone.drop-target {
+.field-zone.drop-target,
+.field-zone-compact.drop-target {
   border-color: var(--neon-green);
   background: rgba(0, 255, 65, 0.08);
   box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.1);
@@ -258,7 +286,30 @@
   }
 }
 
-/* Combat animation */
+/* ============================================
+   Opponent hand indicators (compact card backs)
+   ============================================ */
+.opponent-hand-indicator {
+  width: 22px;
+  height: 30px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #1a1a3e, #0a0a2e);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.opponent-hand-indicator::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+/* ============================================
+   Combat animations
+   ============================================ */
 @keyframes attack-slash {
   0% { transform: translateX(0) scale(1); opacity: 1; }
   50% { transform: translateX(30px) scale(1.1); opacity: 0.8; }
@@ -269,7 +320,6 @@
   animation: attack-slash 0.4s ease-in-out;
 }
 
-/* Damage flash */
 @keyframes damage-flash {
   0%, 100% { filter: brightness(1); }
   25% { filter: brightness(2) hue-rotate(30deg); }
@@ -281,7 +331,6 @@
   animation: damage-flash 0.5s ease-in-out;
 }
 
-/* Card play animation */
 @keyframes card-play {
   0% { transform: translateY(0) scale(1); opacity: 1; }
   50% { transform: translateY(-40px) scale(1.2); opacity: 0.8; }
@@ -292,7 +341,6 @@
   animation: card-play 0.5s ease-out;
 }
 
-/* Card destroy animation */
 @keyframes card-destroy {
   0% { transform: scale(1) rotateZ(0); opacity: 1; filter: brightness(1); }
   50% { transform: scale(1.2) rotateZ(5deg); opacity: 0.8; filter: brightness(3); }
@@ -303,10 +351,12 @@
   animation: card-destroy 0.6s ease-in forwards;
 }
 
-/* HP bar */
+/* ============================================
+   HP bar
+   ============================================ */
 .hp-bar {
-  height: 8px;
-  border-radius: 4px;
+  height: 6px;
+  border-radius: 3px;
   background: rgba(255, 255, 255, 0.1);
   overflow: hidden;
   position: relative;
@@ -314,24 +364,24 @@
 
 .hp-bar-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 3px;
   transition: width 0.5s ease-out;
   position: relative;
 }
 
 .hp-bar-fill.hp-high {
   background: linear-gradient(90deg, var(--neon-green), #00cc33);
-  box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+  box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
 }
 
 .hp-bar-fill.hp-medium {
   background: linear-gradient(90deg, var(--neon-yellow), #ccaa00);
-  box-shadow: 0 0 10px rgba(255, 255, 0, 0.3);
+  box-shadow: 0 0 8px rgba(255, 255, 0, 0.3);
 }
 
 .hp-bar-fill.hp-low {
   background: linear-gradient(90deg, var(--neon-red), #cc0033);
-  box-shadow: 0 0 10px rgba(255, 0, 68, 0.3);
+  box-shadow: 0 0 8px rgba(255, 0, 68, 0.3);
   animation: hp-critical 1s ease-in-out infinite;
 }
 
@@ -340,17 +390,19 @@
   50% { opacity: 0.7; }
 }
 
-/* RAM indicator */
+/* ============================================
+   RAM indicator
+   ============================================ */
 .ram-pip {
-  width: 12px;
-  height: 16px;
-  border-radius: 3px;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
   transition: all 0.3s ease;
 }
 
 .ram-pip.filled {
   background: var(--neon-cyan);
-  box-shadow: 0 0 5px var(--neon-cyan);
+  box-shadow: 0 0 4px var(--neon-cyan);
 }
 
 .ram-pip.empty {
@@ -363,19 +415,21 @@
   border: 1px dashed rgba(0, 255, 255, 0.1);
 }
 
-/* Combat log */
+/* ============================================
+   Combat log
+   ============================================ */
 .combat-log {
   font-family: 'Courier New', monospace;
-  font-size: 0.7rem;
-  line-height: 1.4;
-  max-height: 200px;
+  font-size: 0.65rem;
+  line-height: 1.3;
+  max-height: 180px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--neon-cyan) transparent;
 }
 
 .combat-log::-webkit-scrollbar {
-  width: 4px;
+  width: 3px;
 }
 
 .combat-log::-webkit-scrollbar-thumb {
@@ -383,7 +437,9 @@
   border-radius: 2px;
 }
 
-/* Turn indicator */
+/* ============================================
+   Turn indicator
+   ============================================ */
 @keyframes turn-glow {
   0%, 100% { text-shadow: 0 0 5px currentColor; }
   50% { text-shadow: 0 0 15px currentColor, 0 0 25px currentColor; }
@@ -393,7 +449,9 @@
   animation: turn-glow 2s ease-in-out infinite;
 }
 
-/* Button cyberpunk style */
+/* ============================================
+   Cyberpunk buttons
+   ============================================ */
 .cyber-btn {
   position: relative;
   padding: 0.5rem 1.5rem;
@@ -448,12 +506,14 @@
   box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
 }
 
-/* Hand area */
+/* ============================================
+   Hand area
+   ============================================ */
 .hand-area {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   justify-content: center;
-  padding: 8px;
+  padding: 4px 8px;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -462,10 +522,10 @@
   display: none;
 }
 
-/* Hand card hover spread */
+/* Hand card overlap for tight layout */
 .hand-area .game-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin: 0 -10px;
+  margin: 0 -8px;
 }
 
 .hand-area .game-card:hover {
@@ -473,7 +533,9 @@
   margin: 0 4px;
 }
 
-/* Type badge */
+/* ============================================
+   Type badge
+   ============================================ */
 .type-badge {
   font-family: monospace;
   font-size: 0.55rem;
@@ -483,9 +545,11 @@
   letter-spacing: 0.05em;
 }
 
-/* Divider line */
+/* ============================================
+   Board divider
+   ============================================ */
 .board-divider {
-  height: 2px;
+  height: 1px;
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -494,10 +558,12 @@
     var(--neon-cyan) 80%,
     transparent 100%
   );
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
-/* Lobby styles */
+/* ============================================
+   Lobby styles
+   ============================================ */
 .lobby-room {
   border: 1px solid rgba(0, 255, 255, 0.2);
   background: rgba(0, 255, 255, 0.03);
@@ -510,7 +576,9 @@
   box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
 }
 
-/* Matchmaking spinner */
+/* ============================================
+   Matchmaking spinner
+   ============================================ */
 @keyframes cyber-spin {
   0% { transform: rotate(0deg); border-color: var(--neon-cyan) transparent transparent transparent; }
   25% { border-color: var(--neon-magenta) transparent transparent transparent; }
@@ -527,7 +595,9 @@
   animation: cyber-spin 1.5s linear infinite;
 }
 
-/* Modal overlay */
+/* ============================================
+   Modal overlay
+   ============================================ */
 .cyber-modal-overlay {
   position: fixed;
   inset: 0;
@@ -543,31 +613,118 @@
   background: linear-gradient(135deg, #12122a, #1a1a3e);
   border: 1px solid rgba(0, 255, 255, 0.3);
   border-radius: 12px;
-  padding: 2rem;
-  max-width: 500px;
+  padding: 1.5rem;
+  max-width: 400px;
   width: 90%;
   position: relative;
 }
 
-/* Responsive card sizing */
+/* ============================================
+   Floating combat log (for game board)
+   ============================================ */
+.floating-log-toggle {
+  position: fixed;
+  z-index: 40;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid var(--neon-green);
+  color: var(--neon-green);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.floating-log-toggle:hover {
+  background: rgba(0, 255, 65, 0.15);
+  box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+}
+
+.floating-log-panel {
+  position: fixed;
+  z-index: 40;
+  width: 280px;
+  max-width: calc(100vw - 1rem);
+  backdrop-filter: blur(8px);
+}
+
+/* ============================================
+   Responsive breakpoints
+   ============================================ */
+
+/* Tablet */
 @media (max-width: 768px) {
   .game-card {
     width: 100px;
     height: 145px;
   }
 
+  .game-card-sm {
+    width: 72px;
+    height: 104px;
+  }
+
   .hand-area .game-card {
-    margin: 0 -15px;
+    margin: 0 -12px;
   }
 
   .field-zone {
     min-height: 110px;
   }
+
+  .opponent-hand-indicator {
+    width: 18px;
+    height: 25px;
+  }
+
+  .ram-pip {
+    width: 8px;
+    height: 12px;
+  }
 }
 
+/* Mobile */
 @media (max-width: 480px) {
   .game-card {
     width: 80px;
     height: 116px;
+  }
+
+  .game-card-sm {
+    width: 58px;
+    height: 84px;
+  }
+
+  .hand-area .game-card {
+    margin: 0 -16px;
+  }
+
+  .opponent-hand-indicator {
+    width: 16px;
+    height: 22px;
+  }
+
+  .ram-pip {
+    width: 7px;
+    height: 10px;
+  }
+
+  .hp-bar {
+    height: 5px;
+  }
+
+  .cyber-modal {
+    padding: 1rem;
+  }
+
+  .combat-log {
+    font-size: 0.6rem;
+    max-height: 150px;
   }
 }

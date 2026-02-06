@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { GameState, PlayerSide } from '@/lib/card-game/types'
 import { processAction, canPlayCard } from '@/lib/card-game/engine'
 import { getAIAction } from '@/lib/card-game/ai'
@@ -30,16 +30,9 @@ export default function GameBoard({
   const [selectedAttacker, setSelectedAttacker] = useState<string | null>(null)
   const [isAIThinking, setIsAIThinking] = useState(false)
   const [showGameOver, setShowGameOver] = useState(false)
-  const logRef = useRef<HTMLDivElement>(null)
+  const [showLog, setShowLog] = useState(false)
 
   const isPlayerTurn = gameState.activePlayer === playerSide
-
-  // Scroll combat log
-  useEffect(() => {
-    if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight
-    }
-  }, [gameState.combatLog.length])
 
   // Check game over
   useEffect(() => {
@@ -106,7 +99,6 @@ export default function GameBoard({
     if (!card || card.isExhausted) return
 
     if (selectionMode === 'selecting_attacker' && selectedAttacker === instanceId) {
-      // Deselect
       setSelectionMode('none')
       setSelectedAttacker(null)
       return
@@ -168,9 +160,9 @@ export default function GameBoard({
   const opponent = playerSide === 'player' ? gameState.opponent : gameState.player
 
   return (
-    <div className="game-board grid-pattern scanlines netrun-theme flex flex-col" style={{ minHeight: '100dvh' }}>
-      {/* Opponent Area */}
-      <div className="px-2 pt-2 md:px-4 md:pt-3">
+    <div className="game-board grid-pattern scanlines netrun-theme flex flex-col h-[100dvh] overflow-hidden">
+      {/* ===== Opponent Stats ===== */}
+      <div className="flex-shrink-0 px-2 pt-1 md:px-4 md:pt-2">
         <PlayerStats
           name={isMultiplayer ? 'Oponente' : 'Corp AI'}
           hp={opponent.systemIntegrity}
@@ -185,35 +177,39 @@ export default function GameBoard({
         />
       </div>
 
-      {/* Opponent Hand (face down) */}
-      <div className="hand-area py-1">
+      {/* ===== Opponent Hand (compact indicators) ===== */}
+      <div className="flex-shrink-0 flex items-center justify-center gap-1 py-1">
         {opponent.hand.map((card, i) => (
-          <GameCard
+          <div
             key={card.instanceId || i}
-            card={card}
-            showBack={true}
-            size="sm"
+            className="opponent-hand-indicator"
           />
         ))}
+        {opponent.hand.length === 0 && (
+          <span className="text-[8px] font-mono" style={{ color: 'var(--cyber-muted)' }}>
+            sin cartas
+          </span>
+        )}
       </div>
 
-      {/* Opponent Field */}
-      <div className="px-2 md:px-4">
+      {/* ===== Opponent Field ===== */}
+      <div className="flex-1 min-h-0 px-2 md:px-4 flex items-center">
         <div
-          className={`field-zone flex items-center justify-center gap-2 p-2 flex-wrap ${
+          className={`field-zone-compact w-full flex items-center justify-center gap-1 md:gap-2 p-1 md:p-2 flex-wrap ${
             selectionMode === 'selecting_target' ? 'active' : ''
           }`}
           onClick={selectionMode === 'selecting_target' && opponent.field.length === 0 ? handleDirectAttack : undefined}
         >
           {opponent.field.length === 0 ? (
-            <p className="text-[10px] font-mono" style={{ color: 'var(--cyber-muted)' }}>
-              {selectionMode === 'selecting_target' ? '[ CLICK PARA ATAQUE DIRECTO ]' : '// campo vacío'}
+            <p className="text-[9px] font-mono" style={{ color: 'var(--cyber-muted)' }}>
+              {selectionMode === 'selecting_target' ? '[ ATAQUE DIRECTO ]' : '// vacío'}
             </p>
           ) : (
             opponent.field.map((card) => (
               <GameCard
                 key={card.instanceId}
                 card={card}
+                size="sm"
                 isExhausted={card.isExhausted}
                 isAttackTarget={selectionMode === 'selecting_target'}
                 onClick={() => {
@@ -227,42 +223,37 @@ export default function GameBoard({
         </div>
       </div>
 
-      {/* Center: divider + turn info + combat log */}
-      <div className="flex-1 flex flex-col items-center justify-center px-2 md:px-4 py-2 gap-2 min-h-0">
+      {/* ===== Center Bar (turn info + actions) ===== */}
+      <div className="flex-shrink-0 px-2 md:px-4">
         <div className="board-divider w-full" />
-
-        <div className="flex items-center gap-3 flex-wrap justify-center">
-          <span className="text-[10px] font-mono" style={{ color: 'var(--cyber-muted)' }}>
-            TURNO {gameState.turn}
+        <div className="flex items-center justify-center gap-2 py-1">
+          <span className="text-[9px] md:text-[10px] font-mono" style={{ color: 'var(--cyber-muted)' }}>
+            T{gameState.turn}
           </span>
           <span
-            className={`text-xs font-bold font-mono turn-indicator ${isPlayerTurn ? 'neon-text-cyan' : 'neon-text-magenta'}`}
+            className={`text-[10px] md:text-xs font-bold font-mono turn-indicator ${
+              isPlayerTurn ? 'neon-text-cyan' : 'neon-text-magenta'
+            }`}
           >
-            {isPlayerTurn ? '>> TU TURNO <<' : isAIThinking ? '>> AI PENSANDO... <<' : '>> TURNO RIVAL <<'}
+            {isPlayerTurn ? '>> TU TURNO <<' : isAIThinking ? '>> AI... <<' : '>> RIVAL <<'}
           </span>
           {isPlayerTurn && (
             <button
               onClick={handleEndTurn}
-              className="cyber-btn text-[10px] py-1 px-3"
+              className="cyber-btn text-[9px] py-0.5 px-2"
             >
-              Fin Turno
+              FIN
             </button>
           )}
         </div>
-
-        {/* Combat Log */}
-        <div ref={logRef} className="w-full max-w-lg">
-          <CombatLog entries={gameState.combatLog} />
-        </div>
-
         <div className="board-divider w-full" />
       </div>
 
-      {/* Player Field */}
-      <div className="px-2 md:px-4">
-        <div className="field-zone active flex items-center justify-center gap-2 p-2 flex-wrap">
+      {/* ===== Player Field ===== */}
+      <div className="flex-1 min-h-0 px-2 md:px-4 flex items-center">
+        <div className="field-zone-compact active w-full flex items-center justify-center gap-1 md:gap-2 p-1 md:p-2 flex-wrap">
           {player.field.length === 0 ? (
-            <p className="text-[10px] font-mono" style={{ color: 'var(--cyber-muted)' }}>
+            <p className="text-[9px] font-mono" style={{ color: 'var(--cyber-muted)' }}>
               {/* juega cartas aquí */}
             </p>
           ) : (
@@ -270,6 +261,7 @@ export default function GameBoard({
               <GameCard
                 key={card.instanceId}
                 card={card}
+                size="sm"
                 isExhausted={card.isExhausted}
                 isSelected={selectedAttacker === card.instanceId}
                 onClick={() => handleSelectFieldCard(card.instanceId)}
@@ -279,8 +271,8 @@ export default function GameBoard({
         </div>
       </div>
 
-      {/* Player Hand */}
-      <div className="hand-area py-1 pb-2">
+      {/* ===== Player Hand ===== */}
+      <div className="flex-shrink-0 hand-area">
         {player.hand.map((card) => {
           const playable = isPlayerTurn && canPlayCard(gameState, playerSide, card.instanceId)
           return (
@@ -294,8 +286,8 @@ export default function GameBoard({
         })}
       </div>
 
-      {/* Player Stats */}
-      <div className="px-2 pb-2 md:px-4 md:pb-3">
+      {/* ===== Player Stats ===== */}
+      <div className="flex-shrink-0 px-2 pb-1 md:px-4 md:pb-2">
         <PlayerStats
           name="Runner"
           hp={player.systemIntegrity}
@@ -310,59 +302,80 @@ export default function GameBoard({
         />
       </div>
 
-      {/* Game Over Modal */}
+      {/* ===== Floating Combat Log ===== */}
+      <button
+        onClick={() => setShowLog(!showLog)}
+        className="floating-log-toggle"
+        style={{ bottom: '5rem', right: '0.5rem' }}
+      >
+        {showLog ? '✕' : '⌘'}
+      </button>
+
+      {showLog && (
+        <div
+          className="floating-log-panel"
+          style={{ bottom: '7.5rem', right: '0.5rem' }}
+        >
+          <CombatLog entries={gameState.combatLog} />
+        </div>
+      )}
+
+      {/* ===== Selection mode hint ===== */}
+      {selectionMode === 'selecting_target' && (
+        <div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-50">
+          <div
+            className="bg-black/90 border border-red-500/50 rounded-lg px-3 py-1.5 text-[10px] font-mono"
+            style={{ color: 'var(--neon-red)' }}
+          >
+            Selecciona objetivo
+            <button
+              onClick={() => { setSelectionMode('none'); setSelectedAttacker(null) }}
+              className="ml-2 text-gray-500 hover:text-white"
+            >
+              [X]
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Game Over Modal ===== */}
       {showGameOver && (
         <div className="cyber-modal-overlay" onClick={() => setShowGameOver(false)}>
           <div className="cyber-modal text-center" onClick={e => e.stopPropagation()}>
-            <div className="mb-4">
+            <div className="mb-3">
               {gameState.winner === playerSide ? (
                 <>
-                  <p className="text-4xl mb-2">🏆</p>
-                  <h2 className="text-2xl font-bold neon-text-cyan font-mono">
+                  <p className="text-3xl mb-2">🏆</p>
+                  <h2 className="text-xl font-bold neon-text-cyan font-mono">
                     VICTORIA
                   </h2>
-                  <p className="text-sm mt-2" style={{ color: 'var(--cyber-muted)' }}>
+                  <p className="text-xs mt-1" style={{ color: 'var(--cyber-muted)' }}>
                     Has hackeado el sistema enemigo
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="text-4xl mb-2">💀</p>
-                  <h2 className="text-2xl font-bold neon-text-red font-mono">
+                  <p className="text-3xl mb-2">💀</p>
+                  <h2 className="text-xl font-bold neon-text-red font-mono">
                     DESCONECTADO
                   </h2>
-                  <p className="text-sm mt-2" style={{ color: 'var(--cyber-muted)' }}>
+                  <p className="text-xs mt-1" style={{ color: 'var(--cyber-muted)' }}>
                     Tu sistema ha sido comprometido
                   </p>
                 </>
               )}
             </div>
-            <div className="flex gap-3 justify-center mt-6">
+            <div className="flex gap-3 justify-center mt-4">
               <button
                 onClick={() => window.location.reload()}
-                className="cyber-btn text-sm"
+                className="cyber-btn text-xs"
               >
-                Jugar de nuevo
+                Otra vez
               </button>
-              <a href="/card-game" className="cyber-btn cyber-btn-magenta text-sm">
-                Menú Principal
+              <a href="/card-game" className="cyber-btn cyber-btn-magenta text-xs">
+                Menú
               </a>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Selection mode hint */}
-      {selectionMode === 'selecting_target' && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50">
-          <div className="bg-black/80 border border-red-500/50 rounded-lg px-4 py-2 text-xs font-mono" style={{ color: 'var(--neon-red)' }}>
-            Selecciona un objetivo para atacar
-            <button
-              onClick={() => { setSelectionMode('none'); setSelectedAttacker(null) }}
-              className="ml-3 text-gray-500 hover:text-white"
-            >
-              [Cancelar]
-            </button>
           </div>
         </div>
       )}
