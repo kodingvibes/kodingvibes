@@ -122,8 +122,8 @@ function drawCards(state: GameState, side: PlayerSide, count: number): void {
   for (let i = 0; i < count; i++) {
     if (player.deck.length === 0) {
       addLog(state, `${sideName} no tiene más cartas en el deck`, 'info')
-      player.systemIntegrity -= 1
-      addLog(state, `${sideName} sufre 1 de daño por fatiga`, 'damage')
+      applyDamage(state, side, 1)
+      if (state.phase === 'game_over') return
       continue
     }
     if (player.hand.length >= MAX_HAND_SIZE) {
