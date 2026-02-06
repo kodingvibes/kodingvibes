@@ -91,15 +91,8 @@
 
 /* Small card variant for field display */
 .game-card-sm {
-  width: 100px;
-  height: 140px;
-  border-radius: 8px;
-}
-
-/* Hand card variant - readable but compact */
-.game-card-hand {
-  width: 90px;
-  height: 130px;
+  width: 110px;
+  height: 155px;
   border-radius: 8px;
 }
 
@@ -141,9 +134,8 @@
   text-shadow: 0 0 10px var(--neon-cyan);
 }
 
-.game-card-sm .game-card-back::before,
-.game-card-hand .game-card-back::before {
-  font-size: 0.8rem;
+.game-card-sm .game-card-back::before {
+  font-size: 1rem;
 }
 
 /* Card hover lift */
@@ -224,7 +216,7 @@
    ============================================ */
 .game-board {
   background: linear-gradient(180deg, #080818 0%, #0a0a2a 50%, #080818 100%);
-  position: relative;
+  /* position handled by Tailwind fixed class - do NOT set position here */
   overflow: hidden;
 }
 
@@ -298,27 +290,27 @@
    Opponent hand indicators (compact card backs)
    ============================================ */
 .opponent-hand-indicator {
-  width: 30px;
-  height: 42px;
-  border-radius: 4px;
+  width: 36px;
+  height: 50px;
+  border-radius: 5px;
   background: linear-gradient(135deg, #1a1a3e, #0a0a2e);
-  border: 1px solid rgba(0, 255, 255, 0.25);
+  border: 1px solid rgba(0, 255, 255, 0.3);
   flex-shrink: 0;
   position: relative;
 }
 
 .opponent-hand-indicator::after {
-  content: '//';
+  content: '//NR';
   position: absolute;
   inset: 3px;
   border: 1px solid rgba(0, 255, 255, 0.15);
-  border-radius: 2px;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: monospace;
-  font-size: 7px;
-  color: rgba(0, 255, 255, 0.25);
+  font-size: 8px;
+  color: rgba(0, 255, 255, 0.3);
 }
 
 /* ============================================
@@ -369,8 +361,8 @@
    HP bar
    ============================================ */
 .hp-bar {
-  height: 6px;
-  border-radius: 3px;
+  height: 8px;
+  border-radius: 4px;
   background: rgba(255, 255, 255, 0.1);
   overflow: hidden;
   position: relative;
@@ -408,8 +400,8 @@
    RAM indicator
    ============================================ */
 .ram-pip {
-  width: 10px;
-  height: 14px;
+  width: 12px;
+  height: 16px;
   border-radius: 2px;
   transition: all 0.3s ease;
 }
@@ -675,22 +667,17 @@
 /* Tablet */
 @media (max-width: 768px) {
   .game-card {
-    width: 100px;
-    height: 145px;
+    width: 110px;
+    height: 155px;
   }
 
   .game-card-sm {
-    width: 80px;
-    height: 112px;
-  }
-
-  .game-card-hand {
-    width: 78px;
-    height: 112px;
+    width: 90px;
+    height: 128px;
   }
 
   .hand-area .game-card {
-    margin: 0 -10px;
+    margin: 0 -12px;
   }
 
   .field-zone {
@@ -698,49 +685,44 @@
   }
 
   .opponent-hand-indicator {
-    width: 26px;
-    height: 36px;
+    width: 30px;
+    height: 42px;
   }
 
   .ram-pip {
-    width: 8px;
-    height: 12px;
+    width: 10px;
+    height: 14px;
   }
 }
 
 /* Mobile */
 @media (max-width: 480px) {
   .game-card {
-    width: 80px;
-    height: 116px;
+    width: 88px;
+    height: 128px;
   }
 
   .game-card-sm {
-    width: 68px;
-    height: 96px;
-  }
-
-  .game-card-hand {
-    width: 66px;
-    height: 96px;
+    width: 78px;
+    height: 112px;
   }
 
   .hand-area .game-card {
-    margin: 0 -14px;
+    margin: 0 -16px;
   }
 
   .opponent-hand-indicator {
-    width: 22px;
-    height: 30px;
+    width: 28px;
+    height: 38px;
   }
 
   .ram-pip {
-    width: 7px;
-    height: 10px;
+    width: 9px;
+    height: 12px;
   }
 
   .hp-bar {
-    height: 5px;
+    height: 6px;
   }
 
   .cyber-modal {

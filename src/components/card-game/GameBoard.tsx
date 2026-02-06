@@ -160,7 +160,7 @@ export default function GameBoard({
   const opponent = playerSide === 'player' ? gameState.opponent : gameState.player
 
   return (
-    <div className="game-board grid-pattern scanlines netrun-theme flex flex-col fixed inset-0 z-50 overflow-hidden">
+    <div className="game-board grid-pattern scanlines netrun-theme flex flex-col fixed inset-0 z-[100] overflow-hidden">
       {/* ===== Opponent Stats ===== */}
       <div className="flex-shrink-0 px-2 pt-1 md:px-4 md:pt-2">
         <PlayerStats
@@ -201,7 +201,7 @@ export default function GameBoard({
           onClick={selectionMode === 'selecting_target' && opponent.field.length === 0 ? handleDirectAttack : undefined}
         >
           {opponent.field.length === 0 ? (
-            <p className="text-[9px] font-mono" style={{ color: 'var(--cyber-muted)' }}>
+            <p className="text-xs font-mono" style={{ color: 'var(--cyber-muted)' }}>
               {selectionMode === 'selecting_target' ? '[ ATAQUE DIRECTO ]' : '// vacío'}
             </p>
           ) : (
@@ -227,11 +227,11 @@ export default function GameBoard({
       <div className="flex-shrink-0 px-2 md:px-4">
         <div className="board-divider w-full" />
         <div className="flex items-center justify-center gap-2 py-0.5">
-          <span className="text-[9px] md:text-[10px] font-mono" style={{ color: 'var(--cyber-muted)' }}>
+          <span className="text-[11px] md:text-xs font-mono" style={{ color: 'var(--cyber-muted)' }}>
             T{gameState.turn}
           </span>
           <span
-            className={`text-[10px] md:text-xs font-bold font-mono turn-indicator ${
+            className={`text-xs md:text-sm font-bold font-mono turn-indicator ${
               isPlayerTurn ? 'neon-text-cyan' : 'neon-text-magenta'
             }`}
           >
@@ -240,7 +240,7 @@ export default function GameBoard({
           {isPlayerTurn && (
             <button
               onClick={handleEndTurn}
-              className="cyber-btn text-[9px] py-0.5 px-2"
+              className="cyber-btn text-[11px] py-0.5 px-3"
             >
               FIN
             </button>
@@ -253,7 +253,7 @@ export default function GameBoard({
       <div className="flex-1 min-h-0 px-2 md:px-4 flex items-center">
         <div className="field-zone-compact active w-full flex items-center justify-center gap-1 md:gap-2 p-1 md:p-2 flex-wrap">
           {player.field.length === 0 ? (
-            <p className="text-[9px] font-mono" style={{ color: 'var(--cyber-muted)' }}>
+            <p className="text-xs font-mono" style={{ color: 'var(--cyber-muted)' }}>
               {/* juega cartas aquí */}
             </p>
           ) : (
@@ -279,7 +279,6 @@ export default function GameBoard({
             <GameCard
               key={card.instanceId}
               card={card}
-              size="hand"
               isPlayable={playable}
               onClick={() => playable ? handlePlayCard(card.instanceId) : undefined}
             />
