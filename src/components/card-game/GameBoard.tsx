@@ -160,7 +160,7 @@ export default function GameBoard({
   const opponent = playerSide === 'player' ? gameState.opponent : gameState.player
 
   return (
-    <div className="game-board grid-pattern scanlines netrun-theme flex flex-col h-[100dvh] overflow-hidden">
+    <div className="game-board grid-pattern scanlines netrun-theme flex flex-col fixed inset-0 z-50 overflow-hidden">
       {/* ===== Opponent Stats ===== */}
       <div className="flex-shrink-0 px-2 pt-1 md:px-4 md:pt-2">
         <PlayerStats
@@ -178,7 +178,7 @@ export default function GameBoard({
       </div>
 
       {/* ===== Opponent Hand (compact indicators) ===== */}
-      <div className="flex-shrink-0 flex items-center justify-center gap-1 py-1">
+      <div className="flex-shrink-0 flex items-center justify-center gap-1.5 py-0.5">
         {opponent.hand.map((card, i) => (
           <div
             key={card.instanceId || i}
@@ -226,7 +226,7 @@ export default function GameBoard({
       {/* ===== Center Bar (turn info + actions) ===== */}
       <div className="flex-shrink-0 px-2 md:px-4">
         <div className="board-divider w-full" />
-        <div className="flex items-center justify-center gap-2 py-1">
+        <div className="flex items-center justify-center gap-2 py-0.5">
           <span className="text-[9px] md:text-[10px] font-mono" style={{ color: 'var(--cyber-muted)' }}>
             T{gameState.turn}
           </span>
@@ -279,6 +279,7 @@ export default function GameBoard({
             <GameCard
               key={card.instanceId}
               card={card}
+              size="hand"
               isPlayable={playable}
               onClick={() => playable ? handlePlayCard(card.instanceId) : undefined}
             />
