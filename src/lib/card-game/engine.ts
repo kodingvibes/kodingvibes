@@ -1,6 +1,6 @@
 import {
   GameState, GameAction, PlayerState, PlayerSide,
-  CardInstance, CardDefinition, CombatLogEntry,
+  CardInstance, CardDefinition, CombatLogEntry, AbilityEffect,
 } from './types'
 import { getCardById } from './cards'
 
@@ -122,7 +122,6 @@ function drawCards(state: GameState, side: PlayerSide, count: number): void {
   for (let i = 0; i < count; i++) {
     if (player.deck.length === 0) {
       addLog(state, `${sideName} no tiene más cartas en el deck`, 'info')
-      // Fatigue damage when deck is empty
       player.systemIntegrity -= 1
       addLog(state, `${sideName} sufre 1 de daño por fatiga`, 'damage')
       continue
@@ -163,15 +162,18 @@ function applyDamage(state: GameState, side: PlayerSide, damage: number): void {
   }
 }
 
-function resolveAbility(
+function isCardAlive(state: GameState, side: PlayerSide, instanceId: string): boolean {
+  const player = getPlayerState(state, side)
+  return player.field.some(c => c.instanceId === instanceId)
+}
+
+// Resolve a single ability effect
+function resolveSingleEffect(
   state: GameState,
   card: CardInstance,
   side: PlayerSide,
-  trigger: 'on_play' | 'on_attack' | 'on_defend' | 'on_death'
+  effect: AbilityEffect,
 ): void {
-  const effect = card.definition.abilityEffect
-  if (!effect || effect.type !== trigger) return
-
   const player = getPlayerState(state, side)
   const opponentSide = getOpponentSide(side)
   const opponent = getPlayerState(state, opponentSide)
@@ -239,13 +241,14 @@ function resolveAbility(
       addLog(state, `💾 ${cardName} otorga ${effect.effect.value} RAM`, 'ability')
       break
 
-    case 'steal_ram':
+    case 'steal_ram': {
       const stolen = Math.min(opponent.currentRam, effect.effect.value)
       opponent.currentRam -= stolen
       player.currentRam = Math.min(MAX_RAM, player.currentRam + stolen)
-      applyDamage(state, opponentSide, 3)
-      addLog(state, `🔋 ${cardName} roba ${stolen} RAM y hace 3 de daño`, 'ability')
+      applyDamage(state, opponentSide, effect.effect.value)
+      addLog(state, `🔋 ${cardName} roba ${stolen} RAM y hace ${effect.effect.value} de daño`, 'ability')
       break
+    }
 
     case 'shield':
       player.shield += effect.effect.value
@@ -264,6 +267,27 @@ function resolveAbility(
     case 'double_strike':
       // Handled in combat resolution
       break
+  }
+}
+
+function resolveAbility(
+  state: GameState,
+  card: CardInstance,
+  side: PlayerSide,
+  trigger: 'on_play' | 'on_attack' | 'on_defend' | 'on_death'
+): void {
+  const effects = card.definition.abilityEffects
+  if (!effects || effects.length === 0) {
+    // Fallback to single abilityEffect for backward compatibility
+    const single = card.definition.abilityEffect
+    if (!single || single.type !== trigger) return
+    resolveSingleEffect(state, card, side, single)
+    return
+  }
+
+  for (const effect of effects) {
+    if (effect.type !== trigger) continue
+    resolveSingleEffect(state, card, side, effect)
   }
 }
 
@@ -323,7 +347,9 @@ export function processAction(state: GameState, action: GameAction): GameState {
       if (!attacker || attacker.isExhausted) break
 
       const hasPierce = attacker.definition.abilityEffect?.effect.action === 'pierce'
+        || attacker.definition.abilityEffects?.some(e => e.effect.action === 'pierce')
       const hasDoubleStrike = attacker.definition.abilityEffect?.effect.action === 'double_strike'
+        || attacker.definition.abilityEffects?.some(e => e.effect.action === 'double_strike')
 
       if (action.targetInstanceId) {
         // Attack a specific target
@@ -339,8 +365,9 @@ export function processAction(state: GameState, action: GameAction): GameState {
         // Resolve on_attack abilities
         resolveAbility(newState, attacker, side, 'on_attack')
 
-        // Combat resolution
+        // Combat resolution - capture firewall BEFORE reducing it
         const effectiveFirewall = hasPierce ? 0 : target.currentFirewall
+        const originalFirewall = target.currentFirewall
         const damageToTarget = Math.max(0, attacker.currentStrength - effectiveFirewall)
         const damageToAttacker = Math.max(0, target.currentStrength - attacker.currentFirewall)
 
@@ -356,8 +383,10 @@ export function processAction(state: GameState, action: GameAction): GameState {
           opponent.graveyard.push(target)
           addLog(newState, `💥 ${targetName} ha sido destruida`, 'attack')
 
-          // Overflow damage to opponent
-          const overflow = damageToTarget - target.currentFirewall
+          // Overflow damage: excess strength beyond original firewall
+          const overflow = hasPierce
+            ? attacker.currentStrength
+            : Math.max(0, attacker.currentStrength - originalFirewall)
           if (overflow > 0) {
             applyDamage(newState, opponentSide, Math.floor(overflow / 2))
           }
@@ -380,8 +409,11 @@ export function processAction(state: GameState, action: GameAction): GameState {
           }
         }
 
-        // Double strike - attack again if target was destroyed
-        if (hasDoubleStrike && !opponent.field.find(c => c.instanceId === action.targetInstanceId)) {
+        // Double strike - only if attacker survived
+        if (hasDoubleStrike
+          && isCardAlive(newState, side, attacker.instanceId)
+          && !opponent.field.find(c => c.instanceId === action.targetInstanceId)
+        ) {
           applyDamage(newState, opponentSide, attacker.currentStrength)
           addLog(newState, `⚡ ${attackerName} golpea de nuevo directamente`, 'attack')
         }

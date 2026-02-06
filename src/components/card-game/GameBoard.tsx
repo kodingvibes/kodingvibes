@@ -54,22 +54,31 @@ export default function GameBoard({
     if (isMultiplayer) return
     if (gameState.activePlayer !== 'opponent' || gameState.phase === 'game_over') return
 
+    let cancelled = false
     setIsAIThinking(true)
     const actions = getAIAction(gameState)
+    const timerIds: ReturnType<typeof setTimeout>[] = []
 
     let currentState = gameState
     let delay = 800
 
     actions.forEach((action, idx) => {
-      setTimeout(() => {
+      const timerId = setTimeout(() => {
+        if (cancelled) return
         currentState = processAction(currentState, action)
         setGameState({ ...currentState })
         if (idx === actions.length - 1) {
           setIsAIThinking(false)
         }
       }, delay)
+      timerIds.push(timerId)
       delay += 600
     })
+
+    return () => {
+      cancelled = true
+      timerIds.forEach(id => clearTimeout(id))
+    }
   }, [gameState.activePlayer, isMultiplayer, gameState.phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle playing a card from hand

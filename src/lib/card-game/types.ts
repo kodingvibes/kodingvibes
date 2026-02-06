@@ -17,6 +17,7 @@ export interface CardDefinition {
   ramCost: number
   ability: string
   abilityEffect?: AbilityEffect
+  abilityEffects?: AbilityEffect[] // multiple effects for compound abilities
   flavorText: string
   artColors: [string, string] // gradient colors for CSS art
   artIcon: string // emoji or icon identifier
@@ -102,7 +103,7 @@ export interface DeckConfig {
   id: string
   name: string
   faction: CardFaction
-  cards: string[] // card definition IDs (30 cards)
+  cards: string[] // card definition IDs (20 cards)
   createdAt: string
   updatedAt: string
 }

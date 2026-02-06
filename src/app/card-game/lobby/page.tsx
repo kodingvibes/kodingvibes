@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { LobbyRoom, DeckConfig } from '@/lib/card-game/types'
 import {
@@ -28,8 +28,10 @@ export default function LobbyPage() {
   const [error, setError] = useState<string | null>(null)
   const [savedDecks, setSavedDecks] = useState<DeckConfig[]>([])
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null)
+  const channelRef = useRef<ReturnType<typeof createGameChannel> | null>(null)
+  const roomUnsubRef = useRef<(() => void) | null>(null)
 
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   // Auth check
   useEffect(() => {
@@ -47,6 +49,14 @@ export default function LobbyPage() {
     }
     getUser()
   }, [supabase])
+
+  // Cleanup subscriptions on unmount
+  useEffect(() => {
+    return () => {
+      channelRef.current?.cleanup()
+      roomUnsubRef.current?.()
+    }
+  }, [])
 
   // Load saved decks
   useEffect(() => {
@@ -89,15 +99,13 @@ export default function LobbyPage() {
     setView('waiting')
 
     // Subscribe to room changes
-    const unsubscribe = subscribeToRoom(room.id, (updatedRoom) => {
+    roomUnsubRef.current?.()
+    roomUnsubRef.current = subscribeToRoom(room.id, (updatedRoom) => {
       setCurrentRoom(updatedRoom)
       if (updatedRoom.status === 'ready' && updatedRoom.guestId) {
-        // Guest joined! Start the game
         startMultiplayerGame(updatedRoom, true)
       }
     })
-
-    return unsubscribe
   }
 
   // Join a room
@@ -129,23 +137,26 @@ export default function LobbyPage() {
     const playerDeck = getSelectedDeckCards()
     const opponentDeck = getStarterDeck('corp') // In real scenario, use opponent's deck
 
-    const onAction = (action: import('@/lib/card-game/types').GameAction) => {
+    const onRemoteAction = (action: import('@/lib/card-game/types').GameAction) => {
       setGameState(prev => {
         if (!prev) return prev
         return processAction(prev, action)
       })
     }
 
+    // Clean up previous channel
+    channelRef.current?.cleanup()
+
     if (asHost) {
       const state = createInitialGameState(playerDeck, opponentDeck, true, room.id)
       setGameState(state)
 
-      // Create channel and broadcast initial state
       const channel = createGameChannel(
         room.id,
         (receivedState) => setGameState(receivedState),
-        onAction,
+        onRemoteAction,
       )
+      channelRef.current = channel
 
       // Broadcast initial state
       setTimeout(() => channel.sendGameState(state), 500)
@@ -153,11 +164,12 @@ export default function LobbyPage() {
       updateRoomStatus(room.id, 'playing')
     } else {
       // Guest: wait for host to broadcast state
-      createGameChannel(
+      const channel = createGameChannel(
         room.id,
         (receivedState) => setGameState(receivedState),
-        onAction,
+        onRemoteAction,
       )
+      channelRef.current = channel
     }
 
     setView('playing')
@@ -215,8 +227,9 @@ export default function LobbyPage() {
         initialState={gameState}
         isMultiplayer={true}
         playerSide={isHost ? 'player' : 'opponent'}
-        onAction={() => {
+        onAction={(newState) => {
           // Broadcast state changes to other player via channel
+          channelRef.current?.sendGameState(newState)
         }}
       />
     )
