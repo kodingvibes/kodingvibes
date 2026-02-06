@@ -272,6 +272,26 @@
   box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.1);
 }
 
+/* ============================================
+   Field row (ATK / DEF lane with overlap)
+   ============================================ */
+.field-row {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  padding: 2px 0;
+}
+
+.field-row .game-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: 0 -6px;
+}
+
+.field-row .game-card:hover {
+  z-index: 10;
+  margin: 0 2px;
+}
+
 /* Attack target highlight */
 .attack-target {
   animation: attack-pulse 0.8s ease-in-out infinite;

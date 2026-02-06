@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { GameState, PlayerSide } from '@/lib/card-game/types'
+import { GameState, PlayerSide, CardInstance } from '@/lib/card-game/types'
 import { processAction, canPlayCard } from '@/lib/card-game/engine'
 import { getAIAction } from '@/lib/card-game/ai'
 import GameCard from './GameCard'
@@ -17,6 +17,67 @@ interface GameBoardProps {
 }
 
 type SelectionMode = 'none' | 'selecting_attacker' | 'selecting_target'
+
+/** Splits field cards into ATK (programs) and DEF (ice/hardware) rows */
+function FieldRows({
+  cards,
+  size,
+  selectedId,
+  isAttackTarget,
+  onCardClick,
+  isPlayerSide,
+}: {
+  cards: CardInstance[]
+  size: 'sm' | 'md' | 'lg'
+  selectedId?: string | null
+  isAttackTarget?: boolean
+  onCardClick: (card: CardInstance) => void
+  isPlayerSide?: boolean
+}) {
+  const atkCards = cards.filter(c => c.definition.type === 'program')
+  const defCards = cards.filter(c => c.definition.type !== 'program')
+
+  const renderRow = (rowCards: CardInstance[], label: string, color: string) => (
+    <div className="flex items-center gap-0.5 w-full">
+      <span
+        className="text-[9px] md:text-[10px] font-mono font-bold w-6 text-center flex-shrink-0"
+        style={{ color }}
+      >
+        {label}
+      </span>
+      <div className="field-row flex-1 flex items-center justify-center">
+        {rowCards.map((card) => (
+          <GameCard
+            key={card.instanceId}
+            card={card}
+            size={size}
+            isExhausted={card.isExhausted}
+            isSelected={selectedId === card.instanceId}
+            isAttackTarget={isAttackTarget}
+            onClick={() => onCardClick(card)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+
+  // For player: ATK on top (closer to opponent), DEF on bottom (closer to hand)
+  // For opponent: DEF on top, ATK on bottom (mirrored)
+  const topRow = isPlayerSide
+    ? { cards: atkCards, label: 'ATK', color: '#ff4444' }
+    : { cards: defCards, label: 'DEF', color: '#4488ff' }
+  const bottomRow = isPlayerSide
+    ? { cards: defCards, label: 'DEF', color: '#4488ff' }
+    : { cards: atkCards, label: 'ATK', color: '#ff4444' }
+
+  return (
+    <div className="flex flex-col gap-0.5 w-full">
+      {topRow.cards.length > 0 && renderRow(topRow.cards, topRow.label, topRow.color)}
+      {bottomRow.cards.length > 0 && renderRow(bottomRow.cards, bottomRow.label, bottomRow.color)}
+      {/* If all cards are same type, only one row shows - that's fine */}
+    </div>
+  )
+}
 
 export default function GameBoard({
   initialState,
@@ -192,35 +253,31 @@ export default function GameBoard({
         )}
       </div>
 
-      {/* ===== Opponent Field ===== */}
-      <div className="flex-1 min-h-0 px-2 md:px-4 flex items-center">
-        <div
-          className={`field-zone-compact w-full flex items-center justify-center gap-1 md:gap-2 p-1 md:p-2 flex-wrap ${
-            selectionMode === 'selecting_target' ? 'active' : ''
-          }`}
-          onClick={selectionMode === 'selecting_target' && opponent.field.length === 0 ? handleDirectAttack : undefined}
-        >
-          {opponent.field.length === 0 ? (
+      {/* ===== Opponent Field (ATK / DEF rows) ===== */}
+      <div
+        className={`flex-1 min-h-0 px-2 md:px-4 flex flex-col justify-center ${
+          selectionMode === 'selecting_target' ? '' : ''
+        }`}
+        onClick={selectionMode === 'selecting_target' && opponent.field.length === 0 ? handleDirectAttack : undefined}
+      >
+        {opponent.field.length === 0 ? (
+          <div className="field-zone-compact w-full flex items-center justify-center p-2">
             <p className="text-xs font-mono" style={{ color: 'var(--cyber-muted)' }}>
               {selectionMode === 'selecting_target' ? '[ ATAQUE DIRECTO ]' : '// vacío'}
             </p>
-          ) : (
-            opponent.field.map((card) => (
-              <GameCard
-                key={card.instanceId}
-                card={card}
-                size="sm"
-                isExhausted={card.isExhausted}
-                isAttackTarget={selectionMode === 'selecting_target'}
-                onClick={() => {
-                  if (selectionMode === 'selecting_target') {
-                    handleAttackTarget(card.instanceId)
-                  }
-                }}
-              />
-            ))
-          )}
-        </div>
+          </div>
+        ) : (
+          <FieldRows
+            cards={opponent.field}
+            size="sm"
+            isAttackTarget={selectionMode === 'selecting_target'}
+            onCardClick={(card) => {
+              if (selectionMode === 'selecting_target') {
+                handleAttackTarget(card.instanceId)
+              }
+            }}
+          />
+        )}
       </div>
 
       {/* ===== Center Bar (turn info + actions) ===== */}
@@ -249,26 +306,23 @@ export default function GameBoard({
         <div className="board-divider w-full" />
       </div>
 
-      {/* ===== Player Field ===== */}
-      <div className="flex-1 min-h-0 px-2 md:px-4 flex items-center">
-        <div className="field-zone-compact active w-full flex items-center justify-center gap-1 md:gap-2 p-1 md:p-2 flex-wrap">
-          {player.field.length === 0 ? (
+      {/* ===== Player Field (ATK / DEF rows) ===== */}
+      <div className="flex-1 min-h-0 px-2 md:px-4 flex flex-col justify-center">
+        {player.field.length === 0 ? (
+          <div className="field-zone-compact active w-full flex items-center justify-center p-2">
             <p className="text-xs font-mono" style={{ color: 'var(--cyber-muted)' }}>
               {/* juega cartas aquí */}
             </p>
-          ) : (
-            player.field.map((card) => (
-              <GameCard
-                key={card.instanceId}
-                card={card}
-                size="sm"
-                isExhausted={card.isExhausted}
-                isSelected={selectedAttacker === card.instanceId}
-                onClick={() => handleSelectFieldCard(card.instanceId)}
-              />
-            ))
-          )}
-        </div>
+          </div>
+        ) : (
+          <FieldRows
+            cards={player.field}
+            size="sm"
+            selectedId={selectedAttacker}
+            onCardClick={(card) => handleSelectFieldCard(card.instanceId)}
+            isPlayerSide
+          />
+        )}
       </div>
 
       {/* ===== Player Hand ===== */}
