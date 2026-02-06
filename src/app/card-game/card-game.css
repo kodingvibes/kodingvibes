@@ -91,9 +91,9 @@
 
 /* Small card variant for field display */
 .game-card-sm {
-  width: 110px;
-  height: 155px;
-  border-radius: 8px;
+  width: 88px;
+  height: 124px;
+  border-radius: 7px;
 }
 
 .game-card-inner {
@@ -216,7 +216,7 @@
    ============================================ */
 .game-board {
   background: linear-gradient(180deg, #080818 0%, #0a0a2a 50%, #080818 100%);
-  /* position handled by Tailwind fixed class - do NOT set position here */
+  position: relative;
   overflow: hidden;
 }
 
@@ -284,7 +284,7 @@
 
 .field-row .game-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin: 0 -6px;
+  margin: 0 -8px;
 }
 
 .field-row .game-card:hover {
@@ -649,7 +649,6 @@
    Floating combat log (for game board)
    ============================================ */
 .floating-log-toggle {
-  position: fixed;
   z-index: 40;
   width: 32px;
   height: 32px;
@@ -673,7 +672,6 @@
 }
 
 .floating-log-panel {
-  position: fixed;
   z-index: 40;
   width: 280px;
   max-width: calc(100vw - 1rem);
@@ -687,26 +685,30 @@
 /* Tablet */
 @media (max-width: 768px) {
   .game-card {
-    width: 110px;
-    height: 155px;
+    width: 90px;
+    height: 130px;
   }
 
   .game-card-sm {
-    width: 90px;
-    height: 128px;
+    width: 70px;
+    height: 100px;
   }
 
   .hand-area .game-card {
-    margin: 0 -12px;
+    margin: 0 -14px;
+  }
+
+  .field-row .game-card {
+    margin: 0 -6px;
   }
 
   .field-zone {
-    min-height: 110px;
+    min-height: 80px;
   }
 
   .opponent-hand-indicator {
-    width: 30px;
-    height: 42px;
+    width: 28px;
+    height: 38px;
   }
 
   .ram-pip {
@@ -718,31 +720,35 @@
 /* Mobile */
 @media (max-width: 480px) {
   .game-card {
-    width: 88px;
-    height: 128px;
+    width: 72px;
+    height: 104px;
   }
 
   .game-card-sm {
-    width: 78px;
-    height: 112px;
+    width: 58px;
+    height: 84px;
   }
 
   .hand-area .game-card {
-    margin: 0 -16px;
+    margin: 0 -18px;
+  }
+
+  .field-row .game-card {
+    margin: 0 -5px;
   }
 
   .opponent-hand-indicator {
-    width: 28px;
-    height: 38px;
+    width: 24px;
+    height: 32px;
   }
 
   .ram-pip {
-    width: 9px;
-    height: 12px;
+    width: 8px;
+    height: 11px;
   }
 
   .hp-bar {
-    height: 6px;
+    height: 5px;
   }
 
   .cyber-modal {

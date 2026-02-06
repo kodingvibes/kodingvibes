@@ -221,7 +221,7 @@ export default function GameBoard({
   const opponent = playerSide === 'player' ? gameState.opponent : gameState.player
 
   return (
-    <div className="game-board grid-pattern scanlines netrun-theme flex flex-col fixed inset-0 z-[100] overflow-hidden">
+    <div className="game-board grid-pattern scanlines netrun-theme flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
       {/* ===== Opponent Stats ===== */}
       <div className="flex-shrink-0 px-2 pt-1 md:px-4 md:pt-2">
         <PlayerStats
@@ -359,16 +359,16 @@ export default function GameBoard({
       {/* ===== Floating Combat Log ===== */}
       <button
         onClick={() => setShowLog(!showLog)}
-        className="floating-log-toggle"
-        style={{ bottom: '5rem', right: '0.5rem' }}
+        className="floating-log-toggle absolute"
+        style={{ bottom: '4rem', right: '0.5rem' }}
       >
         {showLog ? '✕' : '⌘'}
       </button>
 
       {showLog && (
         <div
-          className="floating-log-panel"
-          style={{ bottom: '7.5rem', right: '0.5rem' }}
+          className="floating-log-panel absolute"
+          style={{ bottom: '6.5rem', right: '0.5rem' }}
         >
           <CombatLog entries={gameState.combatLog} />
         </div>
@@ -376,7 +376,7 @@ export default function GameBoard({
 
       {/* ===== Selection mode hint ===== */}
       {selectionMode === 'selecting_target' && (
-        <div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-50">
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-50">
           <div
             className="bg-black/90 border border-red-500/50 rounded-lg px-3 py-1.5 text-[10px] font-mono"
             style={{ color: 'var(--neon-red)' }}

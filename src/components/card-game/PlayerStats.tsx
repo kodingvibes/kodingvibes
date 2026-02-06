@@ -30,7 +30,7 @@ export default function PlayerStats({
 
   return (
     <div
-      className={`rounded-lg p-2 md:p-2.5 font-mono transition-all duration-300 ${
+      className={`rounded-lg p-1.5 md:p-2 font-mono transition-all duration-300 ${
         isActive
           ? 'border border-cyan-500/30 bg-cyan-500/5'
           : 'border border-gray-700/30 bg-gray-900/30'
@@ -41,7 +41,7 @@ export default function PlayerStats({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
             <span
-              className={`text-xs md:text-sm font-bold truncate ${
+              className={`text-[11px] md:text-xs font-bold truncate ${
                 side === 'player' ? 'neon-text-cyan' : 'neon-text-magenta'
               }`}
             >
