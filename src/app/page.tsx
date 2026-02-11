@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import PostCard from '@/components/PostCard'
+import GoogleSearch from '@/components/GoogleSearch'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { TrendingUp, Clock, Sparkles, Hash, ChevronDown, Users } from 'lucide-react'
@@ -212,6 +213,9 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background">
+      {/* Google Search Section */}
+      <GoogleSearch />
+
       {/* Hero Section - Popular Posts Carousel */}
       <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white overflow-hidden">
         {/* Background image with overlay */}
