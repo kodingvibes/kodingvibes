@@ -265,7 +265,7 @@ export default function Header() {
                                   backgroundPosition: 'center',
                                 }}
                               >
-                                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent" />
                                 {channel.icon_url ? (
                                   <div className="relative w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-background/20">
                                     <img
@@ -415,7 +415,7 @@ export default function Header() {
                       }}
                     >
                       <div 
-                        className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent"
+                        className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent"
                       />
                       {channel.icon_url ? (
                         <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-background/20">
