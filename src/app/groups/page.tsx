@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { Users, Lock, Globe, Plus, Hash, ArrowRight, Home } from 'lucide-react'
 import type { Tables } from '@/types/database'
@@ -243,72 +244,108 @@ function GroupCard({
   onLeave?: () => void
 }) {
   return (
-    <div className="bg-card border border-border rounded-xl p-5 hover:border-primary/50 transition-colors">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div 
-            className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl"
-            style={{ backgroundColor: group.color || '#6366f1' }}
-          >
-            {group.name.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-foreground">{group.name}</h3>
-              {group.is_default && (
-                <span className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded text-xs font-medium">
-                  <Home className="h-3 w-3" />
-                  Principal
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Users className="h-3.5 w-3.5" />
-                {group.member_count}
-              </span>
-              <span>•</span>
-              <span>{group.post_count} posts</span>
-            </div>
-          </div>
-        </div>
-        {group.is_public ? (
-          <Globe className="h-4 w-4 text-green-500" />
+    <div className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-colors">
+      {/* Banner */}
+      <div className="relative h-24 bg-gradient-to-br from-primary/80 to-primary">
+        {group.banner_url ? (
+          <Image
+            src={group.banner_url}
+            alt={`Banner de ${group.name}`}
+            fill
+            className="object-cover"
+          />
         ) : (
-          <Lock className="h-4 w-4 text-orange-500" />
+          <div 
+            className="absolute inset-0 opacity-50"
+            style={{ backgroundColor: group.color || '#6366f1' }}
+          />
+        )}
+        {group.banner_url && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         )}
       </div>
 
-      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-        {group.description || 'Sin descripción'}
-      </p>
+      {/* Content */}
+      <div className="p-5">
+        <div className="flex items-start justify-between -mt-10 mb-3">
+          <div className="flex items-center gap-3">
+            {/* Icon */}
+            {group.icon_url ? (
+              <div className="w-12 h-12 rounded-xl overflow-hidden ring-2 ring-card bg-card">
+                <Image
+                  src={group.icon_url}
+                  alt={`Icono de ${group.name}`}
+                  width={48}
+                  height={48}
+                  className="object-cover w-full h-full"
+                />
+              </div>
+            ) : (
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl ring-2 ring-card"
+                style={{ backgroundColor: group.color || '#6366f1' }}
+              >
+                {group.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-foreground">{group.name}</h3>
+                {group.is_default && (
+                  <span className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded text-xs font-medium">
+                    <Home className="h-3 w-3" />
+                    Principal
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5" />
+                  {group.member_count}
+                </span>
+                <span>•</span>
+                <span>{group.post_count} posts</span>
+              </div>
+            </div>
+          </div>
+          {group.is_public ? (
+            <Globe className="h-4 w-4 text-green-500" />
+          ) : (
+            <Lock className="h-4 w-4 text-orange-500" />
+          )}
+        </div>
 
-      <div className="flex items-center gap-2">
-        <Link
-          href={`/group/${group.slug}`}
-          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg font-medium transition-colors text-sm"
-        >
-          Ver canal
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-        
-        {isMember ? (
-          !group.is_default && (
-            <button
-              onClick={onLeave}
-              className="px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors text-sm"
-            >
-              Salir
-            </button>
-          )
-        ) : !group.is_default && (
-          <button
-            onClick={onJoin}
-            className="px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 rounded-lg font-medium transition-opacity text-sm"
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+          {group.description || 'Sin descripción'}
+        </p>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/group/${group.slug}`}
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg font-medium transition-colors text-sm"
           >
-            Unirse
-          </button>
-        )}
+            Ver canal
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+          
+          {isMember ? (
+            !group.is_default && (
+              <button
+                onClick={onLeave}
+                className="px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors text-sm"
+              >
+                Salir
+              </button>
+            )
+          ) : !group.is_default && (
+            <button
+              onClick={onJoin}
+              className="px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 rounded-lg font-medium transition-opacity text-sm"
+            >
+              Unirse
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
