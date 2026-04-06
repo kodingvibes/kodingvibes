@@ -92,6 +92,7 @@ export default function Home() {
           comments:comments (count)
         `)
         .eq('is_deleted', false)
+        .eq('status', 'published')
         .gte('vote_count', 0)
 
       // Filter by group if specified, otherwise show all channels
@@ -129,6 +130,7 @@ export default function Home() {
           comments:comments (count)
         `)
         .eq('is_deleted', false)
+        .eq('status', 'published')
         .gte('vote_count', 1)
         .order('vote_count', { ascending: false })
         .limit(5)

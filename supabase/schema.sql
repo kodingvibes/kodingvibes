@@ -25,6 +25,7 @@ create table if not exists public.posts (
   image_url text,
   tags text[] default '{}',
   vote_count integer default 0 not null,
+  status text default 'draft' not null check (status in ('draft', 'published')),
   is_deleted boolean default false not null,
   deleted_at timestamptz,
   edited_at timestamptz,

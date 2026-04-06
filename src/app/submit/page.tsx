@@ -289,7 +289,7 @@ export default function SubmitPage() {
     return publicUrl
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, postStatus: 'draft' | 'published' = 'published') => {
     e.preventDefault()
     
     if (!selectedGroupId) {
@@ -336,8 +336,8 @@ export default function SubmitPage() {
         return
       }
 
-      // Rate limiting: máximo 3 posts por hora
-      if (!checkUserRateLimit(user.id, 'post', 3, 3600000)) {
+      // Rate limiting: máximo 3 posts por hora (only for published posts)
+      if (postStatus === 'published' && !checkUserRateLimit(user.id, 'post', 3, 3600000)) {
         alert('Has alcanzado el límite de posts. Por favor espera antes de publicar nuevamente.')
         return
       }
@@ -360,6 +360,7 @@ export default function SubmitPage() {
           tags: tags,
           user_id: user.id,
           group_id: selectedGroupId,
+          status: postStatus,
         })
         .select()
         .single()
@@ -368,7 +369,11 @@ export default function SubmitPage() {
         throw error
       }
 
-      router.push(`/post/${post.id}`)
+      if (postStatus === 'draft') {
+        router.push(`/drafts`)
+      } else {
+        router.push(`/post/${post.id}`)
+      }
     } catch (error) {
       console.error('Error creating post:', error)
       alert('Error al crear el post')
@@ -609,7 +614,16 @@ Puedes usar Markdown:
               Cancelar
             </Link>
             <button
-              type="submit"
+              type="button"
+              onClick={(e) => handleSubmit(e, 'draft')}
+              disabled={loading || !title.trim() || !selectedGroupId || groups.length === 0 || !canPost}
+              className="px-6 py-2.5 border border-border rounded-full text-foreground hover:bg-muted font-medium transition-colors disabled:opacity-50"
+            >
+              {loading ? 'Guardando...' : 'Guardar borrador'}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e, 'published')}
               disabled={loading || !title.trim() || !selectedGroupId || groups.length === 0 || !canPost}
               className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
             >

@@ -146,6 +146,7 @@ export default function GroupPage() {
           `)
           .eq('group_id', groupData.id)
           .eq('is_deleted', false)
+          .eq('status', 'published')
           .gte('vote_count', 0)
 
         const postsWithCount = (postsData || []).map(post => ({
@@ -210,6 +211,7 @@ export default function GroupPage() {
       `)
       .eq('group_id', group.id)
       .eq('is_deleted', false)
+      .eq('status', 'published')
 
     const postsWithCount = (postsData || []).map(post => ({
       ...post,

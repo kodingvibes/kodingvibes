@@ -5,7 +5,7 @@ import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
-import { Plus, Sun, Moon, LogOut, User as UserIcon, Settings, Hash, Crown, Gamepad2, Menu, X } from 'lucide-react'
+import { Plus, Sun, Moon, LogOut, User as UserIcon, Settings, Hash, Crown, Gamepad2, Menu, X, FileText } from 'lucide-react'
 import { useTheme } from '@/providers/theme-provider'
 import { LogoFull } from '@/components/icons/Logo'
 import { NotificationBell } from '@/components/NotificationBell'
@@ -278,6 +278,14 @@ export default function Header() {
                       >
                         <Settings className="h-4 w-4" />
                         <span>Mi perfil</span>
+                      </Link>
+                      <Link
+                        href="/drafts"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span>Mis borradores</span>
                       </Link>
                       {/* Admin Link */}
                       {isAdmin && (
