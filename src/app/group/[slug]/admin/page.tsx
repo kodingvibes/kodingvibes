@@ -286,6 +286,8 @@ export default function GroupAdminPage() {
         banner_url: finalBannerUrl
       })
 
+      setGroupIconUrl(finalIconUrl)
+      setGroupBannerUrl(finalBannerUrl)
       setNewIconFile(null)
       setNewBannerFile(null)
       setIconPreview(null)
