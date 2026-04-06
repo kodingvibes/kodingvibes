@@ -411,6 +411,7 @@ export type Database = {
           event_count: number
           icon_url: string | null
           color: string
+          post_creation_type: string
         }
         Insert: {
           id?: string
@@ -428,6 +429,7 @@ export type Database = {
           event_count?: number
           icon_url?: string | null
           color?: string
+          post_creation_type?: string
         }
         Update: {
           id?: string
@@ -445,6 +447,7 @@ export type Database = {
           event_count?: number
           icon_url?: string | null
           color?: string
+          post_creation_type?: string
         }
         Relationships: [
           {

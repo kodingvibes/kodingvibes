@@ -53,6 +53,7 @@ export default function GroupAdminPage() {
   const [groupName, setGroupName] = useState('')
   const [groupDescription, setGroupDescription] = useState('')
   const [groupColor, setGroupColor] = useState('#6366f1')
+  const [groupPostCreationType, setGroupPostCreationType] = useState('anyone')
   
   // Tags tab state
   const [newTagName, setNewTagName] = useState('')
@@ -91,6 +92,7 @@ export default function GroupAdminPage() {
         setGroupName(groupData.name)
         setGroupDescription(groupData.description || '')
         setGroupColor(groupData.color || '#6366f1')
+        setGroupPostCreationType(groupData.post_creation_type || 'anyone')
 
         // Check if user is admin of the group
         const { data: memberData } = await supabase
@@ -175,7 +177,8 @@ export default function GroupAdminPage() {
         .update({
           name: groupName.trim(),
           description: groupDescription.trim() || null,
-          color: groupColor
+          color: groupColor,
+          post_creation_type: groupPostCreationType
         })
         .eq('id', group.id)
 
@@ -188,7 +191,8 @@ export default function GroupAdminPage() {
         ...group,
         name: groupName.trim(),
         description: groupDescription.trim() || null,
-        color: groupColor
+        color: groupColor,
+        post_creation_type: groupPostCreationType
       })
       
       setSuccess('Configuración del grupo actualizada exitosamente')
@@ -584,6 +588,25 @@ export default function GroupAdminPage() {
                 </div>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   El slug del grupo no se puede modificar
+                </p>
+              </div>
+
+              {/* Post Creation Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  ¿Quién puede crear posts?
+                </label>
+                <select
+                  value={groupPostCreationType}
+                  onChange={(e) => setGroupPostCreationType(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="anyone">Todos los miembros</option>
+                  <option value="moderators_admins">Solo moderadores y admins</option>
+                  <option value="admins_only">Solo admins</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Configura quién puede publicar en este grupo. Los admins siempre pueden crear posts.
                 </p>
               </div>
 

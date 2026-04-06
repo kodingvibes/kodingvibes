@@ -34,7 +34,9 @@ export default function SubmitPage() {
   const [loadingGroups, setLoadingGroups] = useState(true)
   const [_userMemberships, _setUserMemberships] = useState<Set<string>>(new Set())
   const [groupTags, setGroupTags] = useState<GroupTag[]>([])
-  
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [canPost, setCanPost] = useState(true)
+  const [postPermissionError, setPostPermissionError] = useState<string | null>(null)
   const supabase = createClient()
 
   // Fetch groups where user can post
@@ -88,14 +90,26 @@ export default function SubmitPage() {
     fetchGroups()
   }, [preselectedGroupId, supabase])
 
-  // Fetch group tags when selected group changes
+  // Fetch group tags and check post permissions when selected group changes
   useEffect(() => {
-    const fetchGroupTags = async () => {
+    const fetchGroupData = async () => {
       if (!selectedGroupId) {
         setGroupTags([])
+        setCanPost(true)
+        setPostPermissionError(null)
         return
       }
 
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        setGroupTags([])
+        setCanPost(false)
+        setPostPermissionError('Debes iniciar sesión para publicar')
+        return
+      }
+
+      // Fetch tags
       const { data: tagsData } = await supabase
         .from('group_tags')
         .select('*')
@@ -105,10 +119,64 @@ export default function SubmitPage() {
       if (tagsData) {
         setGroupTags(tagsData)
       }
+
+      // Check if user is member of the group
+      const { data: membership } = await supabase
+        .from('group_members')
+        .select('role')
+        .eq('group_id', selectedGroupId)
+        .eq('user_id', user.id)
+        .single()
+
+      // Get the selected group's post_creation_type
+      const selectedGroup = groups.find(g => g.id === selectedGroupId)
+      if (!selectedGroup) {
+        setCanPost(false)
+        setPostPermissionError('Grupo no encontrado')
+        return
+      }
+
+      const postCreationType = selectedGroup.post_creation_type || 'anyone'
+
+      // If user is not a member, they can't post
+      if (!membership) {
+        setCanPost(false)
+        setUserRole(null)
+        if (!selectedGroup.is_public) {
+          setPostPermissionError('No eres miembro de este grupo privado')
+        } else {
+          setPostPermissionError('No eres miembro de este grupo')
+        }
+        return
+      }
+
+      setUserRole(membership.role)
+
+      // Check post permissions based on post_creation_type
+      if (postCreationType === 'anyone') {
+        setCanPost(true)
+        setPostPermissionError(null)
+      } else if (postCreationType === 'moderators_admins') {
+        if (membership.role === 'member') {
+          setCanPost(false)
+          setPostPermissionError('Solo moderadores y admins pueden crear posts en este grupo')
+        } else {
+          setCanPost(true)
+          setPostPermissionError(null)
+        }
+      } else if (postCreationType === 'admins_only') {
+        if (membership.role !== 'admin') {
+          setCanPost(false)
+          setPostPermissionError('Solo admins pueden crear posts en este grupo')
+        } else {
+          setCanPost(true)
+          setPostPermissionError(null)
+        }
+      }
     }
 
-    fetchGroupTags()
-  }, [selectedGroupId, supabase])
+    fetchGroupData()
+  }, [selectedGroupId, supabase, groups])
 
   // Handle clipboard paste for images
   const handlePaste = useCallback(async (e: ClipboardEvent) => {
@@ -401,6 +469,15 @@ export default function SubmitPage() {
                 )}
               </p>
             )}
+
+            {postPermissionError && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800 flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  {postPermissionError}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="mb-5">
@@ -533,7 +610,7 @@ Puedes usar Markdown:
             </Link>
             <button
               type="submit"
-              disabled={loading || !title.trim() || !selectedGroupId || groups.length === 0}
+              disabled={loading || !title.trim() || !selectedGroupId || groups.length === 0 || !canPost}
               className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               {loading ? 'Publicando...' : 'Publicar'}

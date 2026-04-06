@@ -289,8 +289,51 @@ $$ language plpgsql security definer;
 create or replace function public.soft_delete_comment(comment_id uuid)
 returns void as $$
 begin
-  update public.comments
-  set is_deleted = true, deleted_at = now()
-  where id = comment_id and user_id = auth.uid();
+    update public.comments
+    set is_deleted = true, deleted_at = now()
+    where id = comment_id and user_id = auth.uid();
+end;
+$$ language plpgsql security definer;
+
+-- Function to check if user can create posts in a group based on post_creation_type
+create or replace function public.can_create_post_in_group(group_id uuid)
+returns boolean as $$
+declare
+    current_user_uuid uuid;
+    user_role varchar(20);
+    group_post_type varchar(20);
+begin
+    current_user_uuid := auth.uid();
+    
+    if current_user_uuid is null then
+        return false;
+    end if;
+    
+    if group_id is null then
+        return true;
+    end if;
+    
+    select post_creation_type into group_post_type
+    from groups where id = group_id;
+    
+    if group_post_type is null or group_post_type = 'anyone' then
+        return true;
+    end if;
+    
+    select role into user_role
+    from group_members 
+    where group_id = can_create_post_in_group.group_id and user_id = current_user_uuid;
+    
+    if user_role is null then
+        return false;
+    end if;
+    
+    if group_post_type = 'moderators_admins' then
+        return user_role in ('moderator', 'admin');
+    elsif group_post_type = 'admins_only' then
+        return user_role = 'admin';
+    end if;
+    
+    return false;
 end;
 $$ language plpgsql security definer;
