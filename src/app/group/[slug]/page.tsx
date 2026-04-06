@@ -13,6 +13,7 @@ import {
 import PostCard from '@/components/PostCard'
 import EventCard from '@/components/EventCard'
 import EventForm from '@/components/EventForm'
+import Image from 'next/image'
 import type { Tables } from '@/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -302,11 +303,27 @@ export default function GroupPage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Group Header */}
-      <div 
-        className="text-white"
-        style={{ backgroundColor: group.color || '#6366f1' }}
-      >
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="relative text-white overflow-hidden">
+        {/* Banner Background */}
+        {group.banner_url ? (
+          <div className="absolute inset-0">
+            <Image
+              src={group.banner_url}
+              alt="Banner del grupo"
+              fill
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
+          </div>
+        ) : (
+          <div 
+            className="absolute inset-0"
+            style={{ backgroundColor: group.color || '#6366f1' }}
+          />
+        )}
+        
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Link 
             href="/groups" 
             className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4"
@@ -317,9 +334,24 @@ export default function GroupPage() {
           
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center text-4xl font-bold">
-                {group.name.charAt(0).toUpperCase()}
-              </div>
+              {/* Group Icon */}
+              {group.icon_url ? (
+                <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 ring-4 ring-white/30">
+                  <Image
+                    src={group.icon_url}
+                    alt={group.name}
+                    width={80}
+                    height={80}
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+              ) : (
+                <div 
+                  className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center text-4xl font-bold flex-shrink-0"
+                >
+                  {group.name.charAt(0).toUpperCase()}
+                </div>
+              )}
               <div>
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h1 className="text-3xl font-bold">{group.name}</h1>

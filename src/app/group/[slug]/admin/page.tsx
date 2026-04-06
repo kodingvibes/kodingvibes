@@ -7,8 +7,11 @@ import { useEffect, useState } from 'react'
 import { 
   ArrowLeft, Plus, Trash2, AlertCircle, 
   Check, Tag, Palette, Settings, Users, Shield, 
-  Search, ChevronLeft, ChevronRight
+  Search, ChevronLeft, ChevronRight, 
+  Upload, X
 } from 'lucide-react'
+import Image from 'next/image'
+import { compressImage } from '@/lib/utils'
 import type { Tables } from '@/types/database'
 
 type Group = Tables<'groups'>
@@ -54,6 +57,12 @@ export default function GroupAdminPage() {
   const [groupDescription, setGroupDescription] = useState('')
   const [groupColor, setGroupColor] = useState('#6366f1')
   const [groupPostCreationType, setGroupPostCreationType] = useState('anyone')
+  const [groupIconUrl, setGroupIconUrl] = useState<string | null>(null)
+  const [groupBannerUrl, setGroupBannerUrl] = useState<string | null>(null)
+  const [newIconFile, setNewIconFile] = useState<File | null>(null)
+  const [newBannerFile, setNewBannerFile] = useState<File | null>(null)
+  const [iconPreview, setIconPreview] = useState<string | null>(null)
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   
   // Tags tab state
   const [newTagName, setNewTagName] = useState('')
@@ -93,6 +102,8 @@ export default function GroupAdminPage() {
         setGroupDescription(groupData.description || '')
         setGroupColor(groupData.color || '#6366f1')
         setGroupPostCreationType(groupData.post_creation_type || 'anyone')
+        setGroupIconUrl(groupData.icon_url || null)
+        setGroupBannerUrl(groupData.banner_url || null)
 
         // Check if user is admin of the group
         const { data: memberData } = await supabase
@@ -159,6 +170,63 @@ export default function GroupAdminPage() {
     fetchData()
   }, [slug, router, supabase])
 
+  const uploadImage = async (file: File, type: 'icon' | 'banner'): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+    const filePath = `groups/${type}s/${group?.id}/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('images')
+      .upload(filePath, file)
+
+    if (uploadError) {
+      console.error(`Error uploading ${type}:`, uploadError)
+      return null
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('images')
+      .getPublicUrl(filePath)
+
+    return publicUrl
+  }
+
+  const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setIconPreview(reader.result as string)
+      setNewIconFile(file)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setBannerPreview(reader.result as string)
+      setNewBannerFile(file)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const removeIcon = () => {
+    setNewIconFile(null)
+    setIconPreview(null)
+    setGroupIconUrl(null)
+  }
+
+  const removeBanner = () => {
+    setNewBannerFile(null)
+    setBannerPreview(null)
+    setGroupBannerUrl(null)
+  }
+
   const handleUpdateGroupSettings = async () => {
     if (!groupName.trim()) {
       setError('El nombre del grupo no puede estar vacío')
@@ -172,13 +240,34 @@ export default function GroupAdminPage() {
     setSuccess(null)
 
     try {
+      let finalIconUrl = groupIconUrl
+      let finalBannerUrl = groupBannerUrl
+
+      if (newIconFile) {
+        const compressedFile = await compressImage(newIconFile, { maxSizeMB: 1 })
+        const uploadedUrl = await uploadImage(compressedFile, 'icon')
+        if (uploadedUrl) {
+          finalIconUrl = uploadedUrl
+        }
+      }
+
+      if (newBannerFile) {
+        const compressedFile = await compressImage(newBannerFile, { maxSizeMB: 2 })
+        const uploadedUrl = await uploadImage(compressedFile, 'banner')
+        if (uploadedUrl) {
+          finalBannerUrl = uploadedUrl
+        }
+      }
+
       const { error: updateError } = await supabase
         .from('groups')
         .update({
           name: groupName.trim(),
           description: groupDescription.trim() || null,
           color: groupColor,
-          post_creation_type: groupPostCreationType
+          post_creation_type: groupPostCreationType,
+          icon_url: finalIconUrl,
+          banner_url: finalBannerUrl
         })
         .eq('id', group.id)
 
@@ -192,8 +281,15 @@ export default function GroupAdminPage() {
         name: groupName.trim(),
         description: groupDescription.trim() || null,
         color: groupColor,
-        post_creation_type: groupPostCreationType
+        post_creation_type: groupPostCreationType,
+        icon_url: finalIconUrl,
+        banner_url: finalBannerUrl
       })
+
+      setNewIconFile(null)
+      setNewBannerFile(null)
+      setIconPreview(null)
+      setBannerPreview(null)
       
       setSuccess('Configuración del grupo actualizada exitosamente')
       setTimeout(() => setSuccess(null), 3000)
@@ -538,42 +634,130 @@ export default function GroupAdminPage() {
                 </p>
               </div>
 
-              {/* Group Color/Icon */}
+              {/* Icono del Grupo */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Color del Icono
+                  Icono del Grupo
                 </label>
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-20 h-20 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-lg"
-                    style={{ backgroundColor: groupColor }}
-                  >
-                    {groupName ? groupName[0].toUpperCase() : 'G'}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={groupColor}
-                        onChange={(e) => setGroupColor(e.target.value)}
-                        className="w-24 h-12 rounded-lg cursor-pointer border border-gray-300 dark:border-gray-600"
-                      />
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          value={groupColor}
-                          onChange={(e) => setGroupColor(e.target.value)}
-                          placeholder="#6366f1"
-                          maxLength={7}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                <div className="flex items-start gap-4">
+                  {/* Preview */}
+                  <div className="relative flex-shrink-0">
+                    {iconPreview || groupIconUrl ? (
+                      <div className="relative w-20 h-20 rounded-xl overflow-hidden">
+                        <Image
+                          src={iconPreview || groupIconUrl || ''}
+                          alt="Icono del grupo"
+                          fill
+                          className="object-cover"
                         />
+                        <button
+                          type="button"
+                          onClick={removeIcon}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
                       </div>
-                    </div>
+                    ) : (
+                      <div
+                        className="w-20 h-20 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-lg"
+                        style={{ backgroundColor: groupColor }}
+                      >
+                        {groupName ? groupName[0].toUpperCase() : 'G'}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Upload controls */}
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleIconChange}
+                      className="hidden"
+                      id="icon-upload"
+                    />
+                    <label
+                      htmlFor="icon-upload"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm font-medium"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Subir icono
+                    </label>
                     <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                      El color se usa para el icono del grupo
+                      Imagen cuadrada. Se recomienda mínimo 128x128px.
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Banner del Grupo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Banner del Grupo
+                </label>
+                {bannerPreview || groupBannerUrl ? (
+                  <div className="relative mb-2">
+                    <div className="relative w-full h-32 rounded-xl overflow-hidden">
+                      <Image
+                        src={bannerPreview || groupBannerUrl || ''}
+                        alt="Banner del grupo"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeBanner}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : null}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBannerChange}
+                  className="hidden"
+                  id="banner-upload"
+                />
+                <label
+                  htmlFor="banner-upload"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm font-medium"
+                >
+                  <Upload className="w-4 h-4" />
+                  {groupBannerUrl ? 'Cambiar banner' : 'Subir banner'}
+                </label>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  Imagen wide. Se recomienda mínimo 600x200px.
+                </p>
+              </div>
+
+              {/* Color fallback del Icono */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Color del Icono (fallback)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={groupColor}
+                    onChange={(e) => setGroupColor(e.target.value)}
+                    className="w-12 h-10 rounded-lg cursor-pointer border border-gray-300 dark:border-gray-600"
+                  />
+                  <input
+                    type="text"
+                    value={groupColor}
+                    onChange={(e) => setGroupColor(e.target.value)}
+                    placeholder="#6366f1"
+                    maxLength={7}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm w-32"
+                  />
+                </div>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  Color de respaldo cuando no hay icono personalizado.
+                </p>
               </div>
 
               {/* Slug info (read-only) */}

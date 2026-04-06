@@ -410,6 +410,7 @@ export type Database = {
           post_count: number
           event_count: number
           icon_url: string | null
+          banner_url: string | null
           color: string
           post_creation_type: string
         }
@@ -428,6 +429,7 @@ export type Database = {
           post_count?: number
           event_count?: number
           icon_url?: string | null
+          banner_url?: string | null
           color?: string
           post_creation_type?: string
         }
@@ -446,6 +448,7 @@ export type Database = {
           post_count?: number
           event_count?: number
           icon_url?: string | null
+          banner_url?: string | null
           color?: string
           post_creation_type?: string
         }
