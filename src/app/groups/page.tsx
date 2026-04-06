@@ -232,12 +232,12 @@ export default function GroupsPage() {
   )
 }
 
-function GroupCard({ 
-  group, 
-  isMember, 
-  onJoin, 
-  onLeave 
-}: { 
+function GroupCard({
+  group,
+  isMember,
+  onJoin,
+  onLeave
+}: {
   group: GroupWithMembership
   isMember?: boolean
   onJoin?: () => void
@@ -245,8 +245,8 @@ function GroupCard({
 }) {
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-colors">
-      {/* Banner */}
-      <div className="relative h-24 bg-gradient-to-br from-primary/80 to-primary">
+      {/* Banner - positioned at top of card */}
+      <div className="relative h-20 overflow-hidden">
         {group.banner_url ? (
           <Image
             src={group.banner_url}
@@ -255,34 +255,35 @@ function GroupCard({
             className="object-cover"
           />
         ) : (
-          <div 
-            className="absolute inset-0 opacity-50"
+          <div
+            className="absolute inset-0"
             style={{ backgroundColor: group.color || '#6366f1' }}
           />
         )}
         {group.banner_url && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
         )}
       </div>
 
       {/* Content */}
       <div className="p-5">
-        <div className="flex items-start justify-between -mt-10 mb-3">
+        {/* Header row with icon overlapping banner */}
+        <div className="flex items-start justify-between -mt-8 mb-3 relative z-10">
           <div className="flex items-center gap-3">
-            {/* Icon */}
+            {/* Icon - positioned to overlap banner */}
             {group.icon_url ? (
-              <div className="w-12 h-12 rounded-xl overflow-hidden ring-2 ring-card bg-card">
+              <div className="w-14 h-14 rounded-xl overflow-hidden ring-2 ring-card bg-card flex-shrink-0">
                 <Image
                   src={group.icon_url}
                   alt={`Icono de ${group.name}`}
-                  width={48}
-                  height={48}
+                  width={56}
+                  height={56}
                   className="object-cover w-full h-full"
                 />
               </div>
             ) : (
-              <div 
-                className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl ring-2 ring-card"
+              <div
+                className="w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-2xl ring-2 ring-card flex-shrink-0"
                 style={{ backgroundColor: group.color || '#6366f1' }}
               >
                 {group.name.charAt(0).toUpperCase()}
@@ -327,7 +328,7 @@ function GroupCard({
             Ver canal
             <ArrowRight className="h-4 w-4" />
           </Link>
-          
+
           {isMember ? (
             !group.is_default && (
               <button
