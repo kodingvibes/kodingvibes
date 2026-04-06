@@ -244,9 +244,9 @@ function GroupCard({
   onLeave?: () => void
 }) {
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-colors">
+    <div className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-colors flex flex-col">
       {/* Banner - positioned at top of card */}
-      <div className="relative h-20 overflow-hidden">
+      <div className="relative h-20 overflow-hidden flex-shrink-0">
         {group.banner_url ? (
           <Image
             src={group.banner_url}
@@ -266,7 +266,7 @@ function GroupCard({
       </div>
 
       {/* Content */}
-      <div className="p-5">
+      <div className="p-5 flex flex-col flex-1">
         {/* Header row with icon overlapping banner */}
         <div className="flex items-start justify-between -mt-8 mb-3 relative z-10">
           <div className="flex items-center gap-3">
@@ -316,11 +316,11 @@ function GroupCard({
           )}
         </div>
 
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+        <p className="text-sm text-muted-foreground line-clamp-2">
           {group.description || 'Sin descripción'}
         </p>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mt-auto pt-4">
           <Link
             href={`/group/${group.slug}`}
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg font-medium transition-colors text-sm"
