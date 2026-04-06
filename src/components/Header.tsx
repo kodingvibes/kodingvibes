@@ -249,25 +249,48 @@ export default function Header() {
                           <p className="px-4 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             Mis Canales
                           </p>
-                          {userChannels.map((channel) => (
-                            <Link
-                              key={channel.id}
-                              href={`/group/${channel.slug}`}
-                              onClick={() => setIsMenuOpen(false)}
-                              className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                            >
-                              <div
-                                className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold"
-                                style={{ backgroundColor: channel.color || '#6366f1' }}
+                          <div className="space-y-2 px-2">
+                            {userChannels.map((channel) => (
+                              <Link
+                                key={channel.id}
+                                href={`/group/${channel.slug}`}
+                                onClick={() => setIsMenuOpen(false)}
+                                className="relative flex items-center gap-3 px-3 py-2.5 rounded-lg overflow-hidden group"
+                                style={{
+                                  backgroundImage: channel.banner_url
+                                    ? `url(${channel.banner_url})`
+                                    : undefined,
+                                  backgroundColor: !channel.banner_url ? (channel.color || '#6366f1') : undefined,
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center',
+                                }}
                               >
-                                {channel.name[0].toUpperCase()}
-                              </div>
-                              <span className="flex-1 truncate">{channel.name}</span>
-                              <span className="text-xs text-muted-foreground capitalize">
-                                {channel.role === 'owner' ? 'Owner' : channel.role === 'admin' ? 'Admin' : 'Mod'}
-                              </span>
-                            </Link>
-                          ))}
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
+                                {channel.icon_url ? (
+                                  <div className="relative w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-background/20">
+                                    <img
+                                      src={channel.icon_url}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div
+                                    className="relative w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                                    style={{ backgroundColor: channel.color || '#6366f1' }}
+                                  >
+                                    {channel.name[0].toUpperCase()}
+                                  </div>
+                                )}
+                                <div className="relative flex-1 min-w-0">
+                                  <p className="font-medium text-white truncate">{channel.name}</p>
+                                  <p className="text-xs text-white/70 capitalize">
+                                    {channel.role === 'owner' ? 'Owner' : channel.role === 'admin' ? 'Admin' : 'Mod'}
+                                  </p>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
                         </div>
                       )}
 
