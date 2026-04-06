@@ -3,13 +3,14 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
-import { ImageIcon, X, Sparkles, Eye, EyeOff, Code, Lock, Globe } from 'lucide-react'
+import { ImageIcon, X, Sparkles, Eye, EyeOff, Code } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import MarkdownContent from '@/components/MarkdownContent'
 import { validateString, validateFile, checkUserRateLimit, sanitizeMarkdown } from '@/lib/security/validation'
 import { compressImage } from '@/lib/utils'
 import TagInput from '@/components/TagInput'
+import ChannelSelector from '@/components/ChannelSelector'
 import type { Tables } from '@/types/database'
 
 type Group = Tables<'groups'>
@@ -393,97 +394,13 @@ export default function SubmitPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 shadow-sm">
-          {/* Channel Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-foreground mb-3">
-              Canal <span className="text-red-500">*</span>
-            </label>
-            
-            {loadingGroups ? (
-              <div className="p-3 bg-muted rounded-lg animate-pulse h-12" />
-            ) : groups.length === 0 ? (
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  No tienes acceso a ningún canal. 
-                  <Link href="/groups" className="underline ml-1">
-                    Explora los canales disponibles
-                  </Link>
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                {groups.map((group) => (
-                  <button
-                    key={group.id}
-                    type="button"
-                    onClick={() => setSelectedGroupId(group.id)}
-                    className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all ${
-                      selectedGroupId === group.id
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50 bg-background'
-                    }`}
-                  >
-                    <div 
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                      style={{ backgroundColor: group.color || '#6366f1' }}
-                    >
-                      {group.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`font-medium text-sm truncate ${
-                        selectedGroupId === group.id ? 'text-primary' : 'text-foreground'
-                      }`}>
-                        {group.name}
-                      </p>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        {group.is_public ? (
-                          <>
-                            <Globe className="h-3 w-3" />
-                            <span>Público</span>
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="h-3 w-3" />
-                            <span>Privado</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {selectedGroupId === group.id && (
-                      <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-            
-            {selectedGroup && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Publicando en: <span className="font-medium text-foreground">{selectedGroup.name}</span>
-                {selectedGroup.slug !== 'general' && (
-                  <Link 
-                    href={`/group/${selectedGroup.slug}`}
-                    className="ml-2 text-primary hover:underline"
-                  >
-                    Ver canal
-                  </Link>
-                )}
-              </p>
-            )}
-
-            {postPermissionError && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-800 flex items-center gap-2">
-                  <Lock className="h-4 w-4" />
-                  {postPermissionError}
-                </p>
-              </div>
-            )}
-          </div>
+          <ChannelSelector
+            groups={groups}
+            selectedGroupId={selectedGroupId}
+            onSelect={setSelectedGroupId}
+            disabled={loadingGroups || !canPost}
+            error={postPermissionError}
+          />
 
           <div className="mb-5">
             <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
