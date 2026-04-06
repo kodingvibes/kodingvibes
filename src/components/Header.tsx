@@ -217,11 +217,11 @@ export default function Header() {
                 </Link>
               )}
 
-              {/* User Section */}
+              {/* User Section - Hidden on mobile, shown in hamburger menu */}
               {loading ? (
-                <div className="h-10 w-10 bg-muted animate-pulse rounded-full" />
+                <div className="h-10 w-10 bg-muted animate-pulse rounded-full hidden md:block" />
               ) : user ? (
-                <div className="relative" ref={userMenuRef}>
+                <div className="relative hidden md:block" ref={userMenuRef}>
                   <button
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                     className="flex items-center gap-2 p-2 rounded-full hover:bg-muted transition-colors"
