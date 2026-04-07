@@ -2,7 +2,7 @@ import { CardDefinition } from './types'
 
 // ============================================
 // NetRun - Card Definitions
-// 40 unique cards across factions and types
+// 38 unique cards across factions and types
 // ============================================
 
 export const ALL_CARDS: CardDefinition[] = [
@@ -415,7 +415,7 @@ export const ALL_CARDS: CardDefinition[] = [
     firewall: 0,
     ramCost: 5,
     ability: 'Hace 3 de daño y roba RAM al oponente',
-    abilityEffect: { type: 'on_play', effect: { action: 'steal_ram', value: 2 } },
+    abilityEffect: { type: 'on_play', effect: { action: 'damage_and_steal_ram', damage: 3, ram: 2 } },
     flavorText: '"Un pulso electromagnético que lo cambia todo."',
     artColors: ['#ffff00', '#666600'],
     artIcon: '⚡',
@@ -430,7 +430,10 @@ export const ALL_CARDS: CardDefinition[] = [
     firewall: 0,
     ramCost: 2,
     ability: '+2 fuerza a todos los aliados este turno',
-    abilityEffect: { type: 'on_play', effect: { action: 'buff_all_allies', stat: 'strength', value: 2 } },
+    abilityEffect: {
+      type: 'on_play',
+      effect: { action: 'buff_all_allies', stat: 'strength', value: 2, durationTurns: 1 },
+    },
     flavorText: '"Forzando los límites del hardware."',
     artColors: ['#ff6600', '#ff0066'],
     artIcon: '🔥',
@@ -621,26 +624,51 @@ export function getCardsByRarity(rarity: CardDefinition['rarity']): CardDefiniti
 }
 
 export function getStarterDeck(faction: 'runner' | 'corp'): string[] {
-  const factionCards = ALL_CARDS.filter(c => c.faction === faction || c.faction === 'neutral')
-
-  // Build a 20-card starter deck
-  const deck: string[] = []
-  const commons = factionCards.filter(c => c.rarity === 'common')
-  const uncommons = factionCards.filter(c => c.rarity === 'uncommon')
-  const rares = factionCards.filter(c => c.rarity === 'rare')
-
-  // 2 copies of each common (up to fill)
-  for (const card of commons) {
-    deck.push(card.id, card.id)
+  if (faction === 'runner') {
+    return [
+      'r_neural_spike',
+      'r_neural_spike',
+      'r_data_leech',
+      'r_data_leech',
+      'r_packet_sniffer',
+      'r_packet_sniffer',
+      'r_crypto_miner',
+      'r_crypto_miner',
+      'n_ram_upgrade',
+      'n_ram_upgrade',
+      'n_backup_drive',
+      'e_deep_scan',
+      'e_deep_scan',
+      'r_ghost_protocol',
+      'r_worm_cluster',
+      'r_blackout',
+      'n_neural_link',
+      'n_crypto_shield',
+      'e_ddos_attack',
+      'n_data_broker',
+    ]
   }
-  // 1 copy of each uncommon
-  for (const card of uncommons) {
-    deck.push(card.id)
-  }
-  // 1 copy of each rare (if room)
-  for (const card of rares) {
-    if (deck.length < 20) deck.push(card.id)
-  }
 
-  return deck.slice(0, 20)
+  return [
+    'c_firewall_v1',
+    'c_firewall_v1',
+    'c_sentinel',
+    'c_sentinel',
+    'c_trace_daemon',
+    'c_trace_daemon',
+    'c_proxy_wall',
+    'c_proxy_wall',
+    'n_ram_upgrade',
+    'n_ram_upgrade',
+    'n_backup_drive',
+    'e_patch_update',
+    'e_patch_update',
+    'c_neural_barrier',
+    'c_data_fort',
+    'c_black_ice',
+    'n_neural_link',
+    'n_crypto_shield',
+    'e_overclock_burst',
+    'n_data_broker',
+  ]
 }

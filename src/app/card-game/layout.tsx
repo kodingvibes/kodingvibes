@@ -1,4 +1,13 @@
 import type { Metadata } from 'next'
+import { Michroma } from 'next/font/google'
+import './card-game.css'
+
+const michroma = Michroma({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-michroma',
+})
 
 export const metadata: Metadata = {
   title: 'NetRun - Juego de Cartas Cyberpunk',
@@ -10,5 +19,5 @@ export default function CardGameLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <>{children}</>
+  return <div className={michroma.variable}>{children}</div>
 }

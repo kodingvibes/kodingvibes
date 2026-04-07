@@ -26,6 +26,8 @@ export default function CollectionPage() {
 
   const selectedCard = selectedCardId ? ALL_CARDS.find(c => c.id === selectedCardId) : null
 
+  const handleCloseModal = () => setSelectedCardId(null)
+
   return (
     <div className="netrun-theme min-h-screen grid-pattern" style={{ background: 'var(--cyber-bg)' }}>
       <div className="max-w-6xl mx-auto px-4 py-6">
@@ -108,91 +110,71 @@ export default function CollectionPage() {
           </div>
         </div>
 
-        <div className="flex gap-6">
-          {/* Card Grid */}
-          <div className="flex-1">
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 justify-items-center">
-              {filteredCards.map(card => (
-                <GameCard
-                  key={card.id}
-                  card={card}
-                  isSelected={selectedCardId === card.id}
-                  onClick={() => setSelectedCardId(selectedCardId === card.id ? null : card.id)}
-                />
-              ))}
-            </div>
+        {/* Card Grid */}
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-4 justify-items-center">
+          {filteredCards.map(card => (
+            <GameCard
+              key={card.id}
+              card={card}
+              onClick={() => setSelectedCardId(card.id)}
+            />
+          ))}
+        </div>
 
-            {filteredCards.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-lg font-mono" style={{ color: 'var(--cyber-muted)' }}>
-                  No se encontraron cartas con esos filtros
+        {filteredCards.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-lg font-mono" style={{ color: 'var(--cyber-muted)' }}>
+              No se encontraron cartas con esos filtros
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Fullscreen Modal */}
+      {selectedCard && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black"
+          onClick={handleCloseModal}
+        >
+          <div 
+            className="relative w-full h-full flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-12 p-4 lg:p-12"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={handleCloseModal}
+              className="absolute top-4 right-4 lg:top-8 lg:right-8 text-4xl text-gray-400 hover:text-white transition-colors z-20 bg-black/80 rounded-full w-12 h-12 flex items-center justify-center border border-gray-700"
+            >
+              ×
+            </button>
+
+            {/* Extra Large Card */}
+            <div className="flex flex-col items-center gap-6">
+              <GameCard card={selectedCard} size="xl" />
+
+              {/* Tags */}
+              <div className="flex gap-3 flex-wrap justify-center">
+                <span className="text-sm font-mono px-4 py-2 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                  {selectedCard.type.toUpperCase()}
+                </span>
+                <span className="text-sm font-mono px-4 py-2 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                  {selectedCard.faction.toUpperCase()}
+                </span>
+                <span className="text-sm font-mono px-4 py-2 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                  {selectedCard.rarity.toUpperCase()}
+                </span>
+              </div>
+
+              {/* Description */}
+              <div className="max-w-lg text-center">
+                <p className="text-base leading-relaxed" style={{ color: 'var(--neon-green)' }}>
+                  {selectedCard.ability}
                 </p>
               </div>
-            )}
-          </div>
-
-          {/* Card Detail Sidebar */}
-          {selectedCard && (
-            <div className="hidden lg:block w-72 flex-shrink-0">
-              <div className="sticky top-20 rounded-lg border border-cyan-500/20 bg-black/40 p-4">
-                <div className="flex justify-center mb-4">
-                  <GameCard card={selectedCard} size="lg" />
-                </div>
-
-                <h3
-                  className="text-lg font-bold font-mono mb-1"
-                  style={{ color: selectedCard.artColors[0] }}
-                >
-                  {selectedCard.name}
-                </h3>
-
-                <div className="flex gap-2 mb-3">
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400">
-                    {selectedCard.type.toUpperCase()}
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-400">
-                    {selectedCard.faction.toUpperCase()}
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400">
-                    {selectedCard.rarity.toUpperCase()}
-                  </span>
-                </div>
-
-                <div className="space-y-2 text-xs font-mono" style={{ color: 'var(--cyber-text)' }}>
-                  <div className="flex justify-between">
-                    <span style={{ color: 'var(--cyber-muted)' }}>RAM Cost:</span>
-                    <span className="neon-text-cyan">{selectedCard.ramCost}</span>
-                  </div>
-                  {selectedCard.type !== 'event' && (
-                    <>
-                      <div className="flex justify-between">
-                        <span style={{ color: 'var(--cyber-muted)' }}>Fuerza:</span>
-                        <span style={{ color: '#ff4444' }}>{selectedCard.strength}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span style={{ color: 'var(--cyber-muted)' }}>Firewall:</span>
-                        <span style={{ color: '#4488ff' }}>{selectedCard.firewall}</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="mt-3 pt-3 border-t border-gray-700/30">
-                  <p className="text-xs" style={{ color: 'var(--neon-green)' }}>
-                    {selectedCard.ability}
-                  </p>
-                </div>
-
-                <div className="mt-3">
-                  <p className="text-[10px] italic" style={{ color: 'var(--cyber-muted)' }}>
-                    &ldquo;{selectedCard.flavorText}&rdquo;
-                  </p>
-                </div>
-              </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

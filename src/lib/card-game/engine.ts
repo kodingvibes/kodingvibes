@@ -1,6 +1,6 @@
 import {
   GameState, GameAction, PlayerState, PlayerSide,
-  CardInstance, CardDefinition, CombatLogEntry, AbilityEffect,
+  CardInstance, CardDefinition, CombatLogEntry, AbilityEffect, Buff,
 } from './types'
 import { getCardById } from './cards'
 
@@ -12,7 +12,7 @@ import { getCardById } from './cards'
 const MAX_FIELD_SIZE = 5
 const MAX_HAND_SIZE = 8
 const STARTING_HP = 20
-const STARTING_RAM = 3
+const STARTING_RAM = 1
 const STARTING_HAND = 4
 const MAX_RAM = 10
 
@@ -116,9 +116,13 @@ function getOpponentSide(side: PlayerSide): PlayerSide {
   return side === 'player' ? 'opponent' : 'player'
 }
 
+function getSideName(side: PlayerSide): string {
+  return side === 'player' ? 'Runner' : 'Corp'
+}
+
 function drawCards(state: GameState, side: PlayerSide, count: number): void {
   const player = getPlayerState(state, side)
-  const sideName = side === 'player' ? 'Runner' : 'Corp'
+  const sideName = getSideName(side)
   for (let i = 0; i < count; i++) {
     if (player.deck.length === 0) {
       addLog(state, `${sideName} no tiene más cartas en el deck`, 'info')
@@ -139,7 +143,7 @@ function drawCards(state: GameState, side: PlayerSide, count: number): void {
 
 function applyDamage(state: GameState, side: PlayerSide, damage: number): void {
   const player = getPlayerState(state, side)
-  const sideName = side === 'player' ? 'Runner' : 'Corp'
+  const sideName = getSideName(side)
 
   if (player.shield > 0) {
     const absorbed = Math.min(player.shield, damage)
@@ -167,17 +171,89 @@ function isCardAlive(state: GameState, side: PlayerSide, instanceId: string): bo
   return player.field.some(c => c.instanceId === instanceId)
 }
 
+function isDefenderUnit(card: CardInstance): boolean {
+  return card.definition.type !== 'event' && card.currentFirewall > 0
+}
+
+function isDirectSystemDamageAbility(action: AbilityEffect['effect']['action']): boolean {
+  return action === 'damage_opponent' || action === 'drain' || action === 'damage_and_steal_ram'
+}
+
+function hasAbilityAction(card: CardInstance, action: 'pierce' | 'double_strike'): boolean {
+  return card.definition.abilityEffect?.effect.action === action
+    || card.definition.abilityEffects?.some(e => e.effect.action === action)
+    || false
+}
+
+function applyCardStatDelta(card: CardInstance, stat: 'strength' | 'firewall', value: number): number {
+  if (stat === 'strength') {
+    const before = card.currentStrength
+    card.currentStrength = Math.max(0, card.currentStrength + value)
+    return card.currentStrength - before
+  } else {
+    const before = card.currentFirewall
+    card.currentFirewall = Math.max(0, card.currentFirewall + value)
+    return card.currentFirewall - before
+  }
+}
+
+function addTimedCardStatBuff(
+  card: CardInstance,
+  stat: 'strength' | 'firewall',
+  value: number,
+  turnsRemaining: number,
+): void {
+  const buffType: Buff['type'] = stat === 'strength' ? 'strength' : 'firewall'
+  card.buffs.push({
+    type: buffType,
+    value,
+    turnsRemaining,
+  })
+}
+
+function tickCardBuffs(card: CardInstance): void {
+  const updatedBuffs: Buff[] = []
+
+  for (const buff of card.buffs) {
+    if (buff.turnsRemaining === null) {
+      updatedBuffs.push(buff)
+      continue
+    }
+
+    const nextTurns = buff.turnsRemaining - 1
+    if (nextTurns > 0) {
+      updatedBuffs.push({ ...buff, turnsRemaining: nextTurns })
+      continue
+    }
+
+    if (buff.type === 'strength') {
+      card.currentStrength = Math.max(0, card.currentStrength - buff.value)
+    } else if (buff.type === 'firewall') {
+      card.currentFirewall = Math.max(0, card.currentFirewall - buff.value)
+    }
+  }
+
+  card.buffs = updatedBuffs
+}
+
 // Resolve a single ability effect
 function resolveSingleEffect(
   state: GameState,
   card: CardInstance,
   side: PlayerSide,
   effect: AbilityEffect,
+  options?: {
+    blockDirectOpponentDamage?: boolean
+  }
 ): void {
   const player = getPlayerState(state, side)
   const opponentSide = getOpponentSide(side)
   const opponent = getPlayerState(state, opponentSide)
   const cardName = card.definition.name
+
+  if (options?.blockDirectOpponentDamage && isDirectSystemDamageAbility(effect.effect.action)) {
+    return
+  }
 
   switch (effect.effect.action) {
     case 'damage_opponent':
@@ -196,20 +272,18 @@ function resolveSingleEffect(
       break
 
     case 'buff_self':
-      if (effect.effect.stat === 'strength') {
-        card.currentStrength += effect.effect.value
-      } else {
-        card.currentFirewall += effect.effect.value
+      const selfAppliedDelta = applyCardStatDelta(card, effect.effect.stat, effect.effect.value)
+      if (effect.effect.durationTurns && effect.effect.durationTurns > 0 && selfAppliedDelta !== 0) {
+        addTimedCardStatBuff(card, effect.effect.stat, selfAppliedDelta, effect.effect.durationTurns)
       }
       addLog(state, `⬆️ ${cardName} gana +${effect.effect.value} ${effect.effect.stat === 'strength' ? 'fuerza' : 'firewall'}`, 'ability')
       break
 
     case 'buff_all_allies':
       for (const ally of player.field) {
-        if (effect.effect.stat === 'strength') {
-          ally.currentStrength += effect.effect.value
-        } else {
-          ally.currentFirewall += effect.effect.value
+        const allyAppliedDelta = applyCardStatDelta(ally, effect.effect.stat, effect.effect.value)
+        if (effect.effect.durationTurns && effect.effect.durationTurns > 0 && allyAppliedDelta !== 0) {
+          addTimedCardStatBuff(ally, effect.effect.stat, allyAppliedDelta, effect.effect.durationTurns)
         }
       }
       addLog(state, `⬆️ ${cardName}: +${effect.effect.value} ${effect.effect.stat === 'strength' ? 'fuerza' : 'firewall'} a todos los aliados`, 'ability')
@@ -218,10 +292,10 @@ function resolveSingleEffect(
     case 'debuff_enemy':
       if (opponent.field.length > 0) {
         const target = opponent.field[Math.floor(Math.random() * opponent.field.length)]
-        if (effect.effect.stat === 'strength') {
-          target.currentStrength = Math.max(0, target.currentStrength - effect.effect.value)
-        } else {
-          target.currentFirewall = Math.max(0, target.currentFirewall - effect.effect.value)
+        const debuffValue = -effect.effect.value
+        const targetAppliedDelta = applyCardStatDelta(target, effect.effect.stat, debuffValue)
+        if (effect.effect.durationTurns && effect.effect.durationTurns > 0 && targetAppliedDelta !== 0) {
+          addTimedCardStatBuff(target, effect.effect.stat, targetAppliedDelta, effect.effect.durationTurns)
         }
         addLog(state, `⬇️ ${cardName} reduce ${effect.effect.value} ${effect.effect.stat === 'strength' ? 'fuerza' : 'firewall'} de ${target.definition.name}`, 'ability')
       }
@@ -231,6 +305,7 @@ function resolveSingleEffect(
       if (opponent.field.length > 0) {
         const idx = Math.floor(Math.random() * opponent.field.length)
         const destroyed = opponent.field.splice(idx, 1)[0]
+        resolveAbility(state, destroyed, opponentSide, 'on_death')
         opponent.graveyard.push(destroyed)
         addLog(state, `💥 ${cardName} destruye ${destroyed.definition.name}`, 'ability')
       }
@@ -245,8 +320,16 @@ function resolveSingleEffect(
       const stolen = Math.min(opponent.currentRam, effect.effect.value)
       opponent.currentRam -= stolen
       player.currentRam = Math.min(MAX_RAM, player.currentRam + stolen)
-      applyDamage(state, opponentSide, effect.effect.value)
-      addLog(state, `🔋 ${cardName} roba ${stolen} RAM y hace ${effect.effect.value} de daño`, 'ability')
+      addLog(state, `🔋 ${cardName} roba ${stolen} RAM`, 'ability')
+      break
+    }
+
+    case 'damage_and_steal_ram': {
+      const stolen = Math.min(opponent.currentRam, effect.effect.ram)
+      opponent.currentRam -= stolen
+      player.currentRam = Math.min(MAX_RAM, player.currentRam + stolen)
+      applyDamage(state, opponentSide, effect.effect.damage)
+      addLog(state, `🔋 ${cardName} roba ${stolen} RAM y hace ${effect.effect.damage} de daño`, 'ability')
       break
     }
 
@@ -274,20 +357,23 @@ function resolveAbility(
   state: GameState,
   card: CardInstance,
   side: PlayerSide,
-  trigger: 'on_play' | 'on_attack' | 'on_defend' | 'on_death'
+  trigger: 'on_play' | 'on_attack' | 'on_defend' | 'on_death',
+  options?: {
+    blockDirectOpponentDamage?: boolean
+  }
 ): void {
   const effects = card.definition.abilityEffects
   if (!effects || effects.length === 0) {
     // Fallback to single abilityEffect for backward compatibility
     const single = card.definition.abilityEffect
     if (!single || single.type !== trigger) return
-    resolveSingleEffect(state, card, side, single)
+    resolveSingleEffect(state, card, side, single, options)
     return
   }
 
   for (const effect of effects) {
     if (effect.type !== trigger) continue
-    resolveSingleEffect(state, card, side, effect)
+    resolveSingleEffect(state, card, side, effect, options)
   }
 }
 
@@ -296,6 +382,10 @@ export function processAction(state: GameState, action: GameAction): GameState {
   newState.animatingAction = action
 
   if (newState.phase === 'game_over') return newState
+  if (action.playerSide !== newState.activePlayer) {
+    addLog(newState, `Acción inválida: no es turno de ${getSideName(action.playerSide)}`, 'info')
+    return newState
+  }
 
   switch (action.type) {
     case 'play_card': {
@@ -345,11 +435,15 @@ export function processAction(state: GameState, action: GameAction): GameState {
 
       const attacker = player.field.find(c => c.instanceId === action.attackerInstanceId)
       if (!attacker || attacker.isExhausted) break
+      if (attacker.currentStrength <= 0) {
+        addLog(newState, `${attacker.definition.name} no tiene ataque para iniciar combate`, 'info')
+        break
+      }
 
-      const hasPierce = attacker.definition.abilityEffect?.effect.action === 'pierce'
-        || attacker.definition.abilityEffects?.some(e => e.effect.action === 'pierce')
-      const hasDoubleStrike = attacker.definition.abilityEffect?.effect.action === 'double_strike'
-        || attacker.definition.abilityEffects?.some(e => e.effect.action === 'double_strike')
+      const hasPierce = hasAbilityAction(attacker, 'pierce')
+      const hasDoubleStrike = hasAbilityAction(attacker, 'double_strike')
+
+      const defenders = opponent.field.filter(isDefenderUnit)
 
       if (action.targetInstanceId) {
         // Attack a specific target
@@ -357,42 +451,40 @@ export function processAction(state: GameState, action: GameAction): GameState {
         if (targetIdx === -1) break
         const target = opponent.field[targetIdx]
 
+        if (defenders.length > 0 && !hasPierce && !defenders.some(c => c.instanceId === action.targetInstanceId)) {
+          addLog(newState, 'Debes atacar primero cartas con escudo (firewall > 0)', 'info')
+          break
+        }
+
         const attackerName = attacker.definition.name
         const targetName = target.definition.name
 
         addLog(newState, `⚔️ ${attackerName} ataca a ${targetName}`, 'attack')
 
-        // Resolve on_attack abilities
-        resolveAbility(newState, attacker, side, 'on_attack')
+        // Resolve on_attack abilities. If defenders are up and attacker has no pierce,
+        // prevent on-attack effects that would deal direct system damage.
+        resolveAbility(newState, attacker, side, 'on_attack', {
+          blockDirectOpponentDamage: defenders.length > 0 && !hasPierce,
+        })
 
-        // Combat resolution - capture firewall BEFORE reducing it
-        const effectiveFirewall = hasPierce ? 0 : target.currentFirewall
+        // Combat resolution - attacker's strength reduces target's firewall directly
         const originalFirewall = target.currentFirewall
-        const damageToTarget = Math.max(0, attacker.currentStrength - effectiveFirewall)
-        const damageToAttacker = Math.max(0, target.currentStrength - attacker.currentFirewall)
+        const damageToFirewall = attacker.currentStrength
+        const damageToAttacker = target.currentStrength
 
-        target.currentFirewall = Math.max(0, target.currentFirewall - damageToTarget)
-        if (damageToTarget > 0) {
-          addLog(newState, `${attackerName} reduce firewall de ${targetName} en ${damageToTarget}`, 'attack')
-        }
+        // Reduce firewall by attacker's strength
+        target.currentFirewall = Math.max(0, target.currentFirewall - damageToFirewall)
+        addLog(newState, `${attackerName} reduce firewall de ${targetName} en ${damageToFirewall} (${originalFirewall} → ${target.currentFirewall})`, 'attack')
 
-        if (target.currentFirewall <= 0 && damageToTarget > 0) {
+        // Resolve on_defend abilities whenever a card is attacked
+        resolveAbility(newState, target, opponentSide, 'on_defend')
+
+        if (target.currentFirewall <= 0 && damageToFirewall > 0) {
           // Target destroyed
           resolveAbility(newState, target, opponentSide, 'on_death')
           opponent.field.splice(targetIdx, 1)
           opponent.graveyard.push(target)
           addLog(newState, `💥 ${targetName} ha sido destruida`, 'attack')
-
-          // Overflow damage: excess strength beyond original firewall
-          const overflow = hasPierce
-            ? attacker.currentStrength
-            : Math.max(0, attacker.currentStrength - originalFirewall)
-          if (overflow > 0) {
-            applyDamage(newState, opponentSide, Math.floor(overflow / 2))
-          }
-        } else {
-          // Resolve on_defend abilities
-          resolveAbility(newState, target, opponentSide, 'on_defend')
         }
 
         // Damage to attacker from counter
@@ -409,18 +501,14 @@ export function processAction(state: GameState, action: GameAction): GameState {
           }
         }
 
-        // Double strike - only if attacker survived
-        if (hasDoubleStrike
-          && isCardAlive(newState, side, attacker.instanceId)
-          && !opponent.field.find(c => c.instanceId === action.targetInstanceId)
-        ) {
-          applyDamage(newState, opponentSide, attacker.currentStrength)
-          addLog(newState, `⚡ ${attackerName} golpea de nuevo directamente`, 'attack')
+        // Double strike (extra combat trigger without direct overflow damage)
+        if (hasDoubleStrike && isCardAlive(newState, side, attacker.instanceId)) {
+          addLog(newState, `⚡ ${attackerName} activa doble golpe`, 'attack')
         }
       } else {
-        // Direct attack (no target, hits opponent if no field)
-        if (opponent.field.length > 0) {
-          addLog(newState, `No puedes atacar directamente mientras haya defensas`, 'info')
+        // Direct attack (no target): cards with firewall > 0 gate direct attacks unless attacker can pierce
+        if (defenders.length > 0 && !hasPierce) {
+          addLog(newState, 'Debes eliminar cartas con escudo antes de atacar directo', 'info')
           break
         }
         addLog(newState, `⚔️ ${attacker.definition.name} ataca directamente`, 'attack')
@@ -445,23 +533,43 @@ export function processAction(state: GameState, action: GameAction): GameState {
 
       const attacker = player.field.find(c => c.instanceId === action.attackerInstanceId)
       if (!attacker || attacker.isExhausted) break
+      if (attacker.currentStrength <= 0) {
+        addLog(newState, `${attacker.definition.name} no tiene ataque para atacar directamente`, 'info')
+        break
+      }
+      const hasPierce = hasAbilityAction(attacker, 'pierce')
+      const hasDoubleStrike = hasAbilityAction(attacker, 'double_strike')
 
-      if (opponent.field.length > 0) {
-        addLog(newState, `Debes atacar a las defensas primero`, 'info')
+      const defenders = opponent.field.filter(isDefenderUnit)
+
+      if (defenders.length > 0 && !hasPierce) {
+        addLog(newState, 'Debes atacar a cartas con escudo primero', 'info')
         break
       }
 
       addLog(newState, `⚔️ ${attacker.definition.name} ataca directamente al sistema`, 'attack')
       resolveAbility(newState, attacker, side, 'on_attack')
       applyDamage(newState, opponentSide, attacker.currentStrength)
+
+      if (hasDoubleStrike) {
+        applyDamage(newState, opponentSide, attacker.currentStrength)
+        addLog(newState, `⚡ ${attacker.definition.name} golpea de nuevo`, 'attack')
+      }
+
       attacker.isExhausted = true
       break
     }
 
     case 'end_turn': {
       const currentSide = action.playerSide
+      const currentPlayer = getPlayerState(newState, currentSide)
       const nextSide = getOpponentSide(currentSide)
       const nextPlayer = getPlayerState(newState, nextSide)
+
+      // Process temporary buff durations for the player ending their turn
+      for (const card of currentPlayer.field) {
+        tickCardBuffs(card)
+      }
 
       // Increment turn when going back to player's turn
       if (nextSide === 'player') {
@@ -477,17 +585,6 @@ export function processAction(state: GameState, action: GameAction): GameState {
       // Unexhaust all cards
       for (const card of nextPlayer.field) {
         card.isExhausted = false
-      }
-
-      // Process buff durations
-      for (const card of nextPlayer.field) {
-        card.buffs = card.buffs.filter(b => {
-          if (b.turnsRemaining !== null) {
-            b.turnsRemaining--
-            return b.turnsRemaining > 0
-          }
-          return true
-        })
       }
 
       // Draw a card
@@ -514,6 +611,7 @@ export function getValidActions(state: GameState, side: PlayerSide): GameAction[
   const actions: GameAction[] = []
   const player = getPlayerState(state, side)
   const opponent = getPlayerState(state, getOpponentSide(side))
+  const defenders = opponent.field.filter(isDefenderUnit)
 
   // Play cards from hand
   for (const card of player.hand) {
@@ -526,9 +624,11 @@ export function getValidActions(state: GameState, side: PlayerSide): GameAction[
 
   // Attack with field cards
   for (const card of player.field) {
-    if (!card.isExhausted) {
+    if (!card.isExhausted && card.currentStrength > 0) {
+      const canPierce = hasAbilityAction(card, 'pierce')
       if (opponent.field.length > 0) {
-        for (const target of opponent.field) {
+        const targets = defenders.length > 0 ? defenders : opponent.field
+        for (const target of targets) {
           actions.push({
             type: 'attack',
             attackerInstanceId: card.instanceId,
@@ -536,7 +636,9 @@ export function getValidActions(state: GameState, side: PlayerSide): GameAction[
             playerSide: side,
           })
         }
-      } else {
+      }
+
+      if (canPierce || defenders.length === 0) {
         actions.push({
           type: 'direct_attack',
           attackerInstanceId: card.instanceId,
@@ -553,6 +655,7 @@ export function getValidActions(state: GameState, side: PlayerSide): GameAction[
 }
 
 export function canPlayCard(state: GameState, side: PlayerSide, instanceId: string): boolean {
+  if (state.phase === 'game_over' || state.activePlayer !== side) return false
   const player = getPlayerState(state, side)
   const card = player.hand.find(c => c.instanceId === instanceId)
   if (!card) return false
@@ -562,7 +665,8 @@ export function canPlayCard(state: GameState, side: PlayerSide, instanceId: stri
 }
 
 export function canAttack(state: GameState, side: PlayerSide, instanceId: string): boolean {
+  if (state.phase === 'game_over' || state.activePlayer !== side) return false
   const player = getPlayerState(state, side)
   const card = player.field.find(c => c.instanceId === instanceId)
-  return !!card && !card.isExhausted
+  return !!card && !card.isExhausted && card.currentStrength > 0
 }

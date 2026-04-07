@@ -44,12 +44,13 @@ export type AbilityEffect = {
     | { action: 'damage_opponent'; value: number }
     | { action: 'heal_player'; value: number }
     | { action: 'draw_cards'; value: number }
-    | { action: 'buff_self'; stat: 'strength' | 'firewall'; value: number }
-    | { action: 'buff_all_allies'; stat: 'strength' | 'firewall'; value: number }
-    | { action: 'debuff_enemy'; stat: 'strength' | 'firewall'; value: number }
+    | { action: 'buff_self'; stat: 'strength' | 'firewall'; value: number; durationTurns?: number }
+    | { action: 'buff_all_allies'; stat: 'strength' | 'firewall'; value: number; durationTurns?: number }
+    | { action: 'debuff_enemy'; stat: 'strength' | 'firewall'; value: number; durationTurns?: number }
     | { action: 'destroy_random_enemy' }
     | { action: 'gain_ram'; value: number }
     | { action: 'steal_ram'; value: number }
+    | { action: 'damage_and_steal_ram'; damage: number; ram: number }
     | { action: 'shield'; value: number }
     | { action: 'pierce' } // ignore firewall
     | { action: 'double_strike' } // attack twice

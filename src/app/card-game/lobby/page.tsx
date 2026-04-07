@@ -8,7 +8,7 @@ import {
   subscribeLobby, subscribeToRoom, updateRoomStatus,
   findMatch, createGameChannel,
 } from '@/lib/card-game/multiplayer'
-import { createInitialGameState, processAction } from '@/lib/card-game/engine'
+import { createInitialGameState } from '@/lib/card-game/engine'
 import { getStarterDeck } from '@/lib/card-game/cards'
 import { GameState } from '@/lib/card-game/types'
 import GameBoard from '@/components/card-game/GameBoard'
@@ -16,6 +16,33 @@ import Link from 'next/link'
 import '@/app/card-game/card-game.css'
 
 type LobbyView = 'lobby' | 'waiting' | 'matchmaking' | 'playing'
+
+type SerializedDeck = {
+  id: string
+  cards: string[]
+}
+
+function serializeDeckSelection(deckId: string | null, cards: string[]): string {
+  const payload: SerializedDeck = {
+    id: deckId || 'starter',
+    cards,
+  }
+  return JSON.stringify(payload)
+}
+
+function parseDeckSelection(serialized: string | null | undefined): string[] | null {
+  if (!serialized) return null
+
+  try {
+    const parsed = JSON.parse(serialized) as Partial<SerializedDeck>
+    if (!Array.isArray(parsed.cards)) return null
+    if (parsed.cards.length !== 20) return null
+    if (!parsed.cards.every(cardId => typeof cardId === 'string')) return null
+    return parsed.cards
+  } catch {
+    return null
+  }
+}
 
 export default function LobbyPage() {
   const [view, setView] = useState<LobbyView>('lobby')
@@ -88,7 +115,9 @@ export default function LobbyPage() {
       return
     }
 
-    const room = await createRoom(userId, username, selectedDeckId || 'starter')
+    const deckPayload = serializeDeckSelection(selectedDeckId, getSelectedDeckCards())
+
+    const room = await createRoom(userId, username, deckPayload)
     if (!room) {
       setError('Error al crear la sala')
       return
@@ -115,40 +144,53 @@ export default function LobbyPage() {
       return
     }
 
-    const success = await joinRoom(room.id, userId, username, selectedDeckId || 'starter')
+    const deckPayload = serializeDeckSelection(selectedDeckId, getSelectedDeckCards())
+
+    const success = await joinRoom(room.id, userId, username, deckPayload)
     if (!success) {
       setError('Error al unirse a la sala')
       return
     }
 
-    setCurrentRoom({ ...room, guestId: userId, guestName: username, status: 'ready' })
+    setCurrentRoom({
+      ...room,
+      guestId: userId,
+      guestName: username,
+      guestDeckId: deckPayload,
+      status: 'ready',
+    })
     setIsHost(false)
     setView('waiting')
 
     // The host will start the game and broadcast the initial state
     // Subscribe to game channel to receive it
     setTimeout(() => {
-      startMultiplayerGame({ ...room, guestId: userId }, false)
+      startMultiplayerGame({ ...room, guestId: userId, guestDeckId: deckPayload }, false)
     }, 1000)
   }
 
   // Start multiplayer game
   const startMultiplayerGame = (room: LobbyRoom, asHost: boolean) => {
-    const playerDeck = getSelectedDeckCards()
-    const opponentDeck = getStarterDeck('corp') // In real scenario, use opponent's deck
+    const localDeck = getSelectedDeckCards()
+    const hostDeckFromRoom = parseDeckSelection(room.hostDeckId)
+    const guestDeckFromRoom = parseDeckSelection(room.guestDeckId)
 
-    const onRemoteAction = (action: import('@/lib/card-game/types').GameAction) => {
-      setGameState(prev => {
-        if (!prev) return prev
-        return processAction(prev, action)
-      })
+    const hostDeck = hostDeckFromRoom ?? (asHost ? localDeck : getStarterDeck('runner'))
+    const guestDeck = guestDeckFromRoom ?? (asHost ? getStarterDeck('runner') : localDeck)
+
+    if (asHost && !guestDeckFromRoom) {
+      setError('No se pudo leer el deck del invitado. Se usará deck starter como fallback.')
+    }
+
+    const onRemoteAction = () => {
+      // Actions are broadcast for observability; authoritative sync uses game_state events.
     }
 
     // Clean up previous channel
     channelRef.current?.cleanup()
 
     if (asHost) {
-      const state = createInitialGameState(playerDeck, opponentDeck, true, room.id)
+      const state = createInitialGameState(hostDeck, guestDeck, true, room.id)
       setGameState(state)
 
       const channel = createGameChannel(
@@ -185,7 +227,7 @@ export default function LobbyPage() {
     setView('matchmaking')
 
     // Try to find an existing room
-    const room = await findMatch(userId, 1000)
+    const room = await findMatch(userId)
     if (room) {
       handleJoinRoom(room)
       return
@@ -221,14 +263,29 @@ export default function LobbyPage() {
   }
 
   // Playing
+  if (view === 'playing' && !gameState) {
+    return (
+      <div className="netrun-theme min-h-screen grid-pattern flex items-center justify-center" style={{ background: 'var(--cyber-bg)' }}>
+        <div className="text-center p-8 rounded-lg border border-cyan-500/20 bg-black/60">
+          <div className="cyber-spinner mb-6" />
+          <p className="text-lg font-mono neon-text-cyan mb-2">SINCRONIZANDO PARTIDA...</p>
+          <p className="text-xs font-mono" style={{ color: 'var(--cyber-muted)' }}>
+            Esperando estado inicial del host
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (view === 'playing' && gameState) {
     return (
       <GameBoard
         initialState={gameState}
         isMultiplayer={true}
         playerSide={isHost ? 'player' : 'opponent'}
-        onAction={(newState) => {
-          // Broadcast state changes to other player via channel
+        onAction={(newState, action) => {
+          setGameState(newState)
+          channelRef.current?.sendAction(action)
           channelRef.current?.sendGameState(newState)
         }}
       />

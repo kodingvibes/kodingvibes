@@ -175,12 +175,13 @@ export function subscribeLobby(
 export function createGameChannel(
   roomId: string,
   onGameStateUpdate: (state: GameState) => void,
-  onActionReceived: (action: GameAction) => void
+  onActionReceived: (action: GameAction) => void,
+  options?: { self?: boolean }
 ) {
   const supabase = getSupabaseClient()
 
   const channel = supabase.channel(`${GAMES_CHANNEL_PREFIX}${roomId}`, {
-    config: { broadcast: { self: false } },
+    config: { broadcast: { self: options?.self ?? false } },
   })
 
   channel
@@ -309,7 +310,6 @@ export async function updatePlayerRanking(
 
 export async function findMatch(
   userId: string,
-  _userElo?: number
 ): Promise<LobbyRoom | null> {
   const supabase = getSupabaseClient()
 

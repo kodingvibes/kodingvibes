@@ -99,8 +99,9 @@ export function getAIAction(
       const pool = scored.slice(0, Math.min(3, scored.length))
       chosen = pool[Math.floor(Math.random() * pool.length)].action
     } else if (difficulty === 'medium') {
-      // 70% best, 30% second best
-      if (scored.length > 1 && Math.random() < 0.3) {
+      // 70% best, 30% second best only when close in score
+      const isSecondClose = scored.length > 1 && Math.abs(scored[0].score - scored[1].score) <= 8
+      if (isSecondClose && Math.random() < 0.3) {
         chosen = scored[1].action
       } else {
         chosen = scored[0].action

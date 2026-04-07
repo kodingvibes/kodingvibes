@@ -1,11 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// Simple in-memory rate limiting (en producción usar Redis)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 
-const RATE_LIMIT_MAX = 100 // requests
-const RATE_LIMIT_WINDOW = 60000 // 1 minute in ms
+const RATE_LIMIT_MAX = 100
+const RATE_LIMIT_WINDOW = 60000
+
+const isMockMode = process.env.NEXT_PUBLIC_SUPABASE_URL === 'your_supabase_project_url' ||
+                   !process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith('http')
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()
@@ -25,7 +27,6 @@ function checkRateLimit(ip: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-  // Rate limiting
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
   
   if (!checkRateLimit(ip)) {
@@ -43,8 +44,11 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  // Security headers adicionales
   response.headers.set('X-Request-ID', crypto.randomUUID())
+
+  if (isMockMode) {
+    return response
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -62,8 +66,6 @@ export async function middleware(request: NextRequest) {
                 headers: request.headers,
               },
             })
-            // Preserve Supabase cookie options but ensure secure defaults
-            // Note: @supabase/ssr already sets httpOnly, secure, and sameSite appropriately
             response.cookies.set(name, value, options)
           })
         },
@@ -71,7 +73,6 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired
   await supabase.auth.getUser()
 
   return response

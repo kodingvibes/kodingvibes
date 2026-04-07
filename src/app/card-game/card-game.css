@@ -1,6 +1,6 @@
 /* ============================================
    NetRun - Cyberpunk Card Game Styles
-   Responsive viewport-fit design
+   Premium AAA game-inspired design
    ============================================ */
 
 /* Cyberpunk color variables */
@@ -11,11 +11,492 @@
   --neon-yellow: #ffff00;
   --neon-red: #ff0044;
   --neon-blue: #4488ff;
-  --cyber-bg: #0a0a1a;
+  --neon-orange: #ff8800;
+  --cyber-bg: #050510;
+  --cyber-bg-dark: #020208;
   --cyber-surface: #12122a;
   --cyber-border: #1a1a3e;
   --cyber-text: #e0e0ff;
   --cyber-muted: #6666aa;
+}
+
+/* Apply Michroma font globally to netrun-theme */
+.netrun-theme,
+.netrun-theme * {
+  font-family: var(--font-michroma), 'Michroma', sans-serif !important;
+}
+
+/* Disable text selection during gameplay */
+.game-board,
+.game-board * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Keep body text readable with fallback */
+.netrun-theme p,
+.netrun-theme span,
+.netrun-theme div {
+  font-family: var(--font-michroma), 'Michroma', sans-serif;
+}
+
+/* ============================================
+   Keyframe animations
+   ============================================ */
+
+/* Gradient shift animation */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Float animation for cards and particles */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+/* Card float with rotation */
+@keyframes card-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(1deg); }
+}
+
+/* Pulse glow animation */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+/* Scanline animation */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* Perspective utility */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-500 {
+  perspective: 500px;
+}
+
+/* ============================================
+   Game board combat animations - EXAGGERATED
+   ============================================ */
+
+/* Attack lunge - dramatic forward motion */
+@keyframes attack-lunge {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  55% {
+    transform: translate(var(--attack-x, 80px), var(--attack-y, -8px)) scale(1.14) rotate(4deg);
+  }
+  72% {
+    transform: translate(calc(var(--attack-x, 80px) * 1.05), calc(var(--attack-y, -8px) * 1.05)) scale(1.06);
+  }
+  85% {
+    transform: translate(calc(var(--attack-x, 80px) * 0.95), calc(var(--attack-y, -8px) * 0.95)) scale(1.03);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+/* Attack lunge for opponent (right direction) */
+@keyframes attack-lunge-right {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  55% {
+    transform: translate(var(--attack-x, -80px), var(--attack-y, 8px)) scale(1.14) rotate(-4deg);
+  }
+  72% {
+    transform: translate(calc(var(--attack-x, -80px) * 1.05), calc(var(--attack-y, 8px) * 1.05)) scale(1.06);
+  }
+  85% {
+    transform: translate(calc(var(--attack-x, -80px) * 0.95), calc(var(--attack-y, 8px) * 0.95)) scale(1.03);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+/* Damage hit - violent flash */
+@keyframes damage-hit {
+  0%, 100% { filter: brightness(1) contrast(1); }
+  10% { filter: brightness(3) contrast(1.5) sepia(1) hue-rotate(-50deg); transform: scale(1.05); }
+  30% { filter: brightness(0.5) contrast(1.2); transform: scale(0.95); }
+  50% { filter: brightness(2) contrast(1.3) sepia(0.5); }
+  70% { filter: brightness(0.8); }
+}
+
+/* Critical damage - screen shake effect */
+@keyframes critical-hit {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-8px) rotate(-2deg); }
+  20% { transform: translateX(8px) rotate(2deg); }
+  30% { transform: translateX(-6px) rotate(-1deg); }
+  40% { transform: translateX(6px) rotate(1deg); }
+  50% { transform: translateX(-4px); }
+  60% { transform: translateX(4px); }
+}
+
+/* Death explosion - card destruction */
+@keyframes death-explode {
+  0% { 
+    transform: scale(1) rotate(0); 
+    opacity: 1; 
+    filter: brightness(1);
+  }
+  30% { 
+    transform: scale(1.2) rotate(10deg); 
+    opacity: 0.9; 
+    filter: brightness(2) sepia(1) hue-rotate(-30deg);
+  }
+  60% { 
+    transform: scale(1.4) rotate(20deg); 
+    opacity: 0.6; 
+    filter: brightness(3) contrast(2);
+  }
+  100% { 
+    transform: scale(0) rotate(45deg); 
+    opacity: 0; 
+    filter: brightness(0);
+  }
+}
+
+/* Card draw - flying from deck (from right side for player) */
+@keyframes card-draw {
+  0% { 
+    transform: translateY(-80px) translateX(120px) rotate(-20deg) scale(0.6); 
+    opacity: 0; 
+  }
+  70% { 
+    transform: translateY(10px) translateX(-10px) rotate(5deg) scale(1.05); 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translateY(0) translateX(0) rotate(0) scale(1); 
+    opacity: 1; 
+  }
+}
+
+/* Card play - summon effect */
+@keyframes card-summon {
+  0% { 
+    transform: scale(0.8) translateY(50px); 
+    opacity: 0;
+    filter: brightness(0) blur(10px);
+  }
+  50% { 
+    transform: scale(1.1) translateY(-10px); 
+    opacity: 1;
+    filter: brightness(2) blur(0);
+  }
+  100% { 
+    transform: scale(1) translateY(0); 
+    opacity: 1;
+    filter: brightness(1) blur(0);
+  }
+}
+
+/* Power up - energy surge */
+@keyframes power-surge {
+  0%, 100% { 
+    box-shadow: 0 0 10px currentColor; 
+    filter: brightness(1);
+  }
+  50% { 
+    box-shadow: 0 0 40px currentColor, 0 0 80px currentColor; 
+    filter: brightness(1.5);
+    transform: scale(1.05);
+  }
+}
+
+/* Shield activate */
+@keyframes shield-activate {
+  0% { 
+    opacity: 0; 
+    transform: scale(0.8);
+  }
+  50% { 
+    opacity: 1; 
+    transform: scale(1.1);
+    box-shadow: 0 0 30px rgba(68, 136, 255, 0.8);
+  }
+  100% { 
+    opacity: 0.7; 
+    transform: scale(1);
+  }
+}
+
+/* HP drain animation */
+@keyframes hp-drain {
+  0%, 100% { 
+    filter: brightness(1);
+  }
+  25% { 
+    filter: brightness(3) hue-rotate(0deg);
+  }
+  50% { 
+    filter: brightness(0.5) hue-rotate(50deg);
+  }
+  75% { 
+    filter: brightness(2) hue-rotate(-30deg);
+  }
+}
+
+/* Turn start pulse */
+@keyframes turn-start {
+  0% { 
+    transform: scale(1);
+    box-shadow: 0 0 20px currentColor;
+  }
+  50% { 
+    transform: scale(1.1);
+    box-shadow: 0 0 60px currentColor, 0 0 100px currentColor;
+  }
+  100% { 
+    transform: scale(1);
+    box-shadow: 0 0 20px currentColor;
+  }
+}
+
+/* Glitch effect for defeat */
+@keyframes glitch {
+  0% { transform: translate(0); filter: hue-rotate(0); }
+  10% { transform: translate(-3px, 2px) skewX(10deg); filter: hue-rotate(90deg); }
+  20% { transform: translate(3px, -2px) skewX(-10deg); filter: hue-rotate(180deg); }
+  30% { transform: translate(-2px, 3px) skewX(5deg); filter: hue-rotate(270deg); }
+  40% { transform: translate(2px, -3px) skewX(-5deg); filter: hue-rotate(360deg); }
+  50% { transform: translate(-4px, 1px); }
+  60% { transform: translate(4px, -1px); }
+  70% { transform: translate(-1px, 4px); }
+  80% { transform: translate(1px, -4px); }
+  100% { transform: translate(0); filter: hue-rotate(0); }
+}
+
+/* Energy flow animation */
+@keyframes energy-flow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Rotating glow for legendary */
+@keyframes legendary-rotate {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* Typing effect for terminal */
+@keyframes typing {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Blink cursor */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ============================================
+   Combat animation classes
+   ============================================ */
+
+.anim-attacking {
+  animation: attack-lunge 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.anim-attacking-right {
+  animation: attack-lunge-right 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.anim-damage {
+  animation: damage-hit 0.6s ease-out forwards;
+  position: relative;
+  overflow: visible;
+}
+
+.anim-damage::before,
+.anim-damage::after {
+  content: '';
+  position: absolute;
+  inset: -18%;
+  pointer-events: none;
+  z-index: 25;
+  opacity: 0;
+}
+
+.anim-damage::before {
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.95) 0 7%, rgba(255, 204, 80, 0.9) 8% 14%, transparent 24%),
+    radial-gradient(circle at 34% 30%, rgba(255, 220, 120, 0.85) 0 5%, transparent 12%),
+    radial-gradient(circle at 68% 34%, rgba(255, 180, 70, 0.8) 0 4%, transparent 10%),
+    radial-gradient(circle at 42% 66%, rgba(255, 160, 60, 0.75) 0 4%, transparent 10%),
+    radial-gradient(circle at 70% 70%, rgba(255, 230, 140, 0.7) 0 3%, transparent 9%);
+  filter: drop-shadow(0 0 6px rgba(255, 190, 90, 0.9));
+  animation: spark-burst 0.52s ease-out forwards;
+}
+
+.anim-damage::after {
+  background:
+    conic-gradient(from 0deg at 50% 50%, transparent 0 8%, rgba(255, 235, 160, 0.95) 10% 14%, transparent 16% 28%, rgba(255, 196, 90, 0.9) 30% 34%, transparent 36% 48%, rgba(255, 235, 160, 0.95) 50% 54%, transparent 56% 68%, rgba(255, 196, 90, 0.88) 70% 74%, transparent 76% 88%, rgba(255, 235, 160, 0.9) 90% 94%, transparent 96% 100%);
+  mix-blend-mode: screen;
+  filter: blur(0.7px) drop-shadow(0 0 8px rgba(255, 176, 70, 0.8));
+  animation: spark-ring 0.56s ease-out forwards;
+}
+
+.game-card.anim-damage .game-card-front {
+  overflow: visible;
+}
+
+.game-card.anim-damage .game-card-front::before,
+.game-card.anim-damage .game-card-front::after {
+  content: '';
+  position: absolute;
+  inset: -16%;
+  pointer-events: none;
+  z-index: 80;
+  opacity: 0;
+}
+
+.game-card.anim-damage .game-card-front::before {
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.98) 0 7%, rgba(255, 204, 80, 0.9) 8% 14%, transparent 24%),
+    radial-gradient(circle at 34% 30%, rgba(255, 220, 120, 0.9) 0 5%, transparent 12%),
+    radial-gradient(circle at 68% 34%, rgba(255, 180, 70, 0.86) 0 4%, transparent 10%),
+    radial-gradient(circle at 42% 66%, rgba(255, 160, 60, 0.8) 0 4%, transparent 10%),
+    radial-gradient(circle at 70% 70%, rgba(255, 230, 140, 0.78) 0 3%, transparent 9%);
+  filter: drop-shadow(0 0 7px rgba(255, 190, 90, 0.95));
+  animation: spark-burst 0.52s ease-out forwards;
+}
+
+.game-card.anim-damage .game-card-front::after {
+  background:
+    conic-gradient(from 0deg at 50% 50%, transparent 0 8%, rgba(255, 235, 160, 0.98) 10% 14%, transparent 16% 28%, rgba(255, 196, 90, 0.9) 30% 34%, transparent 36% 48%, rgba(255, 235, 160, 0.95) 50% 54%, transparent 56% 68%, rgba(255, 196, 90, 0.9) 70% 74%, transparent 76% 88%, rgba(255, 235, 160, 0.92) 90% 94%, transparent 96% 100%);
+  mix-blend-mode: screen;
+  filter: blur(0.7px) drop-shadow(0 0 9px rgba(255, 176, 70, 0.85));
+  animation: spark-ring 0.56s ease-out forwards;
+}
+
+@keyframes spark-burst {
+  0% { opacity: 0; transform: scale(0.55) rotate(-8deg); }
+  18% { opacity: 1; transform: scale(1.08) rotate(2deg); }
+  55% { opacity: 0.9; transform: scale(1.2) rotate(8deg); }
+  100% { opacity: 0; transform: scale(1.45) rotate(14deg); }
+}
+
+@keyframes spark-ring {
+  0% { opacity: 0; transform: scale(0.35); }
+  22% { opacity: 0.85; transform: scale(0.9); }
+  60% { opacity: 0.65; transform: scale(1.15); }
+  100% { opacity: 0; transform: scale(1.38); }
+}
+
+.anim-critical {
+  animation: critical-hit 0.5s ease-out;
+}
+
+.anim-death {
+  animation: death-explode 0.7s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+}
+
+.anim-draw {
+  animation: card-draw 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.anim-summon {
+  animation: card-summon 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.anim-power {
+  animation: power-surge 1s ease-in-out infinite;
+}
+
+.anim-shield {
+  animation: shield-activate 0.8s ease-out forwards;
+}
+
+.anim-hp-drain {
+  animation: hp-drain 0.5s ease-out;
+}
+
+.anim-turn-start {
+  animation: turn-start 0.8s ease-out;
+}
+
+.anim-glitch {
+  animation: glitch 0.5s steps(2, start) infinite;
+}
+
+@keyframes stat-float-up {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-22px) scale(1.04);
+  }
+}
+
+@keyframes stat-hit-pulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.stat-float-indicator {
+  position: absolute;
+  z-index: 30;
+  font-size: 10px;
+  font-weight: 700;
+  pointer-events: none;
+  animation: stat-float-up 0.9s ease-out forwards;
+}
+
+.stat-hit-flash {
+  animation: stat-hit-pulse 0.35s ease-out;
+}
+
+@keyframes card-draw-from-deck {
+  0% {
+    transform: translateX(180px) translateY(-80px) rotate(-18deg) scale(0.65);
+    opacity: 0;
+  }
+  65% {
+    transform: translateX(-8px) translateY(6px) rotate(2deg) scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0) translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes card-play-to-field {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  45% {
+    transform: translateY(-80px) scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-180px) scale(0.9);
+    opacity: 0;
+  }
 }
 
 /* Scanline overlay */
@@ -81,8 +562,8 @@
    ============================================ */
 .game-card {
   position: relative;
-  width: 140px;
-  height: 200px;
+  width: 154px;
+  height: 220px;
   border-radius: 10px;
   perspective: 1000px;
   cursor: pointer;
@@ -91,9 +572,31 @@
 
 /* Small card variant for field display */
 .game-card-sm {
-  width: 88px;
-  height: 124px;
+  width: 97px;
+  height: 137px;
   border-radius: 7px;
+}
+
+/* XL card variant for modal - everything scales proportionally */
+.xl-card {
+  width: 400px;
+  height: 570px;
+  border-radius: 16px;
+  font-size: 24px;
+}
+
+.xl-card .game-card-inner {
+  border-radius: inherit;
+}
+
+.xl-card .game-card-front {
+  border-radius: inherit;
+}
+
+/* Ensure images in XL cards render at high quality */
+.xl-card img {
+  image-rendering: auto;
+  image-rendering: -webkit-optimize-contrast;
 }
 
 .game-card-inner {
@@ -102,6 +605,8 @@
   height: 100%;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
+  border-radius: inherit;
+  overflow: hidden;
 }
 
 .game-card.flipped .game-card-inner {
@@ -138,13 +643,17 @@
   font-size: 1rem;
 }
 
-/* Card hover lift */
-.game-card:hover .game-card-inner {
+/* Card hover lift - move entire card including border */
+.game-card {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.game-card:hover {
   transform: translateY(-4px);
 }
 
-.game-card.flipped:hover .game-card-inner {
-  transform: rotateY(180deg) translateY(-4px);
+.game-card.flipped:hover {
+  transform: translateY(-4px);
 }
 
 /* Rarity borders */
@@ -197,6 +706,260 @@
   filter: grayscale(0.5);
 }
 
+/* ============================================
+   Metallic Borders - Inspired by CodePen
+   ============================================ */
+
+/* Legendary - Gold metallic border */
+.rarity-legendary {
+  position: relative;
+}
+
+.rarity-legendary::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 12px;
+  background: linear-gradient(
+    45deg,
+    #ffec8b 0%,
+    #ffd700 10%,
+    #ffec8b 20%,
+    #b8860b 30%,
+    #ffd700 40%,
+    #ffec8b 50%,
+    #b8860b 60%,
+    #ffd700 70%,
+    #ffec8b 80%,
+    #b8860b 90%,
+    #ffd700 100%
+  );
+  background-size: 200% 200%;
+  animation: metallic-flow 3s linear infinite;
+  z-index: -1;
+  filter: blur(0.5px);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.rarity-legendary::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 11px;
+  background: linear-gradient(
+    45deg,
+    #ffd700 0%,
+    #ffec8b 25%,
+    #b8860b 50%,
+    #ffd700 75%,
+    #ffec8b 100%
+  );
+  background-size: 200% 200%;
+  animation: metallic-flow 4s linear infinite reverse;
+  z-index: -1;
+}
+
+/* Rare - Blue metallic border */
+.rarity-rare {
+  position: relative;
+}
+
+.rarity-rare::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 12px;
+  background: linear-gradient(
+    45deg,
+    #87ceeb 0%,
+    #4169e1 10%,
+    #87ceeb 20%,
+    #1e3a8a 30%,
+    #4169e1 40%,
+    #87ceeb 50%,
+    #1e3a8a 60%,
+    #4169e1 70%,
+    #87ceeb 80%,
+    #1e3a8a 90%,
+    #4169e1 100%
+  );
+  background-size: 200% 200%;
+  animation: metallic-flow 3s linear infinite;
+  z-index: -1;
+  filter: blur(0.5px);
+  box-shadow: 0 0 12px rgba(65, 105, 225, 0.5);
+}
+
+.rarity-rare::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 11px;
+  background: linear-gradient(
+    45deg,
+    #4169e1 0%,
+    #87ceeb 25%,
+    #1e3a8a 50%,
+    #4169e1 75%,
+    #87ceeb 100%
+  );
+  background-size: 200% 200%;
+  animation: metallic-flow 4s linear infinite reverse;
+  z-index: -1;
+}
+
+/* Uncommon - Green metallic border */
+.rarity-uncommon {
+  position: relative;
+}
+
+.rarity-uncommon::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 12px;
+  background: linear-gradient(
+    45deg,
+    #90ee90 0%,
+    #32cd32 10%,
+    #90ee90 20%,
+    #228b22 30%,
+    #32cd32 40%,
+    #90ee90 50%,
+    #228b22 60%,
+    #32cd32 70%,
+    #90ee90 80%,
+    #228b22 90%,
+    #32cd32 100%
+  );
+  background-size: 200% 200%;
+  animation: metallic-flow 3s linear infinite;
+  z-index: -1;
+  filter: blur(0.5px);
+  box-shadow: 0 0 10px rgba(50, 205, 50, 0.4);
+}
+
+.rarity-uncommon::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 11px;
+  background: linear-gradient(
+    45deg,
+    #32cd32 0%,
+    #90ee90 25%,
+    #228b22 50%,
+    #32cd32 75%,
+    #90ee90 100%
+  );
+  background-size: 200% 200%;
+  animation: metallic-flow 4s linear infinite reverse;
+  z-index: -1;
+}
+
+/* Defense cards (ICE/Hardware) - Silver metallic border */
+.card-has-defense {
+  position: relative;
+}
+
+.card-has-defense::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 12px;
+  background: linear-gradient(
+    45deg,
+    #e8e8e8 0%,
+    #c0c0c0 10%,
+    #e8e8e8 20%,
+    #808080 30%,
+    #c0c0c0 40%,
+    #e8e8e8 50%,
+    #808080 60%,
+    #c0c0c0 70%,
+    #e8e8e8 80%,
+    #808080 90%,
+    #c0c0c0 100%
+  );
+  background-size: 200% 200%;
+  animation: metallic-flow 3s linear infinite;
+  z-index: -1;
+  filter: blur(0.5px);
+  box-shadow: 0 0 10px rgba(192, 192, 192, 0.4);
+}
+
+.card-has-defense::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 11px;
+  background: linear-gradient(
+    45deg,
+    #c0c0c0 0%,
+    #e8e8e8 25%,
+    #808080 50%,
+    #c0c0c0 75%,
+    #e8e8e8 100%
+  );
+  background-size: 200% 200%;
+  animation: metallic-flow 4s linear infinite reverse;
+  z-index: -1;
+}
+
+/* Direct attack ready - red liquid metallic border */
+.card-direct-attack-ready {
+  position: relative;
+}
+
+.card-direct-attack-ready::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 12px;
+  background: linear-gradient(
+    45deg,
+    #ff9aa5 0%,
+    #ff334f 10%,
+    #ff9aa5 20%,
+    #7f0018 30%,
+    #ff334f 40%,
+    #ff9aa5 50%,
+    #7f0018 60%,
+    #ff334f 70%,
+    #ff9aa5 80%,
+    #7f0018 90%,
+    #ff334f 100%
+  );
+  background-size: 220% 220%;
+  animation: metallic-flow 2.2s linear infinite;
+  z-index: -1;
+  filter: blur(0.5px);
+  box-shadow: 0 0 12px rgba(255, 51, 79, 0.45), 0 0 22px rgba(255, 51, 79, 0.3);
+}
+
+.card-direct-attack-ready::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 11px;
+  background: linear-gradient(
+    45deg,
+    #ff334f 0%,
+    #ff9aa5 25%,
+    #7f0018 50%,
+    #ff334f 75%,
+    #ff9aa5 100%
+  );
+  background-size: 220% 220%;
+  animation: metallic-flow 3.2s linear infinite reverse;
+  z-index: -1;
+}
+
+@keyframes metallic-flow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
 /* Glitch animation */
 @keyframes glitch {
   0% { transform: translate(0); }
@@ -212,10 +975,14 @@
 }
 
 /* ============================================
-   Game board - viewport-fit layout
+   Game board - subtle cyberpunk atmosphere (no grids)
    ============================================ */
 .game-board {
-  background: linear-gradient(180deg, #080818 0%, #0a0a2a 50%, #080818 100%);
+  background:
+    radial-gradient(1200px 560px at 15% 10%, rgba(0, 255, 255, 0.10) 0%, rgba(0, 255, 255, 0.03) 32%, transparent 62%),
+    radial-gradient(900px 460px at 85% 14%, rgba(255, 0, 255, 0.08) 0%, rgba(255, 0, 255, 0.025) 35%, transparent 65%),
+    radial-gradient(900px 400px at 50% 82%, rgba(0, 255, 180, 0.06) 0%, transparent 60%),
+    linear-gradient(180deg, #060813 0%, #080b17 42%, #060712 100%);
   position: relative;
   overflow: hidden;
 }
@@ -225,51 +992,123 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(0, 255, 255, 0.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 100%, rgba(255, 0, 255, 0.05) 0%, transparent 50%);
+    radial-gradient(ellipse at 50% 50%, rgba(0, 255, 255, 0.06) 0%, transparent 38%),
+    radial-gradient(ellipse at 50% 50%, rgba(255, 0, 255, 0.04) 0%, transparent 48%);
+  mix-blend-mode: screen;
+  opacity: 0.75;
   pointer-events: none;
+  z-index: 0;
 }
 
-/* Grid pattern background */
-.grid-pattern {
-  background-image:
-    linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
+.game-board::after {
+  content: '';
+  position: absolute;
+  inset: -20% -10%;
+  background:
+    radial-gradient(circle at 25% 30%, rgba(0, 255, 255, 0.05), transparent 20%),
+    radial-gradient(circle at 75% 35%, rgba(255, 0, 255, 0.05), transparent 22%),
+    radial-gradient(circle at 55% 75%, rgba(0, 210, 255, 0.04), transparent 24%);
+  filter: blur(40px);
+  animation: atmospheric-drift 18s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes atmospheric-drift {
+  0% {
+    transform: translate3d(-1%, -1%, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(1%, 1%, 0) scale(1.02);
+  }
 }
 
 /* ============================================
-   Field zones
+   Field zones - BATTLEFIELD PLATFORMS
    ============================================ */
 .field-zone {
   min-height: 140px;
-  border: 1px dashed rgba(0, 255, 255, 0.15);
+  border: 1px dashed rgba(0, 255, 255, 0.2);
   border-radius: 12px;
-  background: rgba(0, 255, 255, 0.02);
+  background: 
+    linear-gradient(180deg, rgba(0, 255, 255, 0.03) 0%, rgba(0, 255, 255, 0.01) 100%),
+    repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(0, 255, 255, 0.02) 20px, rgba(0, 255, 255, 0.02) 40px);
+  box-shadow: 
+    inset 0 0 30px rgba(0, 255, 255, 0.05),
+    0 0 20px rgba(0, 255, 255, 0.02);
   transition: all 0.3s ease;
+  position: relative;
+}
+
+.field-zone::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 255, 255, 0.1) 20%, 
+    rgba(0, 255, 255, 0.2) 50%, 
+    rgba(0, 255, 255, 0.1) 80%, 
+    transparent 100%);
+  border-radius: 12px;
+  z-index: -1;
+  animation: energy-flow 3s linear infinite;
 }
 
 /* Compact field zone for viewport-fit board */
 .field-zone-compact {
-  border: 1px dashed rgba(0, 255, 255, 0.15);
+  border: 1px dashed rgba(0, 255, 255, 0.2);
   border-radius: 8px;
-  background: rgba(0, 255, 255, 0.02);
+  background: 
+    linear-gradient(180deg, rgba(0, 255, 255, 0.03) 0%, rgba(0, 255, 255, 0.01) 100%),
+    repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(0, 255, 255, 0.02) 20px, rgba(0, 255, 255, 0.02) 40px);
+  box-shadow: 
+    inset 0 0 30px rgba(0, 255, 255, 0.05),
+    0 0 20px rgba(0, 255, 255, 0.02);
   transition: all 0.3s ease;
   min-height: 0;
+  position: relative;
+}
+
+.field-zone-compact::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 255, 255, 0.1) 20%, 
+    rgba(0, 255, 255, 0.2) 50%, 
+    rgba(0, 255, 255, 0.1) 80%, 
+    transparent 100%);
+  border-radius: 8px;
+  z-index: -1;
+  animation: energy-flow 3s linear infinite;
 }
 
 .field-zone.active,
 .field-zone-compact.active {
-  border-color: rgba(0, 255, 255, 0.3);
-  background: rgba(0, 255, 255, 0.05);
+  border-color: rgba(0, 255, 255, 0.4);
+  background: rgba(0, 255, 255, 0.08);
+  box-shadow: 
+    inset 0 0 40px rgba(0, 255, 255, 0.1),
+    0 0 30px rgba(0, 255, 255, 0.15);
 }
 
 /* Drop target highlight */
 .field-zone.drop-target,
 .field-zone-compact.drop-target {
   border-color: var(--neon-green);
-  background: rgba(0, 255, 65, 0.08);
-  box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.1);
+  background: rgba(0, 255, 65, 0.1);
+  box-shadow: 
+    inset 0 0 40px rgba(0, 255, 65, 0.2),
+    0 0 30px rgba(0, 255, 65, 0.3);
+  animation: power-surge 1s ease-in-out infinite;
+}
+
+.field-drop-active .field-zone-compact,
+.field-drop-active .field-zone {
+  border-color: var(--neon-green);
+  box-shadow: inset 0 0 35px rgba(0, 255, 65, 0.2), 0 0 25px rgba(0, 255, 65, 0.35);
 }
 
 /* ============================================
@@ -278,18 +1117,18 @@
 .field-row {
   display: flex;
   justify-content: center;
-  gap: 0;
+  gap: 6px;
   padding: 2px 0;
 }
 
 .field-row .game-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin: 0 -8px;
+  margin: 0 6px;
 }
 
 .field-row .game-card:hover {
   z-index: 10;
-  margin: 0 2px;
+  margin: 0 10px;
 }
 
 /* Attack target highlight */
@@ -378,37 +1217,69 @@
 }
 
 /* ============================================
-   HP bar
+   HP bar - SYSTEM INTEGRITY
    ============================================ */
 .hp-bar {
-  height: 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.1);
+  height: 10px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.5);
   overflow: hidden;
   position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+.hp-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 9px,
+      rgba(255, 255, 255, 0.1) 9px,
+      rgba(255, 255, 255, 0.1) 10px
+    );
+  z-index: 2;
+  pointer-events: none;
 }
 
 .hp-bar-fill {
   height: 100%;
-  border-radius: 3px;
-  transition: width 0.5s ease-out;
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.hp-bar-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: energy-flow 2s linear infinite;
 }
 
 .hp-bar-fill.hp-high {
-  background: linear-gradient(90deg, var(--neon-green), #00cc33);
-  box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+  background: linear-gradient(90deg, #00ff41, #00cc33);
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.5), 0 0 30px rgba(0, 255, 65, 0.3);
 }
 
 .hp-bar-fill.hp-medium {
-  background: linear-gradient(90deg, var(--neon-yellow), #ccaa00);
-  box-shadow: 0 0 8px rgba(255, 255, 0, 0.3);
+  background: linear-gradient(90deg, #ffff00, #ccaa00);
+  box-shadow: 0 0 15px rgba(255, 255, 0, 0.5), 0 0 30px rgba(255, 255, 0, 0.3);
 }
 
 .hp-bar-fill.hp-low {
-  background: linear-gradient(90deg, var(--neon-red), #cc0033);
-  box-shadow: 0 0 8px rgba(255, 0, 68, 0.3);
-  animation: hp-critical 1s ease-in-out infinite;
+  background: linear-gradient(90deg, #ff0044, #cc0033);
+  box-shadow: 0 0 15px rgba(255, 0, 68, 0.5), 0 0 30px rgba(255, 0, 68, 0.3);
+  animation: hp-critical 0.8s ease-in-out infinite;
 }
 
 @keyframes hp-critical {
@@ -544,6 +1415,10 @@
   scrollbar-width: none;
 }
 
+.hand-fan {
+  overflow: visible;
+}
+
 .hand-area::-webkit-scrollbar {
   display: none;
 }
@@ -551,12 +1426,16 @@
 /* Hand card overlap for tight layout */
 .hand-area .game-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin: 0 -8px;
+  margin: 0;
 }
 
 .hand-area .game-card:hover {
   z-index: 10;
-  margin: 0 4px;
+  margin: 0;
+}
+
+.hand-fan .game-card:hover {
+  transform: translateY(-6px);
 }
 
 /* ============================================
@@ -685,13 +1564,13 @@
 /* Tablet */
 @media (max-width: 768px) {
   .game-card {
-    width: 90px;
-    height: 130px;
+    width: 99px;
+    height: 143px;
   }
 
   .game-card-sm {
-    width: 70px;
-    height: 100px;
+    width: 77px;
+    height: 110px;
   }
 
   .hand-area .game-card {
@@ -699,7 +1578,7 @@
   }
 
   .field-row .game-card {
-    margin: 0 -6px;
+    margin: 0 3px;
   }
 
   .field-zone {
@@ -715,18 +1594,38 @@
     width: 10px;
     height: 14px;
   }
+
+  .anim-damage::before,
+  .anim-damage::after {
+    inset: -14%;
+  }
+
+  .game-card.anim-damage .game-card-front::before,
+  .game-card.anim-damage .game-card-front::after {
+    inset: -12%;
+  }
+
+  .anim-damage::before {
+    filter: drop-shadow(0 0 4px rgba(255, 190, 90, 0.75));
+    animation-duration: 0.46s;
+  }
+
+  .anim-damage::after {
+    filter: blur(0.6px) drop-shadow(0 0 6px rgba(255, 176, 70, 0.7));
+    animation-duration: 0.5s;
+  }
 }
 
 /* Mobile */
 @media (max-width: 480px) {
   .game-card {
-    width: 72px;
-    height: 104px;
+    width: 79px;
+    height: 114px;
   }
 
   .game-card-sm {
-    width: 58px;
-    height: 84px;
+    width: 64px;
+    height: 91px;
   }
 
   .hand-area .game-card {
@@ -734,7 +1633,7 @@
   }
 
   .field-row .game-card {
-    margin: 0 -5px;
+    margin: 0 2px;
   }
 
   .opponent-hand-indicator {
@@ -758,5 +1657,65 @@
   .combat-log {
     font-size: 0.6rem;
     max-height: 150px;
+  }
+
+  .anim-damage::before,
+  .anim-damage::after {
+    inset: -10%;
+  }
+
+  .game-card.anim-damage .game-card-front::before,
+  .game-card.anim-damage .game-card-front::after {
+    inset: -9%;
+  }
+
+  .anim-damage::before {
+    filter: drop-shadow(0 0 3px rgba(255, 190, 90, 0.6));
+    animation-duration: 0.42s;
+  }
+
+  .anim-damage::after {
+    filter: blur(0.55px) drop-shadow(0 0 5px rgba(255, 176, 70, 0.58));
+    animation-duration: 0.46s;
+  }
+}
+
+/* ============================================
+   Landing page responsive styles
+   ============================================ */
+
+/* Tablet - 768px */
+@media (max-width: 1199px) {
+  /* Hero section adjustments */
+  .game-card.scale-\[1\.3\] {
+    transform: scale(1.15);
+  }
+}
+
+/* Mobile - Hero card fan adjustment */
+@media (max-width: 768px) {
+  /* Typography scaling */
+  h1 {
+    font-size: 2.5rem !important;
+  }
+  
+  h2 {
+    font-size: 2rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Further typography scaling */
+  h1 {
+    font-size: 2rem !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+  }
+  
+  /* Stats counter smaller numbers */
+  .stats-number {
+    font-size: 2rem !important;
   }
 }

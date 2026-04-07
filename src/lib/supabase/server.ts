@@ -1,8 +1,16 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { Database } from '@/types/database'
+import { createMockClient } from './mock'
+
+const isMockMode = process.env.NEXT_PUBLIC_SUPABASE_URL === 'your_supabase_project_url' ||
+                   !process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith('http')
 
 export async function createClient() {
+  if (isMockMode) {
+    return createMockClient()
+  }
+
   const cookieStore = await cookies()
 
   return createServerClient<Database>(
@@ -19,8 +27,6 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             )
           } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing sessions.
           }
         },
       },
