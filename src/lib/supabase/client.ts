@@ -7,7 +7,7 @@ const isMockMode = process.env.NEXT_PUBLIC_SUPABASE_URL === 'your_supabase_proje
 
 export function createClient() {
   if (isMockMode) {
-    return createMockClient()
+    return createMockClient() as unknown as ReturnType<typeof createBrowserClient<Database>>
   }
   return createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

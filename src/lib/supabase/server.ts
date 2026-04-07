@@ -8,7 +8,7 @@ const isMockMode = process.env.NEXT_PUBLIC_SUPABASE_URL === 'your_supabase_proje
 
 export async function createClient() {
   if (isMockMode) {
-    return createMockClient()
+    return createMockClient() as unknown as ReturnType<typeof createServerClient<Database>>
   }
 
   const cookieStore = await cookies()

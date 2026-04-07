@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Check, X, Loader2, ArrowLeft, Clock, Shield, User as UserIcon } from 'lucide-react'
-import type { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 import type { Tables } from '@/types/database'
 
@@ -16,7 +15,7 @@ export default function GroupRequestsAdminPage() {
   const router = useRouter()
   const [requests, setRequests] = useState<GroupRequest[]>([])
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<User | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
@@ -32,7 +31,7 @@ export default function GroupRequestsAdminPage() {
         return
       }
 
-      setUser(currentUser)
+      setUserId(currentUser.id)
 
       // Check if user is admin
       const { data: userData } = await supabase
@@ -67,14 +66,14 @@ export default function GroupRequestsAdminPage() {
   }, [supabase, router])
 
   const handleApprove = async (requestId: string) => {
-    if (!user) return
+    if (!userId) return
     
     setProcessingId(requestId)
 
     try {
       const { error } = await supabase.rpc('approve_group_request', {
         request_id: requestId,
-        admin_id: user.id
+        admin_id: userId
       })
 
       if (error) throw error
@@ -91,7 +90,7 @@ export default function GroupRequestsAdminPage() {
   }
 
   const handleReject = async (requestId: string) => {
-    if (!user) return
+    if (!userId) return
     
     if (!rejectionReason.trim()) {
       alert('Por favor proporciona un motivo de rechazo')
@@ -103,7 +102,7 @@ export default function GroupRequestsAdminPage() {
     try {
       const { error } = await supabase.rpc('reject_group_request', {
         request_id: requestId,
-        admin_id: user.id,
+        admin_id: userId,
         reason: rejectionReason.trim()
       })
 

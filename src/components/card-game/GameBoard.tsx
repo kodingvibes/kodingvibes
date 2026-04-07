@@ -22,7 +22,7 @@ const MAX_FIELD_SIZE = 5
 
 function cardHasPierce(card: CardInstance): boolean {
   return card.definition.abilityEffect?.effect.action === 'pierce'
-    || card.definition.abilityEffects?.some(e => e.effect.action === 'pierce')
+    || Boolean(card.definition.abilityEffects?.some(e => e.effect.action === 'pierce'))
 }
 
 function isDefenderUnit(card: CardInstance): boolean {
@@ -741,7 +741,7 @@ export default function GameBoard({
     : null
   const selectedCanDirect = selectionMode === 'selecting_target'
     && Boolean(selectedAttackerCard)
-    && (!hasDefenders || cardHasPierce(selectedAttackerCard))
+    && (!hasDefenders || (selectedAttackerCard ? cardHasPierce(selectedAttackerCard) : false))
 
   return (
     <div className="game-board netrun-theme flex flex-col h-[calc(100dvh-4rem)] overflow-hidden relative">
