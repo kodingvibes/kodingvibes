@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { compressImage } from '@/lib/utils'
+import { LoadingSpinner } from '@/components/ui/Loading'
 import type { Tables } from '@/types/database'
 
 type Group = Tables<'groups'>
@@ -47,6 +48,9 @@ export default function GroupAdminPage() {
   const [members, setMembers] = useState<GroupMember[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deletingTag, setDeletingTag] = useState<string | null>(null)
+  const [changingRole, setChangingRole] = useState<string | null>(null)
+  const [removingMember, setRemovingMember] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isCreator, setIsCreator] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -366,7 +370,7 @@ export default function GroupAdminPage() {
       return
     }
 
-    setSaving(true)
+    setDeletingTag(tagId)
     setError(null)
     setSuccess(null)
 
@@ -389,7 +393,7 @@ export default function GroupAdminPage() {
       console.error('Error:', err)
       setError('Error al eliminar el tag')
     } finally {
-      setSaving(false)
+      setDeletingTag(null)
     }
   }
 
@@ -399,7 +403,7 @@ export default function GroupAdminPage() {
       return
     }
 
-    setSaving(true)
+    setChangingRole(memberId)
     setError(null)
     setSuccess(null)
 
@@ -414,7 +418,6 @@ export default function GroupAdminPage() {
         return
       }
 
-      // Update local state
       setMembers(members.map(member => 
         member.id === memberId ? { ...member, role: newRole } : member
       ))
@@ -427,7 +430,7 @@ export default function GroupAdminPage() {
       console.error('Error:', err)
       setError('Error al cambiar el rol')
     } finally {
-      setSaving(false)
+      setChangingRole(null)
     }
   }
 
@@ -449,7 +452,7 @@ export default function GroupAdminPage() {
       return
     }
 
-    setSaving(true)
+    setRemovingMember(memberId)
     setError(null)
     setSuccess(null)
 
@@ -472,7 +475,7 @@ export default function GroupAdminPage() {
       console.error('Error:', err)
       setError('Error al remover al miembro')
     } finally {
-      setSaving(false)
+      setRemovingMember(null)
     }
   }
 
@@ -898,11 +901,15 @@ export default function GroupAdminPage() {
                     </span>
                     <button
                       onClick={() => handleDeleteTag(tag.id)}
-                      disabled={saving}
+                      disabled={deletingTag === tag.id}
                       className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
                       title="Eliminar tag"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      {deletingTag === tag.id ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 ))}
@@ -1048,8 +1055,9 @@ export default function GroupAdminPage() {
                           {/* User Info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate flex items-center gap-2">
                                 {member.users.name || member.users.username}
+                                {changingRole === member.id && <LoadingSpinner size="sm" />}
                               </p>
                               {isGroupCreator && (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 flex-shrink-0">
@@ -1083,11 +1091,15 @@ export default function GroupAdminPage() {
 
                               <button
                                 onClick={() => handleRemoveMember(member.id, member.user_id)}
-                                disabled={saving}
+                                disabled={removingMember === member.id}
                                 className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
                                 title="Remover del grupo"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                {removingMember === member.id ? (
+                                  <LoadingSpinner size="sm" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
                               </button>
                             </div>
                           )}

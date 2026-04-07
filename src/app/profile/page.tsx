@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import { User, Save, ArrowLeft, AtSign, AlertCircle, Users, Settings } from 'lucide-react'
 import Link from 'next/link'
+import { LoadingSpinner } from '@/components/ui/Loading'
 
 interface Profile {
   id: string
@@ -285,8 +286,17 @@ export default function ProfilePage() {
               disabled={saving || !userId}
               className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
             >
-              <Save className="h-4 w-4" />
-              {saving ? 'Guardando...' : 'Guardar cambios'}
+              {saving ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Guardar cambios
+                </>
+              )}
             </button>
           </div>
         </form>

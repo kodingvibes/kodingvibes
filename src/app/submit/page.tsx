@@ -394,13 +394,20 @@ export default function SubmitPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 shadow-sm">
-          <ChannelSelector
-            groups={groups}
-            selectedGroupId={selectedGroupId}
-            onSelect={setSelectedGroupId}
-            disabled={loadingGroups || !canPost}
-            error={postPermissionError}
-          />
+          {loadingGroups ? (
+            <div className="space-y-2">
+              <div className="h-4 bg-muted rounded animate-pulse w-24"></div>
+              <div className="h-10 bg-muted rounded-lg animate-pulse"></div>
+            </div>
+          ) : (
+            <ChannelSelector
+              groups={groups}
+              selectedGroupId={selectedGroupId}
+              onSelect={setSelectedGroupId}
+              disabled={!canPost}
+              error={postPermissionError}
+            />
+          )}
 
           <div className="mb-5">
             <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">

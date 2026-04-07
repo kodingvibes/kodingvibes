@@ -443,7 +443,23 @@ export default function Home() {
 
         {/* Posts feed */}
         <div className="space-y-4">
-          {!loading && sortedPosts.length > 0 ? (
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-card rounded-xl border border-border p-4 animate-pulse">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-muted" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-muted rounded w-1/4" />
+                      <div className="h-6 bg-muted rounded w-3/4" />
+                      <div className="h-4 bg-muted rounded w-full" />
+                      <div className="h-4 bg-muted rounded w-2/3" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : !loading && sortedPosts.length > 0 ? (
             sortedPosts.map((post) => (
               <PostCard key={post.id} post={post} onDelete={handleDelete} />
             ))
