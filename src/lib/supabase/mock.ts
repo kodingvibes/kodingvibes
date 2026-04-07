@@ -1,5 +1,3 @@
-import type { Database } from '@/types/database'
-
 const mockUser = {
   id: 'mock-user-1',
   email: 'demo@kodingvibes.local',
@@ -73,7 +71,7 @@ export const mockSupabase = {
     getSession: () => Promise.resolve({ data: { session: mockSession }, error: null }),
     signInWithOAuth: () => Promise.resolve({ data: { url: '/', error: null }, error: null }),
     signOut: () => Promise.resolve({ error: null }),
-    onAuthStateChange: (callback: (event: string, session: any) => void) => {
+    onAuthStateChange: (callback: (event: string, session: { user: typeof mockUser } | null) => void) => {
       callback('SIGNED_IN', { user: mockUser })
       return { data: { subscription: { unsubscribe: () => {} } } }
     },
@@ -81,7 +79,7 @@ export const mockSupabase = {
   },
   from: (table: string) => mockDb[table as keyof typeof mockDb] || mockDb.posts,
   storage: mockDb.storage,
-} as any
+}
 
 export function createMockClient() {
   return mockSupabase
