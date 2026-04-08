@@ -21,7 +21,15 @@
     "profile": "プロフィール",
     "notifications": "通知",
     "submit": "投稿",
-    "admin": "管理者"
+    "admin": "管理者",
+    "toggleLight": "ライトモードに切り替え",
+    "toggleDark": "ダークモードに切り替え",
+    "myChannels": "マイチャンネル",
+    "drafts": "マイドラフト",
+    "adminRequests": "管理者：リクエスト",
+    "createPost": "投稿を作成",
+    "login": "ログイン",
+    "logout": "ログアウト"
   },
   "home": {
     "title": "KodingVibes",
@@ -125,7 +133,9 @@
     "notifications": "通知",
     "logout": "ログアウト",
     "login": "ログイン",
-    "register": "登録"
+    "register": "登録",
+    "setUsernameHint": "「マイプロフィール」をクリックしてユーザー名を設定してください",
+    "member": "メンバー"
   },
   "notifications": {
     "title": "通知",

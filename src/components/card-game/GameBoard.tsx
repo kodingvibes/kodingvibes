@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef, CSSProperties } from 'react'
+import Link from 'next/link'
 import { GameState, PlayerSide, CardInstance, GameAction } from '@/lib/card-game/types'
 import { processAction, canPlayCard } from '@/lib/card-game/engine'
 import { getAIAction } from '@/lib/card-game/ai'
@@ -1281,7 +1282,7 @@ export default function GameBoard({
               >
                 ↻ REINTENTAR
               </button>
-              <a
+              <Link
                 href="/card-game"
                 className="cyber-btn cyber-btn-magenta text-sm py-2 px-6"
                 style={{
@@ -1289,7 +1290,7 @@ export default function GameBoard({
                 }}
               >
                 ← MENÚ
-              </a>
+              </Link>
             </div>
           </div>
         </div>

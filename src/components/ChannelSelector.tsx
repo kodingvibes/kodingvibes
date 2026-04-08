@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { ChevronDown, Check, Globe, Lock } from 'lucide-react'
+import Link from 'next/link'
 import type { Tables } from '@/types/database'
 
 type Group = Tables<'groups'>
@@ -53,9 +54,9 @@ export default function ChannelSelector({
       <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <p className="text-sm text-yellow-800">
           No tienes acceso a ningún canal.{' '}
-          <a href="/groups" className="underline ml-1">
+          <Link href="/groups" className="underline ml-1">
             Explora los canales disponibles
-          </a>
+          </Link>
         </p>
       </div>
     )

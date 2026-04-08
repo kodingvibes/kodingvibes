@@ -9,6 +9,7 @@ import { Plus, Sun, Moon, LogOut, User as UserIcon, Settings, Hash, Crown, Gamep
 import { useTheme } from '@/providers/theme-provider'
 import { LogoFull } from '@/components/icons/Logo'
 import { NotificationBell } from '@/components/NotificationBell'
+import { useTranslations } from 'next-intl'
 
 interface ChannelInfo {
   id: string
@@ -33,6 +34,10 @@ interface GroupMembership {
 }
 
 export default function Header() {
+  const t = useTranslations('nav')
+  const tCommon = useTranslations('common')
+  const tProfile = useTranslations('profile')
+  
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -126,7 +131,6 @@ export default function Header() {
   }, [supabase])
 
   const handleLogin = async () => {
-    // Always use NEXT_PUBLIC_SITE_URL for production, fallback to window.location.origin only for local dev
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
     const redirectTo = `${baseUrl}/auth/callback`
     
@@ -150,46 +154,41 @@ export default function Header() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
-              {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="md:hidden p-2 rounded-full hover:bg-muted transition-colors"
-                aria-label="Abrir menú"
+                aria-label={tCommon('backToMenu')}
               >
                 <Menu className="h-5 w-5" />
               </button>
 
-              {/* Logo */}
               <Link href="/" className="flex items-center group">
                 <LogoFull className="text-foreground transition-transform group-hover:scale-105" />
               </Link>
             </div>
 
-            {/* Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
-              {/* Desktop Navigation Links */}
               <div className="hidden md:flex items-center gap-2">
                 <Link
                   href="/groups"
                   className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-muted transition-colors text-sm font-medium text-foreground"
                 >
                   <Hash className="h-4 w-4" />
-                  Canales
+                  {t('groups')}
                 </Link>
                 <Link
                   href="/card-game"
                   className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-muted transition-colors text-sm font-medium text-foreground"
                 >
                   <Gamepad2 className="h-4 w-4" />
-                  NetRun
+                  {t('cardGame')}
                 </Link>
               </div>
 
-              {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-full hover:bg-muted transition-colors"
-                aria-label={theme === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'}
+                aria-label={theme === 'dark' ? t('toggleLight') : t('toggleDark')}
                 suppressHydrationWarning
               >
                 {mounted && (
@@ -203,21 +202,18 @@ export default function Header() {
                 )}
               </button>
 
-              {/* Notification Bell - Only for logged in users */}
               {user && <NotificationBell />}
 
-              {/* Create Post Button - Desktop only */}
               {user && (
                 <Link
                   href="/submit"
                   className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
                 >
                   <Plus className="h-4 w-4" />
-                  <span>Crear post</span>
+                  <span>{t('submit')}</span>
                 </Link>
               )}
 
-              {/* User Section - Hidden on mobile, shown in hamburger menu */}
               {loading ? (
                 <div className="h-10 w-10 bg-muted animate-pulse rounded-full hidden md:block" />
               ) : user ? (
@@ -231,7 +227,6 @@ export default function Header() {
                     </div>
                   </button>
 
-                  {/* Dropdown Menu */}
                   {isMenuOpen && (
                     <div className="absolute right-0 mt-2 w-64 bg-card border border-border rounded-xl shadow-lg py-2 animate-fade-in max-h-[80vh] overflow-y-auto">
                       <div className="px-4 py-3 border-b border-border">
@@ -239,15 +234,14 @@ export default function Header() {
                           {user.email}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Haz click en &quot;Mi perfil&quot; para poner tu pseudónimo
+                          {tProfile('setUsernameHint')}
                         </p>
                       </div>
                       
-                      {/* User Channels Section */}
                       {userChannels.length > 0 && (
                         <div className="py-2">
                           <p className="px-4 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Mis Canales
+                            {t('myChannels')}
                           </p>
                           <div className="space-y-2 px-2">
                             {userChannels.map((channel) => (
@@ -300,7 +294,7 @@ export default function Header() {
                         className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                       >
                         <Settings className="h-4 w-4" />
-                        <span>Mi perfil</span>
+                        <span>{t('profile')}</span>
                       </Link>
                       <Link
                         href="/drafts"
@@ -308,9 +302,8 @@ export default function Header() {
                         className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                       >
                         <FileText className="h-4 w-4" />
-                        <span>Mis borradores</span>
+                        <span>{t('drafts')}</span>
                       </Link>
-                      {/* Admin Link */}
                       {isAdmin && (
                         <Link
                           href="/admin/group-requests"
@@ -318,7 +311,7 @@ export default function Header() {
                           className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                         >
                           <Crown className="h-4 w-4 text-yellow-500" />
-                          <span>Admin: Solicitudes</span>
+                          <span>{t('adminRequests')}</span>
                         </Link>
                       )}
                       <button
@@ -326,7 +319,7 @@ export default function Header() {
                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-muted transition-colors"
                       >
                         <LogOut className="h-4 w-4" />
-                        <span>Cerrar sesión</span>
+                        <span>{t('logout')}</span>
                       </button>
                     </div>
                   )}
@@ -337,7 +330,7 @@ export default function Header() {
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
                 >
                   <UserIcon className="h-4 w-4" />
-                  <span className="hidden sm:inline">Iniciar sesión</span>
+                  <span className="hidden sm:inline">{t('login')}</span>
                 </button>
               )}
             </div>
@@ -345,7 +338,6 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-[100] md:hidden"
@@ -353,7 +345,6 @@ export default function Header() {
         />
       )}
 
-      {/* Mobile Menu Drawer */}
       <div
         ref={mobileMenuRef}
         className={`fixed top-0 left-0 h-full w-72 bg-card border-r border-border z-[101] transform transition-transform duration-300 md:hidden ${
@@ -366,14 +357,13 @@ export default function Header() {
             <button
               onClick={() => setIsMobileMenuOpen(false)}
               className="p-2 rounded-full hover:bg-muted transition-colors"
-              aria-label="Cerrar menú"
+              aria-label={tCommon('backToMenu')}
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
           <div className="flex-1 overflow-y-auto py-4">
-            {/* Navigation Links */}
             <div className="px-4 space-y-1">
               <Link
                 href="/groups"
@@ -381,7 +371,7 @@ export default function Header() {
                 className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted transition-colors text-foreground"
               >
                 <Hash className="h-5 w-5" />
-                <span className="font-medium">Canales</span>
+                <span className="font-medium">{t('groups')}</span>
               </Link>
               <Link
                 href="/card-game"
@@ -389,14 +379,14 @@ export default function Header() {
                 className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted transition-colors text-foreground"
               >
                 <Gamepad2 className="h-5 w-5" />
-                <span className="font-medium">NetRun</span>
+                <span className="font-medium">{t('cardGame')}</span>
               </Link>
             </div>
 
             {user && userChannels.length > 0 && (
               <div className="mt-6 px-4">
                 <p className="px-4 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                  Mis Canales
+                  {t('myChannels')}
                 </p>
                 <div className="space-y-2">
                   {userChannels.map((channel) => (
@@ -445,7 +435,6 @@ export default function Header() {
               </div>
             )}
 
-            {/* User Section in Mobile Menu */}
             {user && (
               <div className="mt-6 px-4 border-t border-border pt-6">
                 <div className="flex items-center gap-3 px-4 py-3">
@@ -454,7 +443,7 @@ export default function Header() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-foreground truncate">{user.email}</p>
-                    <p className="text-sm text-muted-foreground">Miembro</p>
+                    <p className="text-sm text-muted-foreground">{tProfile('member')}</p>
                   </div>
                 </div>
                 
@@ -464,7 +453,7 @@ export default function Header() {
                   className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted transition-colors text-foreground"
                 >
                   <Settings className="h-5 w-5" />
-                  <span className="font-medium">Mi perfil</span>
+                  <span className="font-medium">{t('profile')}</span>
                 </Link>
                 
                 {isAdmin && (
@@ -474,7 +463,7 @@ export default function Header() {
                     className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted transition-colors text-foreground"
                   >
                     <Crown className="h-5 w-5 text-yellow-500" />
-                    <span className="font-medium">Admin: Solicitudes</span>
+                    <span className="font-medium">{t('adminRequests')}</span>
                   </Link>
                 )}
                 
@@ -483,7 +472,7 @@ export default function Header() {
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted transition-colors text-red-600"
                 >
                   <LogOut className="h-5 w-5" />
-                  <span className="font-medium">Cerrar sesión</span>
+                  <span className="font-medium">{t('logout')}</span>
                 </button>
               </div>
             )}
@@ -491,12 +480,11 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Create Post Button - Floating */}
       {user && (
         <Link
           href="/submit"
           className="md:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 z-[100]"
-          aria-label="Crear post"
+          aria-label={t('createPost')}
         >
           <Plus className="h-7 w-7" strokeWidth={3} />
         </Link>
