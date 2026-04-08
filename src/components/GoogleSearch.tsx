@@ -6,7 +6,6 @@ export default function GoogleSearch() {
   return (
     <div className="bg-background border-b border-foreground/10">
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <span className="text-sm text-muted-foreground mb-3 block">Buscar en la web</span>
         <div className="flex items-center gap-3">
           <span className="text-2xl font-bold">
             <span className="text-[#4285F4]">G</span>
