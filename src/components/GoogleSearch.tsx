@@ -25,7 +25,7 @@ export default function GoogleSearch() {
             <input
               type="text"
               name="q"
-              placeholder="Buscar en Google..."
+              placeholder="Buscar en la web"
               autoComplete="off"
               className="w-full pl-12 pr-4 py-3 rounded-full border border-foreground/20 bg-background text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow text-base"
             />
