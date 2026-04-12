@@ -381,6 +381,16 @@ export default function Header() {
                 <Gamepad2 className="h-5 w-5" />
                 <span className="font-medium">{t('cardGame')}</span>
               </Link>
+              {user && (
+                <Link
+                  href="/drafts"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted transition-colors text-foreground"
+                >
+                  <FileText className="h-5 w-5" />
+                  <span className="font-medium">{t('drafts')}</span>
+                </Link>
+              )}
             </div>
 
             {user && userChannels.length > 0 && (
