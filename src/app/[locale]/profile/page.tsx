@@ -880,10 +880,10 @@ export default function ProfilePage() {
                 Estilo referencia: endpoint, ejemplo de request y ejemplo de respuesta.
               </p>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {BOT_ENDPOINT_DOCS.map((endpoint) => (
-                  <div key={`${endpoint.method}-${endpoint.path}`} className="border border-border rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <details key={`${endpoint.method}-${endpoint.path}`} className="border border-border rounded-lg group" open={false}>
+                    <summary className="list-none cursor-pointer px-3 py-2.5 flex items-center gap-2 flex-wrap hover:bg-muted/50 rounded-lg">
                       <span
                         className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
                           endpoint.method === 'GET'
@@ -897,25 +897,30 @@ export default function ProfilePage() {
                       >
                         {endpoint.method}
                       </span>
-                      <code className="text-xs break-all">{endpoint.path}</code>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-3">{endpoint.description}</p>
+                      <code className="text-xs break-all flex-1">{endpoint.path}</code>
+                      <span className="text-xs text-muted-foreground group-open:hidden">Ver</span>
+                      <span className="text-xs text-muted-foreground hidden group-open:inline">Ocultar</span>
+                    </summary>
 
-                    <div className="grid gap-3 lg:grid-cols-2">
-                      <div>
-                        <p className="text-xs font-medium text-foreground mb-1">Request ejemplo</p>
-                        <pre className="text-xs bg-muted/60 rounded-md p-2 overflow-x-auto whitespace-pre-wrap break-words">
-                          {endpoint.requestExample}
-                        </pre>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-foreground mb-1">Response ejemplo</p>
-                        <pre className="text-xs bg-muted/60 rounded-md p-2 overflow-x-auto whitespace-pre-wrap break-words">
-                          {endpoint.responseExample}
-                        </pre>
+                    <div className="px-3 pb-3">
+                      <p className="text-xs text-muted-foreground mb-3">{endpoint.description}</p>
+
+                      <div className="grid gap-3 lg:grid-cols-2">
+                        <div>
+                          <p className="text-xs font-medium text-foreground mb-1">Request ejemplo</p>
+                          <pre className="text-xs bg-muted/60 rounded-md p-2 overflow-x-auto whitespace-pre-wrap break-words">
+                            {endpoint.requestExample}
+                          </pre>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-foreground mb-1">Response ejemplo</p>
+                          <pre className="text-xs bg-muted/60 rounded-md p-2 overflow-x-auto whitespace-pre-wrap break-words">
+                            {endpoint.responseExample}
+                          </pre>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </details>
                 ))}
               </div>
             </div>
