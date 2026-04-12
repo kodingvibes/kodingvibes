@@ -3,6 +3,9 @@ import { NextRequest } from 'next/server';
 
 export const runtime = 'nodejs';
 
+const OG_WIDTH = 1200;
+const OG_HEIGHT = 630;
+
 /**
  * Sanitiza texto para evitar que caracteres Unicode problemáticos causen errores
  * en la carga dinámica de fuentes de Satori/ImageResponse. Elimina todos los
@@ -48,24 +51,21 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-/** Imagen mínima que siempre es válida para PNG — se usa como fallback en errores. */
-function fallbackImage() {
-  return new ImageResponse(
-    <div style={{ width: 1200, height: 630, backgroundColor: '#0a0a0e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ color: '#ffffff', fontSize: '28px', fontWeight: '700', fontFamily: 'sans-serif' }}>KodingVibes</span>
-    </div>,
-    {
-      width: 1200,
-      height: 630,
-      headers: {
-        'Content-Type': 'image/png',
-        // TEMPORAL: Sin caché para forzar regeneración
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      },
-    }
-  );
+async function createPngResponse(image: JSX.Element) {
+  const rendered = new ImageResponse(image, {
+    width: OG_WIDTH,
+    height: OG_HEIGHT,
+  });
+
+  const pngBuffer = await rendered.arrayBuffer();
+
+  return new Response(pngBuffer, {
+    headers: {
+      'Content-Type': 'image/png',
+      'Content-Length': String(pngBuffer.byteLength),
+      'Cache-Control': 'public, max-age=0, s-maxage=86400, stale-while-revalidate=604800',
+    },
+  });
 }
 
 export async function GET(request: NextRequest) {
@@ -607,33 +607,14 @@ export async function GET(request: NextRequest) {
       </div>
     );
 
-    return new ImageResponse(ogImage, {
-      width: 1200,
-      height: 630,
-      headers: {
-        'Content-Type': 'image/png',
-        // TEMPORAL: Caché deshabilitado para forzar regeneración de imágenes con el nuevo sanitizer
-        // TODO: Restaurar a 'public, max-age=600, stale-while-revalidate=3600' después de 48h
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      },
-    });
+    return createPngResponse(ogImage);
   } catch (e) {
     console.error('Error generating OG image:', e);
     try {
-      return new ImageResponse(
+      return createPngResponse(
         <div style={{ width: 1200, height: 630, backgroundColor: '#0a0a0e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ color: '#ffffff', fontSize: '48px', fontWeight: 'bold', fontFamily: 'sans-serif' }}>KodingVibes</span>
         </div>,
-        {
-          width: 1200,
-          height: 630,
-          headers: {
-            'Content-Type': 'image/png',
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-          },
-        }
       );
     } catch {
       return new Response(null, { status: 500 });
