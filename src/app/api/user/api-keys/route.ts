@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { createHash, randomBytes } from 'node:crypto'
 
@@ -64,18 +65,47 @@ export async function POST(request: Request) {
         ? userMetadata.avatar_url.trim()
         : null
 
-    const { error: ensureProfileError } = await supabase.from('users').upsert(
-      {
-        id: user.id,
-        email: user.email ?? '',
-        name: fallbackName,
-        avatar_url: avatarUrl,
-      },
-      { onConflict: 'id', ignoreDuplicates: true }
-    )
+    const { data: existingProfile, error: profileFetchError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
 
-    if (ensureProfileError) {
-      return NextResponse.json({ error: 'No se pudo preparar tu perfil para crear la API key' }, { status: 500 })
+    if (profileFetchError) {
+      return NextResponse.json({ error: 'No se pudo validar tu perfil de usuario' }, { status: 500 })
+    }
+
+    if (!existingProfile) {
+      let ensureProfileError: { code?: string; message?: string } | null = null
+
+      try {
+        const adminSupabase = createAdminClient()
+        const { error } = await adminSupabase.from('users').insert({
+          id: user.id,
+          email: user.email ?? '',
+          name: fallbackName,
+          avatar_url: avatarUrl,
+        })
+        ensureProfileError = error
+      } catch {
+        const { error } = await supabase.from('users').insert({
+          id: user.id,
+          email: user.email ?? '',
+          name: fallbackName,
+          avatar_url: avatarUrl,
+        })
+        ensureProfileError = error
+      }
+
+      if (ensureProfileError) {
+        return NextResponse.json(
+          {
+            error: 'No se pudo preparar tu perfil para crear la API key',
+            code: ensureProfileError.code ?? null,
+          },
+          { status: 500 }
+        )
+      }
     }
 
     const body = await request.json().catch(() => ({}))
@@ -125,6 +155,13 @@ export async function POST(request: Request) {
         return NextResponse.json(
           { error: 'No se encontro tu perfil de usuario. Vuelve a iniciar sesion e intenta nuevamente.' },
           { status: 400 }
+        )
+      }
+
+      if (error.code === '42501') {
+        return NextResponse.json(
+          { error: 'No tienes permisos para crear la API key. Revisa las politicas RLS en user_api_keys.' },
+          { status: 403 }
         )
       }
 
