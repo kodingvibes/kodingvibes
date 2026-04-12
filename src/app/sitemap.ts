@@ -1,5 +1,4 @@
 import { MetadataRoute } from 'next'
-import { createClient } from '@/lib/supabase/server'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Base URL
@@ -31,11 +30,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let postRoutes: MetadataRoute.Sitemap = []
   
   try {
-    const supabase = await createClient()
-    const { data: posts } = await supabase
-      .from('posts')
-      .select('id, updated_at')
-      .eq('is_deleted', false)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseAnonKey || !supabaseUrl.startsWith('http')) {
+      return staticRoutes
+    }
+
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/posts?select=id,updated_at&is_deleted=eq.false`,
+      {
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
+        cache: 'no-store',
+      }
+    )
+
+    if (!response.ok) {
+      return staticRoutes
+    }
+
+    const posts = (await response.json()) as Array<{ id: string; updated_at: string | null }>
     
     if (posts) {
       postRoutes = posts.map((post) => ({
