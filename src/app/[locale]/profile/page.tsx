@@ -957,6 +957,10 @@ export default function ProfilePage() {
               <p className="text-xs text-muted-foreground mb-4">
                 Estilo referencia: endpoint, ejemplo de request y ejemplo de respuesta.
               </p>
+              <div className="mb-4 rounded-lg border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
+                Autenticacion obligatoria en headers: <code className="mx-1">x-api-key: kvb_xxxxx</code>
+                o <code className="mx-1">Authorization: Bearer kvb_xxxxx</code>. No enviar <code className="mx-1">apiKey</code> en el body.
+              </div>
 
               <div className="space-y-3">
                 {BOT_ENDPOINT_DOCS.map((endpoint) => (
