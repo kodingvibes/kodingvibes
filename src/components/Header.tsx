@@ -131,7 +131,7 @@ export default function Header() {
   }, [supabase])
 
   const handleLogin = async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+    const baseUrl = window.location.origin.replace(/\/$/, '')
     const redirectTo = `${baseUrl}/auth/callback`
     
     await supabase.auth.signInWithOAuth({

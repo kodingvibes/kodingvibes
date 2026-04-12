@@ -130,7 +130,7 @@ export async function POST(request: Request) {
 
     if ((count ?? 0) > 0) {
       return NextResponse.json(
-        { error: 'Solo puedes tener 1 API key. Revoca/reactiva la actual.' },
+        { error: 'Solo puedes tener 1 API key. Revoca y elimina la actual para crear otra.' },
         { status: 409 }
       )
     }
@@ -227,6 +227,68 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ key: data })
   } catch (error) {
     console.error('Error updating api key:', error)
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
+
+    const requestUrl = new URL(request.url)
+    let id = requestUrl.searchParams.get('id')?.trim() || ''
+
+    if (!id) {
+      const body = await request.json().catch(() => ({}))
+      id = typeof body?.id === 'string' ? body.id.trim() : ''
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
+    }
+
+    const { data: existingKey, error: existingKeyError } = await supabase
+      .from('user_api_keys')
+      .select('id, is_active')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (existingKeyError) {
+      return NextResponse.json({ error: 'No se pudo validar la API key' }, { status: 500 })
+    }
+
+    if (!existingKey) {
+      return NextResponse.json({ error: 'API key no encontrada' }, { status: 404 })
+    }
+
+    if (existingKey.is_active) {
+      return NextResponse.json(
+        { error: 'Debes revocar la API key antes de eliminarla' },
+        { status: 409 }
+      )
+    }
+
+    const { error } = await supabase
+      .from('user_api_keys')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
+
+    if (error) {
+      return NextResponse.json({ error: 'No se pudo eliminar la API key' }, { status: 500 })
+    }
+
+    return NextResponse.json({ deleted: true, id })
+  } catch (error) {
+    console.error('Error deleting api key:', error)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }

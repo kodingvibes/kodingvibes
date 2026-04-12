@@ -10,7 +10,7 @@
 4. Agrega la siguiente variable:
 
    **Nombre:** `NEXT_PUBLIC_SITE_URL`
-   **Valor:** `https://tudominio.com` (reemplaza con tu dominio real)
+   **Valor:** `https://www.kodingvibes.com`
 
 5. Haz clic en **Save**
 
@@ -26,10 +26,10 @@ Después de agregar la variable:
 Asegúrate de que en tu proyecto de Supabase:
 
 1. Ve a **Authentication** → **URL Configuration**
-2. En **Site URL**, coloca: `https://tudominio.com`
+2. En **Site URL**, coloca: `https://www.kodingvibes.com`
 3. En **Redirect URLs**, agrega:
-   - `https://tudominio.com/auth/callback`
-   - `https://tudominio.com/**`
+   - `https://www.kodingvibes.com/auth/callback`
+   - `https://www.kodingvibes.com/**`
 
 ### 4. Verificación
 

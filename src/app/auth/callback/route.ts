@@ -6,12 +6,13 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
-  
-  // Use environment variable for base URL, fallback to request origin for local dev
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-                  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
-                  new URL(request.url).origin
+  const nextPath = searchParams.get('next')
+  const next = nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : '/'
+
+  const requestOrigin = new URL(request.url).origin
+  const envBaseUrl = process.env.NEXT_PUBLIC_SITE_URL
+    ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined)
+  const baseUrl = (envBaseUrl ?? requestOrigin).replace(/\/$/, '')
   
   if (code) {
     try {

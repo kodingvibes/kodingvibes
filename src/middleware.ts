@@ -1,4 +1,3 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { routing } from './i18n/routing'
 
@@ -6,9 +5,6 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 
 const RATE_LIMIT_MAX = 100
 const RATE_LIMIT_WINDOW = 60000
-
-const isMockMode = process.env.NEXT_PUBLIC_SUPABASE_URL === 'your_supabase_project_url' ||
-                   !process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith('http')
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()
@@ -76,6 +72,14 @@ export async function middleware(request: NextRequest) {
     pathname.includes('.') ||
     pathname === '/favicon.ico'
   ) {
+    return NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    });
+  }
+
+  if (pathname === '/auth/callback') {
     return NextResponse.next({
       request: {
         headers: request.headers,

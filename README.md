@@ -102,7 +102,7 @@ Configura estas variables en tu proyecto de Vercel:
 2. Crea credenciales OAuth 2.0
 3. Agrega los URIs autorizados:
    - Local: `http://localhost:3000/auth/callback`
-   - Producción: `https://kodingvibes.com/auth/callback`
+   - Producción: `https://www.kodingvibes.com/auth/callback`
 4. Actualiza las credenciales en Supabase
 
 ## Estructura del Proyecto

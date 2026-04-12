@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
-import { User, Save, ArrowLeft, AtSign, AlertCircle, Users, Settings, KeyRound, Copy, Bot, Power, Check } from 'lucide-react'
+import { User, Save, ArrowLeft, AtSign, AlertCircle, Users, Settings, KeyRound, Copy, Bot, Power, Check, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { LoadingSpinner } from '@/components/ui/Loading'
 
@@ -215,6 +215,7 @@ export default function ProfilePage() {
   const [botName, setBotName] = useState('')
   const [creatingApiKey, setCreatingApiKey] = useState(false)
   const [updatingApiKeyId, setUpdatingApiKeyId] = useState<string | null>(null)
+  const [apiKeyPendingDelete, setApiKeyPendingDelete] = useState<UserApiKey | null>(null)
   const [newApiKeyPlain, setNewApiKeyPlain] = useState<string | null>(null)
   const [apiKeysError, setApiKeysError] = useState<string | null>(null)
   const [botGroupRoles, setBotGroupRoles] = useState<BotGroupRole[]>([])
@@ -362,7 +363,7 @@ export default function ProfilePage() {
     }
 
     if (apiKeys.length > 0) {
-      setApiKeysError('Solo puedes tener 1 API key. Revoca/reactiva la actual.')
+      setApiKeysError('Solo puedes tener 1 API key. Revoca y elimina la actual para crear otra.')
       return
     }
 
@@ -421,6 +422,39 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Error updating api key:', error)
       setApiKeysError('No se pudo actualizar la API key')
+    } finally {
+      setUpdatingApiKeyId(null)
+    }
+  }
+
+  const handleRequestDeleteApiKey = (key: UserApiKey) => {
+    setApiKeysError(null)
+    setApiKeyPendingDelete(key)
+  }
+
+  const handleDeleteApiKey = async (id: string) => {
+    setApiKeysError(null)
+    setUpdatingApiKeyId(id)
+
+    try {
+      const response = await fetch(`/api/user/api-keys?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setApiKeysError(result?.error || 'No se pudo eliminar la API key')
+        return
+      }
+
+      setApiKeys((prev) => prev.filter((key) => key.id !== id))
+      setBotGroupRoles([])
+      setNewApiKeyPlain(null)
+      setApiKeyPendingDelete(null)
+    } catch (error) {
+      console.error('Error deleting api key:', error)
+      setApiKeysError('No se pudo eliminar la API key')
     } finally {
       setUpdatingApiKeyId(null)
     }
@@ -569,6 +603,19 @@ export default function ProfilePage() {
       setBotGroupRoles([])
     }
   }, [apiKeys, loadBotGroupRoles])
+
+  useEffect(() => {
+    if (!apiKeyPendingDelete) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      if (updatingApiKeyId === apiKeyPendingDelete.id) return
+      setApiKeyPendingDelete(null)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [apiKeyPendingDelete, updatingApiKeyId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -889,7 +936,7 @@ export default function ProfilePage() {
 
             {apiKeys.length > 0 && (
               <p className="text-xs text-muted-foreground mb-4">
-                Ya tienes una API key creada. Solo se permite una por usuario.
+                Ya tienes una API key creada. Solo se permite una por usuario. Si esta revocada, puedes eliminarla y luego crear otra.
               </p>
             )}
 
@@ -932,6 +979,18 @@ export default function ProfilePage() {
                         {key.is_active ? <Power className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                         {key.is_active ? 'Revocar' : 'Reactivar'}
                       </button>
+
+                      {!key.is_active && (
+                        <button
+                          type="button"
+                          onClick={() => handleRequestDeleteApiKey(key)}
+                          disabled={updatingApiKeyId === key.id}
+                          className="px-3 py-2 border border-red-300 text-red-700 dark:text-red-300 rounded-lg text-sm hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Eliminar
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -1038,6 +1097,44 @@ export default function ProfilePage() {
                       </div>
                     )
                   })}
+                </div>
+              </div>
+            )}
+
+            {apiKeyPendingDelete && (
+              <div
+                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+                onClick={(event) => {
+                  if (event.target !== event.currentTarget) return
+                  if (updatingApiKeyId === apiKeyPendingDelete.id) return
+                  setApiKeyPendingDelete(null)
+                }}
+              >
+                <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-xl">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Eliminar API key</h3>
+                  <p className="text-sm text-muted-foreground mb-5">
+                    Esta acción elimina de forma permanente la API key revocada{' '}
+                    <span className="font-medium text-foreground">{apiKeyPendingDelete.name}</span>. Luego podrás crear una nueva.
+                  </p>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setApiKeyPendingDelete(null)}
+                      disabled={updatingApiKeyId === apiKeyPendingDelete.id}
+                      className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteApiKey(apiKeyPendingDelete.id)}
+                      disabled={updatingApiKeyId === apiKeyPendingDelete.id}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {updatingApiKeyId === apiKeyPendingDelete.id ? 'Eliminando...' : 'Eliminar'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
