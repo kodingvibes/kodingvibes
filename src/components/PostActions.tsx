@@ -114,7 +114,7 @@ export default function PostActions({
 
   const handleShare = async () => {
     try {
-      const ogUrl = `https://www.kodingvibes.com/api/og?id=${postId}${title ? `&title=${encodeURIComponent(title.substring(0, 80))}` : ''}`
+      const ogUrl = `https://www.kodingvibes.com/api/og?id=${postId}${title ? `&title=${encodeURIComponent(title.substring(0, 80))}` : ''}&v=3`
       fetch(ogUrl, { method: 'GET', mode: 'no-cors' }).catch(() => {})
 
       if (navigator.clipboard && window.isSecureContext) {

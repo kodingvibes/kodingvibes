@@ -49,8 +49,8 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
     const authorName = post.users?.name || post.users?.username || 'KodingVibes'
     
     // Construct OG image URL with version parameter for cache busting
-    // v=2 = versión con sanitización de Unicode (Feb 2026)
-    const ogImageUrl = `https://www.kodingvibes.com/api/og?id=${encodeURIComponent(id)}&v=2`
+    // v=3 = versión con imagen del post como background + overlay ajustado
+    const ogImageUrl = `https://www.kodingvibes.com/api/og?id=${encodeURIComponent(id)}&v=3`
     
     return {
       title: `${post.title} | KodingVibes`,

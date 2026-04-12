@@ -373,7 +373,7 @@ export default function SubmitPage() {
       if (postStatus === 'draft') {
         router.push(`/drafts`)
       } else {
-        const ogUrl = `https://www.kodingvibes.com/api/og?id=${post.id}${title ? `&title=${encodeURIComponent(title.substring(0, 80))}` : ''}`
+        const ogUrl = `https://www.kodingvibes.com/api/og?id=${post.id}${title ? `&title=${encodeURIComponent(title.substring(0, 80))}` : ''}&v=3`
         fetch(ogUrl, { method: 'GET', mode: 'no-cors' }).catch(() => {})
         router.push(`/post/${post.id}`)
       }
