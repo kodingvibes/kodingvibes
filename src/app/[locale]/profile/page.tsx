@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
-import { User, Save, ArrowLeft, AtSign, AlertCircle, Users, Settings } from 'lucide-react'
+import { User, Save, ArrowLeft, AtSign, AlertCircle, Users, Settings, KeyRound, Copy, Bot, Power } from 'lucide-react'
 import Link from 'next/link'
 import { LoadingSpinner } from '@/components/ui/Loading'
 
@@ -28,6 +28,22 @@ interface Group {
   created_at: string
 }
 
+interface UserApiKey {
+  id: string
+  name: string
+  key_prefix: string
+  is_active: boolean
+  created_at: string
+  last_used_at: string | null
+  revoked_at: string | null
+}
+
+interface BotGroupRole {
+  id: string
+  group_id: string
+  role: 'member' | 'moderator'
+}
+
 export default function ProfilePage() {
   const [, setProfile] = useState<Profile | null>(null)
   const [username, setUsername] = useState('')
@@ -39,6 +55,15 @@ export default function ProfilePage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [myGroups, setMyGroups] = useState<Group[]>([])
+  const [apiKeys, setApiKeys] = useState<UserApiKey[]>([])
+  const [botName, setBotName] = useState('')
+  const [creatingApiKey, setCreatingApiKey] = useState(false)
+  const [updatingApiKeyId, setUpdatingApiKeyId] = useState<string | null>(null)
+  const [newApiKeyPlain, setNewApiKeyPlain] = useState<string | null>(null)
+  const [apiKeysError, setApiKeysError] = useState<string | null>(null)
+  const [botGroupRoles, setBotGroupRoles] = useState<BotGroupRole[]>([])
+  const [assigningGroupRole, setAssigningGroupRole] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'profile' | 'bots'>('profile')
   const router = useRouter()
   const supabase = createClient()
 
@@ -74,6 +99,40 @@ export default function ProfilePage() {
       setTimeout(() => setSuccess(false), 3000)
     }
   }, [supabase, generateUsername])
+
+  const loadApiKeys = useCallback(async () => {
+    try {
+      const response = await fetch('/api/user/api-keys', {
+        method: 'GET',
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setApiKeysError(result?.error || 'No se pudieron cargar tus API keys')
+        return
+      }
+
+      setApiKeys(result?.keys || [])
+      setApiKeysError(null)
+    } catch (error) {
+      console.error('Error loading api keys:', error)
+      setApiKeysError('No se pudieron cargar tus API keys')
+    }
+  }, [])
+
+  const loadBotGroupRoles = useCallback(async (apiKeyId: string) => {
+    try {
+      const query = new URLSearchParams({ apiKeyId }).toString()
+      const response = await fetch(`/api/user/api-keys/group-roles?${query}`)
+      const result = await response.json()
+
+      if (!response.ok) return
+      setBotGroupRoles(result?.roles || [])
+    } catch (error) {
+      console.error('Error loading bot group roles:', error)
+    }
+  }, [])
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -121,6 +180,8 @@ export default function ProfilePage() {
         } else if (groupsData) {
           setMyGroups(groupsData)
         }
+
+        await loadApiKeys()
       } catch (err) {
         console.error('Unexpected error:', err)
         setError('Error inesperado al cargar el perfil')
@@ -130,7 +191,149 @@ export default function ProfilePage() {
     }
 
     loadProfile()
-  }, [router, supabase, createProfile])
+  }, [router, supabase, createProfile, loadApiKeys])
+
+  const handleCreateApiKey = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setApiKeysError(null)
+    setNewApiKeyPlain(null)
+
+    const trimmedBotName = botName.trim()
+    if (trimmedBotName.length < 3 || trimmedBotName.length > 80) {
+      setApiKeysError('El nombre del bot debe tener entre 3 y 80 caracteres')
+      return
+    }
+
+    if (apiKeys.length > 0) {
+      setApiKeysError('Solo puedes tener 1 API key. Revoca/reactiva la actual.')
+      return
+    }
+
+    setCreatingApiKey(true)
+    try {
+      const response = await fetch('/api/user/api-keys', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ botName: trimmedBotName }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setApiKeysError(result?.error || 'No se pudo crear la API key')
+        return
+      }
+
+      const createdPlain = result?.key?.plain || null
+      setNewApiKeyPlain(createdPlain)
+      setBotName('')
+      await loadApiKeys()
+      if (result?.key?.id) {
+        await loadBotGroupRoles(result.key.id)
+      }
+    } catch (error) {
+      console.error('Error creating api key:', error)
+      setApiKeysError('No se pudo crear la API key')
+    } finally {
+      setCreatingApiKey(false)
+    }
+  }
+
+  const handleToggleApiKey = async (id: string, nextState: boolean) => {
+    setApiKeysError(null)
+    setUpdatingApiKeyId(id)
+    try {
+      const response = await fetch('/api/user/api-keys', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, is_active: nextState }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setApiKeysError(result?.error || 'No se pudo actualizar la API key')
+        return
+      }
+
+      setApiKeys((prev) => prev.map((key) => (key.id === id ? result.key : key)))
+    } catch (error) {
+      console.error('Error updating api key:', error)
+      setApiKeysError('No se pudo actualizar la API key')
+    } finally {
+      setUpdatingApiKeyId(null)
+    }
+  }
+
+  const copyApiKey = async () => {
+    if (!newApiKeyPlain) return
+
+    try {
+      await navigator.clipboard.writeText(newApiKeyPlain)
+    } catch (error) {
+      console.error('Error copying api key:', error)
+    }
+  }
+
+  const handleAssignBotRole = async (groupId: string, role: 'member' | 'moderator') => {
+    const apiKeyId = apiKeys[0]?.id
+    if (!apiKeyId) {
+      setApiKeysError('Necesitas generar una API key para configurar roles del bot')
+      return
+    }
+
+    setAssigningGroupRole(groupId)
+    setApiKeysError(null)
+    try {
+      const response = await fetch('/api/user/api-keys/group-roles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          apiKeyId,
+          groupId,
+          role,
+        }),
+      })
+
+      const result = await response.json()
+      if (!response.ok) {
+        setApiKeysError(result?.error || 'No se pudo asignar rol del bot en el grupo')
+        return
+      }
+
+      setBotGroupRoles((prev) => {
+        const exists = prev.find((item) => item.group_id === groupId)
+        if (exists) {
+          return prev.map((item) => (item.group_id === groupId ? result.role : item))
+        }
+        return [result.role, ...prev]
+      })
+    } catch (error) {
+      console.error('Error assigning bot role:', error)
+      setApiKeysError('No se pudo asignar rol del bot en el grupo')
+    } finally {
+      setAssigningGroupRole(null)
+    }
+  }
+
+  const getBotRoleForGroup = (groupId: string): 'member' | 'moderator' => {
+    return botGroupRoles.find((item) => item.group_id === groupId)?.role || 'member'
+  }
+
+  useEffect(() => {
+    const apiKeyId = apiKeys[0]?.id
+    if (apiKeyId) {
+      loadBotGroupRoles(apiKeyId)
+    } else {
+      setBotGroupRoles([])
+    }
+  }, [apiKeys, loadBotGroupRoles])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -241,126 +444,316 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 space-y-6">
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-foreground mb-2">
-              <div className="flex items-center gap-2">
-                <AtSign className="h-4 w-4" />
-                <span>Pseudónimo (Username)</span>
-              </div>
-            </label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value.toLowerCase())}
-              placeholder="tu_username"
-              className="w-full p-3 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Entre 3 y 20 caracteres. Solo letras, números y guiones bajos.
-            </p>
-          </div>
-
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-              Nombre completo
-            </label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Tu nombre"
-              className="w-full p-3 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <Link
-              href="/"
-              className="px-6 py-2.5 border border-border rounded-full text-foreground hover:bg-muted font-medium transition-colors"
-            >
-              Cancelar
-            </Link>
+        <div className="bg-card border border-border rounded-xl p-2 mb-6">
+          <div className="grid grid-cols-2 gap-2">
             <button
-              type="submit"
-              disabled={saving || !userId}
-              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
+              type="button"
+              onClick={() => setActiveTab('profile')}
+              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === 'profile'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-muted'
+              }`}
             >
-              {saving ? (
-                <>
-                  <LoadingSpinner size="sm" />
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  Guardar cambios
-                </>
-              )}
+              Perfil
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('bots')}
+              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors inline-flex items-center justify-center gap-2 ${
+                activeTab === 'bots'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-muted'
+              }`}
+            >
+              <KeyRound className="h-4 w-4" />
+              Bots
             </button>
           </div>
-        </form>
-
-        <div className="mt-6 bg-muted/50 rounded-xl p-4 text-sm text-muted-foreground">
-          <p className="font-medium text-foreground mb-2">¿Cómo te verán otros usuarios?</p>
-          <p>
-            Tu pseudónimo (username) se mostrará en tus posts y comentarios. 
-            Si no tienes uno, se usará tu nombre o email.
-          </p>
         </div>
 
-        {/* Mis Grupos */}
-        {myGroups.length > 0 && (
-          <div className="mt-8">
-            <div className="flex items-center gap-2 mb-4">
-              <Users className="h-5 w-5 text-foreground" />
-              <h2 className="text-xl font-bold text-foreground">Mis Grupos</h2>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {myGroups.map((group) => (
-                <div
-                  key={group.id}
-                  className="bg-card border border-border rounded-xl p-4 hover:border-primary/50 transition-all"
+        {activeTab === 'profile' && (
+          <>
+            <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 space-y-6">
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-foreground mb-2">
+                  <div className="flex items-center gap-2">
+                    <AtSign className="h-4 w-4" />
+                    <span>Pseudónimo (Username)</span>
+                  </div>
+                </label>
+                <input
+                  type="text"
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                  placeholder="tu_username"
+                  className="w-full p-3 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Entre 3 y 20 caracteres. Solo letras, números y guiones bajos.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
+                  Nombre completo
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Tu nombre"
+                  className="w-full p-3 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                <Link
+                  href="/"
+                  className="px-6 py-2.5 border border-border rounded-full text-foreground hover:bg-muted font-medium transition-colors"
                 >
-                  <div className="flex items-start gap-3">
+                  Cancelar
+                </Link>
+                <button
+                  type="submit"
+                  disabled={saving || !userId}
+                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
+                >
+                  {saving ? (
+                    <>
+                      <LoadingSpinner size="sm" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Guardar cambios
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+
+            <div className="mt-6 bg-muted/50 rounded-xl p-4 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground mb-2">¿Cómo te verán otros usuarios?</p>
+              <p>
+                Tu pseudónimo (username) se mostrará en tus posts y comentarios.
+                Si no tienes uno, se usará tu nombre o email.
+              </p>
+            </div>
+
+            {myGroups.length > 0 && (
+              <div className="mt-8">
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="h-5 w-5 text-foreground" />
+                  <h2 className="text-xl font-bold text-foreground">Mis Grupos</h2>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {myGroups.map((group) => (
                     <div
-                      className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
-                      style={{ backgroundColor: group.color || '#6366f1' }}
+                      key={group.id}
+                      className="bg-card border border-border rounded-xl p-4 hover:border-primary/50 transition-all"
                     >
-                      {group.name[0].toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate">
-                        {group.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                        {group.description || 'Sin descripción'}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
-                        <span>{group.member_count} miembros</span>
-                        <span>{group.post_count} posts</span>
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
+                          style={{ backgroundColor: group.color || '#6366f1' }}
+                        >
+                          {group.name[0].toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-foreground truncate">
+                            {group.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                            {group.description || 'Sin descripción'}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
+                            <span>{group.member_count} miembros</span>
+                            <span>{group.post_count} posts</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-4 pt-4 border-t border-border">
+                        <Link
+                          href={`/group/${group.slug}`}
+                          className="flex-1 px-3 py-2 text-center text-sm border border-border rounded-lg hover:bg-muted transition-colors"
+                        >
+                          Ver grupo
+                        </Link>
+                        <Link
+                          href={`/group/${group.slug}/admin`}
+                          className="flex-1 px-3 py-2 text-center text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-1"
+                        >
+                          <Settings className="h-3 w-3" />
+                          Administrar
+                        </Link>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex gap-2 mt-4 pt-4 border-t border-border">
-                    <Link
-                      href={`/group/${group.slug}`}
-                      className="flex-1 px-3 py-2 text-center text-sm border border-border rounded-lg hover:bg-muted transition-colors"
-                    >
-                      Ver grupo
-                    </Link>
-                    <Link
-                      href={`/group/${group.slug}/admin`}
-                      className="flex-1 px-3 py-2 text-center text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-1"
-                    >
-                      <Settings className="h-3 w-3" />
-                      Administrar
-                    </Link>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 'bots' && (
+          <div className="mt-2">
+            <div className="flex items-center gap-2 mb-4">
+              <KeyRound className="h-5 w-5 text-foreground" />
+              <h2 className="text-xl font-bold text-foreground">API Keys para Bots</h2>
+            </div>
+
+            <div className="bg-card border border-border rounded-xl p-5">
+            <p className="text-sm text-muted-foreground mb-4">
+              Puedes generar 1 API key para publicar desde tu bot. El post queda marcado como bot y muestra el nombre del bot.
+            </p>
+
+            {apiKeysError && (
+              <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm">
+                {apiKeysError}
+              </div>
+            )}
+
+            {newApiKeyPlain && (
+              <div className="mb-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 px-4 py-3 rounded-lg">
+                <p className="text-sm font-medium mb-2">Guarda esta key ahora: solo se muestra una vez.</p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <code className="flex-1 text-xs bg-background border border-border rounded px-3 py-2 break-all">{newApiKeyPlain}</code>
+                  <button
+                    type="button"
+                    onClick={copyApiKey}
+                    className="px-3 py-2 border border-border rounded-lg text-sm hover:bg-muted transition-colors inline-flex items-center justify-center gap-2"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copiar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateApiKey} className="flex flex-col sm:flex-row gap-2 mb-5">
+              <input
+                type="text"
+                value={botName}
+                onChange={(e) => setBotName(e.target.value)}
+                placeholder="Nombre del bot (ej: Bot Discord)"
+                className="flex-1 p-3 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                maxLength={80}
+              />
+              <button
+                type="submit"
+                disabled={creatingApiKey || apiKeys.length > 0}
+                className="px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                {creatingApiKey ? 'Creando...' : 'Generar key'}
+              </button>
+            </form>
+
+            {apiKeys.length > 0 && (
+              <p className="text-xs text-muted-foreground mb-4">
+                Ya tienes una API key creada. Solo se permite una por usuario.
+              </p>
+            )}
+
+            <div className="space-y-3">
+              {apiKeys.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Aún no tienes API keys.</p>
+              ) : (
+                apiKeys.map((key) => (
+                  <div
+                    key={key.id}
+                    className="border border-border rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{key.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Prefijo: <code>{key.key_prefix}...</code>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Último uso: {key.last_used_at ? new Date(key.last_used_at).toLocaleString() : 'Nunca'}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          key.is_active
+                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {key.is_active ? 'Activa' : 'Revocada'}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleApiKey(key.id, !key.is_active)}
+                        disabled={updatingApiKeyId === key.id}
+                        className="px-3 py-2 border border-border rounded-lg text-sm hover:bg-muted transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+                      >
+                        {key.is_active ? <Power className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                        {key.is_active ? 'Revocar' : 'Reactivar'}
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-5 bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
+              Endpoint para bots: <code>POST /api/bot/posts</code>
+            </div>
+
+            <div className="mt-4 bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-2">
+              <p className="font-medium text-foreground">Ejemplo rápido para publicar:</p>
+              <pre className="overflow-x-auto whitespace-pre-wrap break-words">{`curl -X POST /api/bot/posts \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "apiKey": "kvb_...",
+    "title": "Post desde mi bot",
+    "content": "Hola mundo",
+    "groupId": "uuid-del-grupo",
+    "status": "published"
+  }'`}</pre>
+            </div>
+
+            {myGroups.length > 0 && (
+              <div className="mt-5 border border-border rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-foreground mb-3">
+                  Asignar rol del bot en tus grupos
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Como dueño del grupo, puedes dejar tu bot como moderador para que administre posts y comentarios del grupo.
+                </p>
+                <div className="space-y-3">
+                  {myGroups.map((group) => {
+                    const selectedRole = getBotRoleForGroup(group.id)
+                    return (
+                      <div key={group.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border border-border rounded-lg p-3">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{group.name}</p>
+                          <p className="text-xs text-muted-foreground">/{group.slug}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={selectedRole}
+                            onChange={(e) => handleAssignBotRole(group.id, e.target.value as 'member' | 'moderator')}
+                            disabled={apiKeys.length === 0 || assigningGroupRole === group.id}
+                            className="px-3 py-2 text-sm bg-background border border-input rounded-lg"
+                          >
+                            <option value="member">Miembro</option>
+                            <option value="moderator">Moderador</option>
+                          </select>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
             </div>
           </div>
         )}

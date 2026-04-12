@@ -72,12 +72,15 @@ export type Database = {
       }
       posts: {
         Row: {
+          api_key_id: string | null
+          bot_name: string | null
           content: string | null
           created_at: string
           deleted_at: string | null
           edited_at: string | null
           id: string
           image_url: string | null
+          is_bot_post: boolean
           is_deleted: boolean
           status: string
           tags: string[] | null
@@ -88,12 +91,15 @@ export type Database = {
           group_id: string | null
         }
         Insert: {
+          api_key_id?: string | null
+          bot_name?: string | null
           content?: string | null
           created_at?: string
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
           image_url?: string | null
+          is_bot_post?: boolean
           is_deleted?: boolean
           status?: string
           tags?: string[] | null
@@ -104,12 +110,15 @@ export type Database = {
           group_id?: string | null
         }
         Update: {
+          api_key_id?: string | null
+          bot_name?: string | null
           content?: string | null
           created_at?: string
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
           image_url?: string | null
+          is_bot_post?: boolean
           is_deleted?: boolean
           status?: string
           tags?: string[] | null
@@ -129,6 +138,112 @@ export type Database = {
           },
           {
             foreignKeyName: "posts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "user_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_api_keys: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          revoked_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          revoked_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_api_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_api_key_group_roles: {
+        Row: {
+          api_key_id: string
+          assigned_by: string
+          created_at: string
+          group_id: string
+          id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          api_key_id: string
+          assigned_by: string
+          created_at?: string
+          group_id: string
+          id?: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          api_key_id?: string
+          assigned_by?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_api_key_group_roles_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "user_api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_api_key_group_roles_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_api_key_group_roles_group_id_fkey"
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "groups"
@@ -914,6 +1029,36 @@ export type Database = {
           check_user_id: string
         }
         Returns: boolean
+      }
+      create_post_with_api_key: {
+        Args: {
+          p_api_key: string
+          p_title: string
+          p_content?: string
+          p_group_id?: string
+          p_tags?: string[]
+          p_image_url?: string
+          p_status?: string
+        }
+        Returns: {
+          api_key_id: string | null
+          bot_name: string | null
+          content: string | null
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          group_id: string | null
+          id: string
+          image_url: string | null
+          is_bot_post: boolean
+          is_deleted: boolean
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+          vote_count: number
+        }
       }
     }
     Enums: {

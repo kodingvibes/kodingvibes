@@ -6,7 +6,7 @@ import VoteButtons from '@/components/VoteButtons'
 import CommentSection from '@/components/CommentSection'
 import MarkdownContent from '@/components/MarkdownContent'
 import PostActionsClient from '@/components/PostActionsClient'
-import { ArrowLeft, Clock, Edit3 } from 'lucide-react'
+import { ArrowLeft, Clock, Edit3, Bot } from 'lucide-react'
 import type { Metadata } from 'next'
 
 interface PostPageProps {
@@ -180,6 +180,12 @@ export default async function PostPage({ params }: PostPageProps) {
                     <p className="font-medium text-foreground">
                       @{post.users?.username || post.users?.name || post.users?.email?.split('@')[0] || 'anónimo'}
                     </p>
+                    {post.is_bot_post && (
+                      <p className="inline-flex items-center gap-1 text-xs mt-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5">
+                        <Bot className="h-3 w-3" />
+                        {post.bot_name ? `Publicado por bot: ${post.bot_name}` : 'Publicado por bot del usuario'}
+                      </p>
+                    )}
                     <p className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {formatDate(post.created_at)}
@@ -267,6 +273,12 @@ export default async function PostPage({ params }: PostPageProps) {
                     <p className="font-medium text-foreground">
                       @{post.users?.username || post.users?.name || post.users?.email?.split('@')[0] || 'anónimo'}
                     </p>
+                    {post.is_bot_post && (
+                      <p className="inline-flex items-center gap-1 text-xs mt-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5">
+                        <Bot className="h-3 w-3" />
+                        {post.bot_name ? `Publicado por bot: ${post.bot_name}` : 'Publicado por bot del usuario'}
+                      </p>
+                    )}
                     <p className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {formatDate(post.created_at)}

@@ -6,7 +6,7 @@ import Image from 'next/image'
 import VoteButtons from './VoteButtons'
 import PostActions from './PostActions'
 import { createClient } from '@/lib/supabase/client'
-import { MessageSquare, Clock } from 'lucide-react'
+import { MessageSquare, Clock, Bot } from 'lucide-react'
 
 interface GroupTag {
   id: string
@@ -25,6 +25,8 @@ interface Post {
   is_deleted: boolean
   tags: string[] | null
   group_id: string | null
+  is_bot_post: boolean
+  bot_name: string | null
   users: {
     name: string | null
     username: string | null
@@ -104,6 +106,12 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
               <span className="font-medium text-foreground/80">
                 @{post.users?.username || post.users?.name || post.users?.email?.split('@')[0] || 'anónimo'}
               </span>
+              {post.is_bot_post && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5">
+                  <Bot className="h-3 w-3" />
+                  {post.bot_name ? `bot: ${post.bot_name}` : 'bot del usuario'}
+                </span>
+              )}
               <span>•</span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
