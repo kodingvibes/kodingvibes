@@ -54,6 +54,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 
+    const userMetadata = (user.user_metadata ?? {}) as Record<string, unknown>
+    const fallbackName =
+      typeof userMetadata.name === 'string' && userMetadata.name.trim().length > 0
+        ? userMetadata.name.trim()
+        : (user.email?.split('@')[0] ?? 'Usuario')
+    const avatarUrl =
+      typeof userMetadata.avatar_url === 'string' && userMetadata.avatar_url.trim().length > 0
+        ? userMetadata.avatar_url.trim()
+        : null
+
+    const { error: ensureProfileError } = await supabase.from('users').upsert(
+      {
+        id: user.id,
+        email: user.email ?? '',
+        name: fallbackName,
+        avatar_url: avatarUrl,
+      },
+      { onConflict: 'id', ignoreDuplicates: true }
+    )
+
+    if (ensureProfileError) {
+      return NextResponse.json({ error: 'No se pudo preparar tu perfil para crear la API key' }, { status: 500 })
+    }
+
     const body = await request.json().catch(() => ({}))
     const botNameRaw = typeof body?.botName === 'string' ? body.botName : body?.name
     const botName = typeof botNameRaw === 'string' ? botNameRaw.trim() : ''
@@ -97,6 +121,13 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
+      if (error.code === '23503') {
+        return NextResponse.json(
+          { error: 'No se encontro tu perfil de usuario. Vuelve a iniciar sesion e intenta nuevamente.' },
+          { status: 400 }
+        )
+      }
+
       return NextResponse.json({ error: 'No se pudo crear la API key' }, { status: 500 })
     }
 

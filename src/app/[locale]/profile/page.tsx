@@ -44,6 +44,173 @@ interface BotGroupRole {
   role: 'member' | 'moderator'
 }
 
+interface BotEndpointDoc {
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
+  path: string
+  description: string
+  requestExample: string
+  responseExample: string
+}
+
+const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
+  {
+    method: 'POST',
+    path: '/api/bot/posts',
+    description: 'Crea un post marcado como bot del usuario.',
+    requestExample: `{
+  "apiKey": "kvb_xxxxx",
+  "title": "Post desde mi bot",
+  "content": "Hola comunidad",
+  "groupId": "uuid-del-grupo",
+  "tags": ["bot", "ia"],
+  "status": "published"
+}`,
+    responseExample: `{
+  "post": {
+    "id": "uuid-post",
+    "title": "Post desde mi bot",
+    "is_bot_post": true,
+    "bot_name": "Mi Bot",
+    "status": "published"
+  }
+}`,
+  },
+  {
+    method: 'PATCH',
+    path: '/api/bot/posts/{id}',
+    description: 'Edita un post propio o moderable por el bot.',
+    requestExample: `{
+  "apiKey": "kvb_xxxxx",
+  "title": "Titulo actualizado",
+  "content": "Contenido actualizado",
+  "status": "published"
+}`,
+    responseExample: `{
+  "post": {
+    "id": "uuid-post",
+    "title": "Titulo actualizado",
+    "updated_at": "2026-04-12T02:10:00.000Z"
+  }
+}`,
+  },
+  {
+    method: 'DELETE',
+    path: '/api/bot/posts/{id}',
+    description: 'Soft delete de post (is_deleted=true).',
+    requestExample: `{
+  "apiKey": "kvb_xxxxx"
+}`,
+    responseExample: `{
+  "deleted": true,
+  "id": "uuid-post"
+}`,
+  },
+  {
+    method: 'POST',
+    path: '/api/bot/comments',
+    description: 'Crea comentario en un post permitido para el bot.',
+    requestExample: `{
+  "apiKey": "kvb_xxxxx",
+  "postId": "uuid-post",
+  "content": "Comentario desde bot",
+  "parentId": null
+}`,
+    responseExample: `{
+  "comment": {
+    "id": "uuid-comment",
+    "post_id": "uuid-post",
+    "content": "Comentario desde bot"
+  }
+}`,
+  },
+  {
+    method: 'PATCH',
+    path: '/api/bot/comments/{id}',
+    description: 'Edita comentario propio o moderable por el bot.',
+    requestExample: `{
+  "apiKey": "kvb_xxxxx",
+  "content": "Comentario editado"
+}`,
+    responseExample: `{
+  "comment": {
+    "id": "uuid-comment",
+    "content": "Comentario editado"
+  }
+}`,
+  },
+  {
+    method: 'DELETE',
+    path: '/api/bot/comments/{id}',
+    description: 'Soft delete de comentario (is_deleted=true).',
+    requestExample: `{
+  "apiKey": "kvb_xxxxx"
+}`,
+    responseExample: `{
+  "deleted": true,
+  "id": "uuid-comment"
+}`,
+  },
+  {
+    method: 'POST',
+    path: '/api/bot/votes',
+    description: 'Crea o actualiza voto de post (1 o -1).',
+    requestExample: `{
+  "apiKey": "kvb_xxxxx",
+  "postId": "uuid-post",
+  "value": 1
+}`,
+    responseExample: `{
+  "vote": {
+    "post_id": "uuid-post",
+    "user_id": "uuid-user",
+    "value": 1
+  }
+}`,
+  },
+  {
+    method: 'DELETE',
+    path: '/api/bot/votes',
+    description: 'Elimina voto del bot en un post.',
+    requestExample: `{
+  "apiKey": "kvb_xxxxx",
+  "postId": "uuid-post"
+}`,
+    responseExample: `{
+  "deleted": true
+}`,
+  },
+  {
+    method: 'GET',
+    path: '/api/bot/group-roles?apiKey=...',
+    description: 'Lista roles del bot por grupo para esa API key.',
+    requestExample: 'Sin body (query param apiKey).',
+    responseExample: `{
+  "roles": [
+    {
+      "group_id": "uuid-grupo",
+      "role": "moderator"
+    }
+  ]
+}`,
+  },
+  {
+    method: 'POST',
+    path: '/api/bot/group-roles',
+    description: 'Asigna rol del bot en un grupo (si el usuario es dueno).',
+    requestExample: `{
+  "apiKey": "kvb_xxxxx",
+  "groupId": "uuid-grupo",
+  "role": "moderator"
+}`,
+    responseExample: `{
+  "role": {
+    "group_id": "uuid-grupo",
+    "role": "moderator"
+  }
+}`,
+  },
+]
+
 export default function ProfilePage() {
   const [, setProfile] = useState<Profile | null>(null)
   const [username, setUsername] = useState('')
@@ -707,17 +874,50 @@ export default function ProfilePage() {
               Endpoint para bots: <code>POST /api/bot/posts</code>
             </div>
 
-            <div className="mt-4 bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-2">
-              <p className="font-medium text-foreground">Ejemplo rápido para publicar:</p>
-              <pre className="overflow-x-auto whitespace-pre-wrap break-words">{`curl -X POST /api/bot/posts \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "apiKey": "kvb_...",
-    "title": "Post desde mi bot",
-    "content": "Hola mundo",
-    "groupId": "uuid-del-grupo",
-    "status": "published"
-  }'`}</pre>
+            <div className="mt-4 border border-border rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Documentacion API Bot</h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                Estilo referencia: endpoint, ejemplo de request y ejemplo de respuesta.
+              </p>
+
+              <div className="space-y-4">
+                {BOT_ENDPOINT_DOCS.map((endpoint) => (
+                  <div key={`${endpoint.method}-${endpoint.path}`} className="border border-border rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span
+                        className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
+                          endpoint.method === 'GET'
+                            ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300'
+                            : endpoint.method === 'POST'
+                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                            : endpoint.method === 'PATCH'
+                            ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                            : 'bg-red-500/15 text-red-700 dark:text-red-300'
+                        }`}
+                      >
+                        {endpoint.method}
+                      </span>
+                      <code className="text-xs break-all">{endpoint.path}</code>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-3">{endpoint.description}</p>
+
+                    <div className="grid gap-3 lg:grid-cols-2">
+                      <div>
+                        <p className="text-xs font-medium text-foreground mb-1">Request ejemplo</p>
+                        <pre className="text-xs bg-muted/60 rounded-md p-2 overflow-x-auto whitespace-pre-wrap break-words">
+                          {endpoint.requestExample}
+                        </pre>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-foreground mb-1">Response ejemplo</p>
+                        <pre className="text-xs bg-muted/60 rounded-md p-2 overflow-x-auto whitespace-pre-wrap break-words">
+                          {endpoint.responseExample}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {myGroups.length > 0 && (
