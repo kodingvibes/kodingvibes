@@ -161,6 +161,37 @@ export async function GET(request: NextRequest) {
           position: 'relative',
         }}
       >
+        {imageData ? (
+          <>
+            <img
+              src={imageData}
+              alt=""
+              style={{
+                position: 'absolute',
+                top: '0',
+                left: '0',
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                inset: '0',
+                background: 'rgba(6,8,16,0.72)',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                inset: '0',
+                background: 'linear-gradient(135deg, rgba(10,10,14,0.78) 0%, rgba(10,10,14,0.58) 55%, rgba(10,10,14,0.84) 100%)',
+              }}
+            />
+          </>
+        ) : null}
+
         {/* ─── BACKGROUND DEPTH LAYER ─── */}
         {/* Orb indigo – esquina superior izquierda */}
         <div
