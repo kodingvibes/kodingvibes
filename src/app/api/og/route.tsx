@@ -131,24 +131,17 @@ export async function GET(request: NextRequest) {
       try {
         const imgResponse = await fetch(imageUrl);
         if (imgResponse.ok) {
-          // Strip parameters (e.g. "; charset=utf-8") so the data URL stays well-formed
           const contentType = (imgResponse.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
-
-          // Only embed raster formats that Satori's rasterizer can decode
           const supported = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
           if (supported.includes(contentType)) {
             const buffer = await imgResponse.arrayBuffer();
             if (buffer.byteLength <= 4 * 1024 * 1024) {
-              const bytes = new Uint8Array(buffer);
-              let binary = '';
-              for (let i = 0; i < bytes.length; i += 8192) {
-                binary += String.fromCharCode(...bytes.slice(i, Math.min(i + 8192, bytes.length)));
-              }
-              imageData = `data:${contentType};base64,${btoa(binary)}`;
+              const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+              imageData = `data:${contentType};base64,${base64}`;
             }
           }
         }
-      } catch (_e) {
+      } catch {
         // Image fetch failed – render without image
       }
     }
@@ -628,6 +621,22 @@ export async function GET(request: NextRequest) {
     });
   } catch (e) {
     console.error('Error generating OG image:', e);
-    return fallbackImage();
+    try {
+      return new ImageResponse(
+        <div style={{ width: 1200, height: 630, backgroundColor: '#0a0a0e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ color: '#ffffff', fontSize: '48px', fontWeight: 'bold', fontFamily: 'sans-serif' }}>KodingVibes</span>
+        </div>,
+        {
+          width: 1200,
+          height: 630,
+          headers: {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          },
+        }
+      );
+    } catch {
+      return new Response(null, { status: 500 });
+    }
   }
 }
