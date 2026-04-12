@@ -871,7 +871,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="mt-5 bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
-              Endpoint para bots: <code>POST /api/bot/posts</code>
+              URL base para bots: <code>https://www.kodingvibes.com</code>
             </div>
 
             <div className="mt-4 border border-border rounded-lg p-4">
