@@ -41,3 +41,15 @@ export async function touchBotApiKeyUsage(apiKeyId: string) {
     })
     .eq('id', apiKeyId)
 }
+
+export function getBotApiKeyFromRequest(request: Request): string {
+  const xApiKey = request.headers.get('x-api-key')?.trim()
+  if (xApiKey) return xApiKey
+
+  const authorization = request.headers.get('authorization')?.trim() || ''
+  if (authorization.toLowerCase().startsWith('bearer ')) {
+    return authorization.slice(7).trim()
+  }
+
+  return ''
+}

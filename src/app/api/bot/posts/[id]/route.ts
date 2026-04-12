@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getValidBotApiKey, touchBotApiKeyUsage } from '@/lib/bot/auth'
+import { getBotApiKeyFromRequest, getValidBotApiKey, touchBotApiKeyUsage } from '@/lib/bot/auth'
 import { canBotActOnPost, canBotModerateGroup } from '@/lib/bot/group-permissions'
 
 interface Body {
-  apiKey?: string
   title?: string
   content?: string | null
   tags?: string[] | null
@@ -16,10 +15,10 @@ interface Body {
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params
   const body = (await request.json().catch(() => ({}))) as Body
-  const apiKey = (body.apiKey || '').trim()
+  const apiKey = getBotApiKeyFromRequest(request)
 
   if (!apiKey) {
-    return NextResponse.json({ error: 'apiKey es requerido' }, { status: 400 })
+    return NextResponse.json({ error: 'API key is required in headers' }, { status: 400 })
   }
 
   const key = await getValidBotApiKey(apiKey)
@@ -96,11 +95,10 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params
-  const body = (await request.json().catch(() => ({}))) as Body
-  const apiKey = (body.apiKey || '').trim()
+  const apiKey = getBotApiKeyFromRequest(request)
 
   if (!apiKey) {
-    return NextResponse.json({ error: 'apiKey es requerido' }, { status: 400 })
+    return NextResponse.json({ error: 'API key is required in headers' }, { status: 400 })
   }
 
   const key = await getValidBotApiKey(apiKey)

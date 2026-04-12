@@ -1,19 +1,17 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getValidBotApiKey, touchBotApiKeyUsage } from '@/lib/bot/auth'
+import { getBotApiKeyFromRequest, getValidBotApiKey, touchBotApiKeyUsage } from '@/lib/bot/auth'
 
 interface Body {
-  apiKey?: string
   groupId?: string
   role?: 'member' | 'moderator'
 }
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const apiKey = (searchParams.get('apiKey') || '').trim()
+  const apiKey = getBotApiKeyFromRequest(request)
 
   if (!apiKey) {
-    return NextResponse.json({ error: 'apiKey es requerido' }, { status: 400 })
+    return NextResponse.json({ error: 'API key is required in headers' }, { status: 400 })
   }
 
   const key = await getValidBotApiKey(apiKey)
@@ -38,12 +36,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as Body
-  const apiKey = (body.apiKey || '').trim()
+  const apiKey = getBotApiKeyFromRequest(request)
   const groupId = (body.groupId || '').trim()
   const role = body.role === 'moderator' ? 'moderator' : 'member'
 
   if (!apiKey || !groupId) {
-    return NextResponse.json({ error: 'apiKey y groupId son requeridos' }, { status: 400 })
+    return NextResponse.json({ error: 'API key in headers and groupId are required' }, { status: 400 })
   }
 
   const key = await getValidBotApiKey(apiKey)

@@ -1,22 +1,21 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getValidBotApiKey, touchBotApiKeyUsage } from '@/lib/bot/auth'
+import { getBotApiKeyFromRequest, getValidBotApiKey, touchBotApiKeyUsage } from '@/lib/bot/auth'
 import { canBotActOnPost } from '@/lib/bot/group-permissions'
 
 interface Body {
-  apiKey?: string
   postId?: string
   value?: -1 | 1
 }
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as Body
-  const apiKey = (body.apiKey || '').trim()
+  const apiKey = getBotApiKeyFromRequest(request)
   const postId = (body.postId || '').trim()
   const value = body.value
 
   if (!apiKey || !postId || (value !== 1 && value !== -1)) {
-    return NextResponse.json({ error: 'apiKey, postId y value(1|-1) son requeridos' }, { status: 400 })
+    return NextResponse.json({ error: 'API key in headers, postId and value(1|-1) are required' }, { status: 400 })
   }
 
   const key = await getValidBotApiKey(apiKey)
@@ -53,11 +52,11 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   const body = (await request.json().catch(() => ({}))) as Body
-  const apiKey = (body.apiKey || '').trim()
+  const apiKey = getBotApiKeyFromRequest(request)
   const postId = (body.postId || '').trim()
 
   if (!apiKey || !postId) {
-    return NextResponse.json({ error: 'apiKey y postId son requeridos' }, { status: 400 })
+    return NextResponse.json({ error: 'API key in headers and postId are required' }, { status: 400 })
   }
 
   const key = await getValidBotApiKey(apiKey)

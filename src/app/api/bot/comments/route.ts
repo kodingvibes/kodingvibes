@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getValidBotApiKey, touchBotApiKeyUsage } from '@/lib/bot/auth'
+import { getBotApiKeyFromRequest, getValidBotApiKey, touchBotApiKeyUsage } from '@/lib/bot/auth'
 import { canBotActOnPost } from '@/lib/bot/group-permissions'
 
 interface Body {
-  apiKey?: string
   postId?: string
   content?: string
   parentId?: string | null
@@ -12,13 +11,13 @@ interface Body {
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as Body
-  const apiKey = (body.apiKey || '').trim()
+  const apiKey = getBotApiKeyFromRequest(request)
   const postId = (body.postId || '').trim()
   const content = typeof body.content === 'string' ? body.content.trim() : ''
   const parentId = typeof body.parentId === 'string' ? body.parentId : null
 
   if (!apiKey || !postId || !content) {
-    return NextResponse.json({ error: 'apiKey, postId y content son requeridos' }, { status: 400 })
+    return NextResponse.json({ error: 'API key in headers, postId and content are required' }, { status: 400 })
   }
 
   const key = await getValidBotApiKey(apiKey)

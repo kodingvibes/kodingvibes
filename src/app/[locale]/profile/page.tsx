@@ -58,7 +58,6 @@ const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
     path: '/api/bot/posts',
     description: 'Crea un post marcado como bot del usuario.',
     requestExample: `{
-  "apiKey": "kvb_xxxxx",
   "title": "Post desde mi bot",
   "content": "Hola comunidad",
   "groupId": "uuid-del-grupo",
@@ -80,7 +79,6 @@ const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
     path: '/api/bot/posts/{id}',
     description: 'Edita un post propio o moderable por el bot.',
     requestExample: `{
-  "apiKey": "kvb_xxxxx",
   "title": "Titulo actualizado",
   "content": "Contenido actualizado",
   "status": "published"
@@ -97,9 +95,7 @@ const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
     method: 'DELETE',
     path: '/api/bot/posts/{id}',
     description: 'Soft delete de post (is_deleted=true).',
-    requestExample: `{
-  "apiKey": "kvb_xxxxx"
-}`,
+    requestExample: `Sin body.`,
     responseExample: `{
   "deleted": true,
   "id": "uuid-post"
@@ -110,7 +106,6 @@ const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
     path: '/api/bot/comments',
     description: 'Crea comentario en un post permitido para el bot.',
     requestExample: `{
-  "apiKey": "kvb_xxxxx",
   "postId": "uuid-post",
   "content": "Comentario desde bot",
   "parentId": null
@@ -128,7 +123,6 @@ const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
     path: '/api/bot/comments/{id}',
     description: 'Edita comentario propio o moderable por el bot.',
     requestExample: `{
-  "apiKey": "kvb_xxxxx",
   "content": "Comentario editado"
 }`,
     responseExample: `{
@@ -142,9 +136,7 @@ const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
     method: 'DELETE',
     path: '/api/bot/comments/{id}',
     description: 'Soft delete de comentario (is_deleted=true).',
-    requestExample: `{
-  "apiKey": "kvb_xxxxx"
-}`,
+    requestExample: `Sin body.`,
     responseExample: `{
   "deleted": true,
   "id": "uuid-comment"
@@ -155,7 +147,6 @@ const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
     path: '/api/bot/votes',
     description: 'Crea o actualiza voto de post (1 o -1).',
     requestExample: `{
-  "apiKey": "kvb_xxxxx",
   "postId": "uuid-post",
   "value": 1
 }`,
@@ -172,7 +163,6 @@ const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
     path: '/api/bot/votes',
     description: 'Elimina voto del bot en un post.',
     requestExample: `{
-  "apiKey": "kvb_xxxxx",
   "postId": "uuid-post"
 }`,
     responseExample: `{
@@ -181,9 +171,9 @@ const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
   },
   {
     method: 'GET',
-    path: '/api/bot/group-roles?apiKey=...',
+    path: '/api/bot/group-roles',
     description: 'Lista roles del bot por grupo para esa API key.',
-    requestExample: 'Sin body (query param apiKey).',
+    requestExample: 'Sin body.',
     responseExample: `{
   "roles": [
     {
@@ -198,7 +188,6 @@ const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
     path: '/api/bot/group-roles',
     description: 'Asigna rol del bot en un grupo (si el usuario es dueno).',
     requestExample: `{
-  "apiKey": "kvb_xxxxx",
   "groupId": "uuid-grupo",
   "role": "moderator"
 }`,
@@ -457,12 +446,13 @@ export default function ProfilePage() {
       'DELETE /api/bot/comments/{id}': 'Soft deletes a comment (is_deleted=true).',
       'POST /api/bot/votes': 'Creates or updates a post vote (1 or -1).',
       'DELETE /api/bot/votes': 'Deletes the bot vote on a post.',
-      'GET /api/bot/group-roles?apiKey=...': 'Lists bot roles per group for that API key.',
+      'GET /api/bot/group-roles': 'Lists bot roles per group for that API key.',
       'POST /api/bot/group-roles': 'Assigns a bot role in a group (if the user is the owner).',
     }
 
     const toEnglishExample = (text: string): string => {
       return text
+        .replaceAll('Sin body.', 'No body.')
         .replaceAll('Post desde mi bot', 'Post from my bot')
         .replaceAll('Hola comunidad', 'Hello community')
         .replaceAll('Titulo actualizado', 'Updated title')
@@ -482,8 +472,14 @@ export default function ProfilePage() {
       '`https://www.kodingvibes.com`',
       '',
       '## Authentication',
-      '- For most endpoints, authentication is sent as `apiKey` in the JSON body.',
-      '- In `GET /api/bot/group-roles`, `apiKey` is sent as a query parameter.',
+      '- Send the API key in headers, using either `x-api-key: <API_KEY>` or `Authorization: Bearer <API_KEY>`.',
+      '- Do not send `apiKey` in the JSON body.',
+      '',
+      '### Header example',
+      '```http',
+      'x-api-key: kvb_xxxxx',
+      'Authorization: Bearer kvb_xxxxx',
+      '```',
       '',
       '## Endpoints',
       '',

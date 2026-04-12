@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getBotApiKeyFromRequest } from '@/lib/bot/auth'
 
 interface BotPostBody {
-  apiKey?: string
   title?: string
   content?: string | null
   groupId?: string | null
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json().catch(() => ({}))) as BotPostBody
 
-    const apiKey = typeof body.apiKey === 'string' ? body.apiKey.trim() : ''
+    const apiKey = getBotApiKeyFromRequest(request)
     const title = typeof body.title === 'string' ? body.title.trim() : ''
     const content = typeof body.content === 'string' ? body.content : undefined
     const groupId = typeof body.groupId === 'string' ? body.groupId : undefined
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const status = body.status === 'draft' ? 'draft' : 'published'
 
     if (!apiKey) {
-      return NextResponse.json({ error: 'apiKey es requerido' }, { status: 400 })
+      return NextResponse.json({ error: 'API key is required in headers' }, { status: 400 })
     }
 
     if (!title || title.length < 5 || title.length > 300) {
