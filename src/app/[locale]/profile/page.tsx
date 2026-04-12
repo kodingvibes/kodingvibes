@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
-import { User, Save, ArrowLeft, AtSign, AlertCircle, Users, Settings, KeyRound, Copy, Bot, Power } from 'lucide-react'
+import { User, Save, ArrowLeft, AtSign, AlertCircle, Users, Settings, KeyRound, Copy, Bot, Power, Check } from 'lucide-react'
 import Link from 'next/link'
 import { LoadingSpinner } from '@/components/ui/Loading'
 
@@ -230,6 +230,7 @@ export default function ProfilePage() {
   const [apiKeysError, setApiKeysError] = useState<string | null>(null)
   const [botGroupRoles, setBotGroupRoles] = useState<BotGroupRole[]>([])
   const [assigningGroupRole, setAssigningGroupRole] = useState<string | null>(null)
+  const [docsCopied, setDocsCopied] = useState(false)
   const [activeTab, setActiveTab] = useState<'profile' | 'bots'>('profile')
   const router = useRouter()
   const supabase = createClient()
@@ -443,6 +444,77 @@ export default function ProfilePage() {
       await navigator.clipboard.writeText(newApiKeyPlain)
     } catch (error) {
       console.error('Error copying api key:', error)
+    }
+  }
+
+  const copyBotApiDocs = async () => {
+    const translatedDescriptions: Record<string, string> = {
+      'POST /api/bot/posts': 'Creates a post marked as a bot post for the user.',
+      'PATCH /api/bot/posts/{id}': 'Edits an owned post or a post the bot can moderate.',
+      'DELETE /api/bot/posts/{id}': 'Soft deletes a post (is_deleted=true).',
+      'POST /api/bot/comments': 'Creates a comment on a post the bot is allowed to access.',
+      'PATCH /api/bot/comments/{id}': 'Edits an owned comment or a comment the bot can moderate.',
+      'DELETE /api/bot/comments/{id}': 'Soft deletes a comment (is_deleted=true).',
+      'POST /api/bot/votes': 'Creates or updates a post vote (1 or -1).',
+      'DELETE /api/bot/votes': 'Deletes the bot vote on a post.',
+      'GET /api/bot/group-roles?apiKey=...': 'Lists bot roles per group for that API key.',
+      'POST /api/bot/group-roles': 'Assigns a bot role in a group (if the user is the owner).',
+    }
+
+    const toEnglishExample = (text: string): string => {
+      return text
+        .replaceAll('Post desde mi bot', 'Post from my bot')
+        .replaceAll('Hola comunidad', 'Hello community')
+        .replaceAll('Titulo actualizado', 'Updated title')
+        .replaceAll('Contenido actualizado', 'Updated content')
+        .replaceAll('Comentario desde bot', 'Comment from bot')
+        .replaceAll('Comentario editado', 'Edited comment')
+    }
+
+    const docsText = [
+      '# Bot API - KodingVibes',
+      '',
+      '## Context',
+      '- This API lets users publish and moderate content through their bot.',
+      '- All routes use the same base URL.',
+      '',
+      '## Base URL',
+      '`https://www.kodingvibes.com`',
+      '',
+      '## Authentication',
+      '- For most endpoints, authentication is sent as `apiKey` in the JSON body.',
+      '- In `GET /api/bot/group-roles`, `apiKey` is sent as a query parameter.',
+      '',
+      '## Endpoints',
+      '',
+      ...BOT_ENDPOINT_DOCS.flatMap((endpoint, index) => [
+        `### ${index + 1}) ${endpoint.method} ${endpoint.path}`,
+        '',
+        `**Description**: ${translatedDescriptions[`${endpoint.method} ${endpoint.path}`] || endpoint.description}`,
+        '',
+        '**Request (example)**',
+        '```json',
+        toEnglishExample(endpoint.requestExample),
+        '```',
+        '',
+        '**Response (example)**',
+        '```json',
+        toEnglishExample(endpoint.responseExample),
+        '```',
+        '',
+      ]),
+      '## Suggested prompt for another AI',
+      '```text',
+      'Use this documentation to generate a complete bot integration with robust error handling, retries, and input validation. Return production-ready JavaScript/TypeScript examples.',
+      '```',
+    ].join('\n')
+
+    try {
+      await navigator.clipboard.writeText(docsText)
+      setDocsCopied(true)
+      setTimeout(() => setDocsCopied(false), 2500)
+    } catch (error) {
+      console.error('Error copying bot docs:', error)
     }
   }
 
@@ -875,7 +947,17 @@ export default function ProfilePage() {
             </div>
 
             <div className="mt-4 border border-border rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-foreground mb-1">Documentacion API Bot</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
+                <h3 className="text-sm font-semibold text-foreground">Documentacion API Bot</h3>
+                <button
+                  type="button"
+                  onClick={copyBotApiDocs}
+                  className="px-3 py-1.5 border border-border rounded-lg text-xs hover:bg-muted transition-colors inline-flex items-center justify-center gap-2"
+                >
+                  {docsCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {docsCopied ? 'Copiado' : 'Copiar todo'}
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground mb-4">
                 Estilo referencia: endpoint, ejemplo de request y ejemplo de respuesta.
               </p>
