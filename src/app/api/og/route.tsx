@@ -1,7 +1,7 @@
 import { ImageResponse } from '@vercel/og';
 import { NextRequest } from 'next/server';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 /**
  * Sanitiza texto para evitar que caracteres Unicode problemáticos causen errores
