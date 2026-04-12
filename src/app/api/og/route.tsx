@@ -179,14 +179,14 @@ export async function GET(request: NextRequest) {
               style={{
                 position: 'absolute',
                 inset: '0',
-                background: 'rgba(6,8,16,0.72)',
+                background: 'rgba(6,8,16,0.42)',
               }}
             />
             <div
               style={{
                 position: 'absolute',
                 inset: '0',
-                background: 'linear-gradient(135deg, rgba(10,10,14,0.78) 0%, rgba(10,10,14,0.58) 55%, rgba(10,10,14,0.84) 100%)',
+                background: 'linear-gradient(135deg, rgba(10,10,14,0.44) 0%, rgba(10,10,14,0.28) 55%, rgba(10,10,14,0.52) 100%)',
               }}
             />
           </>
