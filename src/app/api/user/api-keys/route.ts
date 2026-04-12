@@ -119,6 +119,32 @@ export async function POST(request: Request) {
       )
     }
 
+    const { data: existingUser, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .ilike('username', botName)
+      .single()
+
+    if (!userError && existingUser) {
+      return NextResponse.json(
+        { error: 'Ese nombre ya esta en uso por un usuario' },
+        { status: 409 }
+      )
+    }
+
+    const { data: existingBot, error: botError } = await supabase
+      .from('user_api_keys')
+      .select('id')
+      .ilike('name', botName)
+      .single()
+
+    if (!botError && existingBot) {
+      return NextResponse.json(
+        { error: 'Ese nombre ya esta en uso por otro bot' },
+        { status: 409 }
+      )
+    }
+
     const { count, error: countError } = await supabase
       .from('user_api_keys')
       .select('id', { count: 'exact', head: true })

@@ -112,15 +112,23 @@ export default function PostActionsClient({
 
   const handleShare = async () => {
     try {
-      // Preload OG image to ensure it's ready for social sharing
       const ogUrl = `https://www.kodingvibes.com/api/og?id=${postId}${title ? `&title=${encodeURIComponent(title.substring(0, 80))}` : ''}`
-      
-      // Try to preload the OG image in background (this warms up the cache)
-      fetch(ogUrl, { method: 'GET', mode: 'no-cors' }).catch(() => {
-        // Silently fail if preloading doesn't work
-      })
+      fetch(ogUrl, { method: 'GET', mode: 'no-cors' }).catch(() => {})
 
-      await navigator.clipboard.writeText(postUrl)
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(postUrl)
+      } else {
+        const textArea = document.createElement('textarea')
+        textArea.value = postUrl
+        textArea.style.position = 'fixed'
+        textArea.style.left = '-999999px'
+        textArea.style.top = '-999999px'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        document.execCommand('copy')
+        textArea.remove()
+      }
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
