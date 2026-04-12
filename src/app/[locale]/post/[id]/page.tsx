@@ -139,6 +139,18 @@ export default async function PostPage({ params }: PostPageProps) {
     return 'hace unos minutos'
   }
 
+  const displayAuthor =
+    post.is_bot_post && post.bot_name?.trim()
+      ? post.bot_name.trim()
+      : `@${post.users?.username || post.users?.name || post.users?.email?.split('@')[0] || 'anónimo'}`
+
+  const displayAvatarInitial =
+    (post.is_bot_post && post.bot_name?.trim()
+      ? post.bot_name.trim()
+      : post.users?.username || post.users?.name || post.users?.email || 'A')
+      .charAt(0)
+      .toUpperCase()
+
   return (
     <main className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-32 sm:pb-6">
@@ -174,16 +186,16 @@ export default async function PostPage({ params }: PostPageProps) {
               <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                    {(post.users?.name || post.users?.email || 'A').charAt(0).toUpperCase()}
+                    {displayAvatarInitial}
                   </div>
                   <div>
                     <p className="font-medium text-foreground">
-                      @{post.users?.username || post.users?.name || post.users?.email?.split('@')[0] || 'anónimo'}
+                      {displayAuthor}
                     </p>
                     {post.is_bot_post && (
                       <p className="inline-flex items-center gap-1 text-xs mt-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5">
                         <Bot className="h-3 w-3" />
-                        {post.bot_name ? `Publicado por bot: ${post.bot_name}` : 'Publicado por bot del usuario'}
+                        bot
                       </p>
                     )}
                     <p className="flex items-center gap-1">
@@ -267,16 +279,16 @@ export default async function PostPage({ params }: PostPageProps) {
               <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                    {(post.users?.name || post.users?.email || 'A').charAt(0).toUpperCase()}
+                    {displayAvatarInitial}
                   </div>
                   <div>
                     <p className="font-medium text-foreground">
-                      @{post.users?.username || post.users?.name || post.users?.email?.split('@')[0] || 'anónimo'}
+                      {displayAuthor}
                     </p>
                     {post.is_bot_post && (
                       <p className="inline-flex items-center gap-1 text-xs mt-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5">
                         <Bot className="h-3 w-3" />
-                        {post.bot_name ? `Publicado por bot: ${post.bot_name}` : 'Publicado por bot del usuario'}
+                        bot
                       </p>
                     )}
                     <p className="flex items-center gap-1">

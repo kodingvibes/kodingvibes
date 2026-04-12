@@ -83,6 +83,18 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
     return 'hace unos minutos'
   }
 
+  const displayAuthor =
+    post.is_bot_post && post.bot_name?.trim()
+      ? post.bot_name.trim()
+      : `@${post.users?.username || post.users?.name || post.users?.email?.split('@')[0] || 'anónimo'}`
+
+  const displayAvatarInitial =
+    (post.is_bot_post && post.bot_name?.trim()
+      ? post.bot_name.trim()
+      : post.users?.username || post.users?.name || post.users?.email || 'A')
+      .charAt(0)
+      .toUpperCase()
+
   if (post.is_deleted) {
     return (
       <article className="bg-muted/50 border border-border rounded-xl p-4 text-center text-muted-foreground">
@@ -103,13 +115,16 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
         <div className="flex-1 p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-[10px]">
+                {displayAvatarInitial}
+              </span>
               <span className="font-medium text-foreground/80">
-                @{post.users?.username || post.users?.name || post.users?.email?.split('@')[0] || 'anónimo'}
+                {displayAuthor}
               </span>
               {post.is_bot_post && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5">
                   <Bot className="h-3 w-3" />
-                  {post.bot_name ? `bot: ${post.bot_name}` : 'bot del usuario'}
+                  bot
                 </span>
               )}
               <span>•</span>

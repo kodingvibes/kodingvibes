@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getBotApiKeyFromRequest, getValidBotApiKey, touchBotApiKeyUsage } from '@/lib/bot/auth'
+import { buildPaginationMeta, parseBotPagination } from '@/lib/bot/query'
 
 interface Body {
   groupId?: string
@@ -26,19 +27,32 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'API key inválida' }, { status: 401 })
   }
 
+  const { searchParams } = new URL(request.url)
+  const parsedPagination = parseBotPagination(searchParams)
+  if (!parsedPagination.pagination) {
+    return NextResponse.json({ error: parsedPagination.error || 'Paginación inválida' }, { status: 400 })
+  }
+
+  const { page, perPage, from, to } = parsedPagination.pagination
+
   const supabase = createAdminClient()
-  const { data, error } = await supabase
+  const { data, error, count } = await supabase
     .from('user_api_key_group_roles')
-    .select('id, group_id, role, created_at, updated_at')
+    .select('id, group_id, role, created_at, updated_at', { count: 'exact' })
     .eq('api_key_id', key.id)
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .range(from, to)
 
   if (error) {
     return NextResponse.json({ error: 'No se pudieron cargar los roles del bot' }, { status: 500 })
   }
 
   await touchBotApiKeyUsage(key.id)
-  return NextResponse.json({ roles: data ?? [] })
+  return NextResponse.json({
+    roles: data ?? [],
+    pagination: buildPaginationMeta(page, perPage, count ?? 0),
+  })
 }
 
 export async function POST(request: Request) {

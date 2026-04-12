@@ -916,23 +916,25 @@ export default function ProfilePage() {
               </div>
             )}
 
-            <form onSubmit={handleCreateApiKey} className="flex flex-col sm:flex-row gap-2 mb-5">
-              <input
-                type="text"
-                value={botName}
-                onChange={(e) => setBotName(e.target.value)}
-                placeholder="Nombre del bot (ej: Bot Discord)"
-                className="flex-1 p-3 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                maxLength={80}
-              />
-              <button
-                type="submit"
-                disabled={creatingApiKey || apiKeys.length > 0}
-                className="px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
-              >
-                {creatingApiKey ? 'Creando...' : 'Generar key'}
-              </button>
-            </form>
+            {apiKeys.length === 0 && (
+              <form onSubmit={handleCreateApiKey} className="flex flex-col sm:flex-row gap-2 mb-5">
+                <input
+                  type="text"
+                  value={botName}
+                  onChange={(e) => setBotName(e.target.value)}
+                  placeholder="Nombre del bot (ej: Bot Discord)"
+                  className="flex-1 p-3 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  maxLength={80}
+                />
+                <button
+                  type="submit"
+                  disabled={creatingApiKey}
+                  className="px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  {creatingApiKey ? 'Creando...' : 'Generar key'}
+                </button>
+              </form>
+            )}
 
             {apiKeys.length > 0 && (
               <p className="text-xs text-muted-foreground mb-4">

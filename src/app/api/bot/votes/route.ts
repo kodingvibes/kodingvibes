@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getBotApiKeyFromRequest, getValidBotApiKey, touchBotApiKeyUsage } from '@/lib/bot/auth'
 import { canBotActOnPost } from '@/lib/bot/group-permissions'
+import {
+  buildPaginationMeta,
+  checkBotReadRateLimit,
+  parseBooleanQueryParam,
+  parseBotPagination,
+  parseUuidQueryParam,
+} from '@/lib/bot/query'
 
 interface Body {
   postId?: string
@@ -96,4 +103,96 @@ export async function DELETE(request: Request) {
 
   await touchBotApiKeyUsage(key.id)
   return NextResponse.json({ deleted: true })
+}
+
+export async function GET(request: Request) {
+  const apiKey = getBotApiKeyFromRequest(request)
+
+  if (!apiKey) {
+    return NextResponse.json({ error: 'API key is required in headers' }, { status: 400 })
+  }
+
+  let key
+  try {
+    key = await getValidBotApiKey(apiKey)
+  } catch (error) {
+    console.error('Error validating bot api key:', error)
+    return NextResponse.json({ error: 'No se pudo validar la API key' }, { status: 500 })
+  }
+
+  if (!key) {
+    return NextResponse.json({ error: 'API key inválida' }, { status: 401 })
+  }
+
+  const { searchParams } = new URL(request.url)
+
+  const parsedPagination = parseBotPagination(searchParams)
+  if (!parsedPagination.pagination) {
+    return NextResponse.json({ error: parsedPagination.error || 'Paginación inválida' }, { status: 400 })
+  }
+
+  const mineParsed = parseBooleanQueryParam(searchParams.get('mine'), false)
+  if (mineParsed.error) {
+    return NextResponse.json({ error: mineParsed.error }, { status: 400 })
+  }
+
+  const postIdParsed = parseUuidQueryParam(searchParams.get('postId'))
+  if (postIdParsed.error) {
+    return NextResponse.json({ error: postIdParsed.error }, { status: 400 })
+  }
+
+  const valueParamRaw = (searchParams.get('value') || '').trim()
+  let valueFilter: -1 | 1 | null = null
+  if (valueParamRaw) {
+    if (valueParamRaw !== '1' && valueParamRaw !== '-1') {
+      return NextResponse.json({ error: 'value inválido. Usa 1 o -1' }, { status: 400 })
+    }
+    valueFilter = valueParamRaw === '1' ? 1 : -1
+  }
+
+  const readLimit = checkBotReadRateLimit(key.id, 'votes:get')
+  if (!readLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Demasiadas solicitudes de lectura para el bot' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(readLimit.retryAfterSeconds || 60) },
+      }
+    )
+  }
+
+  const { page, perPage, from, to } = parsedPagination.pagination
+
+  const supabase = createAdminClient()
+  let query = supabase
+    .from('votes')
+    .select('id, post_id, user_id, value, created_at', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .range(from, to)
+
+  if (mineParsed.value) {
+    query = query.eq('user_id', key.user_id)
+  }
+
+  if (postIdParsed.value) {
+    query = query.eq('post_id', postIdParsed.value)
+  }
+
+  if (valueFilter !== null) {
+    query = query.eq('value', valueFilter)
+  }
+
+  const { data, error, count } = await query
+
+  if (error) {
+    return NextResponse.json({ error: 'No se pudieron cargar los votos' }, { status: 500 })
+  }
+
+  await touchBotApiKeyUsage(key.id)
+
+  return NextResponse.json({
+    votes: data ?? [],
+    pagination: buildPaginationMeta(page, perPage, count ?? 0),
+  })
 }
