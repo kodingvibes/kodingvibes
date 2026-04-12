@@ -131,9 +131,10 @@ export default function EditPostPage() {
           return
         }
 
-        // Check edit window only for non-admins
+        // Check edit window only for non-admins and published posts
+        // Drafts can be edited without time limit
         let remaining = 0
-        if (!userIsAdmin) {
+        if (!userIsAdmin && postData.status === 'published') {
           remaining = checkEditWindow(postData.created_at)
           if (remaining <= 0) {
             router.push(`/post/${postId}`)
@@ -554,7 +555,7 @@ Puedes usar Markdown:
         <div className="mt-6 bg-muted/50 rounded-xl p-4 text-sm">
           <p className="font-medium text-foreground mb-2">Información de edición:</p>
           <ul className="text-xs text-muted-foreground space-y-1">
-            <li>• Solo puedes editar posts dentro de los primeros {EDIT_WINDOW_MINUTES} minutos después de crearlos</li>
+            <li>• Solo puedes editar posts publicados dentro de los primeros {EDIT_WINDOW_MINUTES} minutos después de publicarlos</li>
             <li>• Los posts editados mostrarán la fecha de última edición</li>
             <li>• El título es obligatorio, el contenido es opcional</li>
           </ul>

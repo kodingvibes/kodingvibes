@@ -163,7 +163,7 @@ export default async function PostPage({ params }: PostPageProps) {
         </Link>
 
         <article className="bg-card border border-border rounded-xl overflow-hidden relative">
-          {/* Desktop: Vote section lateral */}
+                {/* Desktop: Vote section lateral */}
           <div className="hidden sm:flex">
             <div className="bg-muted/30 p-4 flex items-start">
               <VoteButtons postId={post.id} initialVotes={post.vote_count} />
@@ -217,6 +217,7 @@ export default async function PostPage({ params }: PostPageProps) {
                   userId={post.user_id}
                   createdAt={post.created_at}
                   isDeleted={post.is_deleted}
+                  status={post.status}
                   title={post.title}
                 />
               </div>
@@ -255,7 +256,7 @@ export default async function PostPage({ params }: PostPageProps) {
             </div>
           </div>
 
-          {/* Mobile: Vote section floating */}
+                {/* Mobile: Vote section floating */}
           <div className="sm:hidden">
             {/* Floating vote buttons - positioned left to avoid overlap with create button */}
             <div className="fixed bottom-6 left-6 z-50 flex flex-col items-center gap-1 bg-card border border-border rounded-xl shadow-2xl p-2">
@@ -310,6 +311,7 @@ export default async function PostPage({ params }: PostPageProps) {
                   userId={post.user_id}
                   createdAt={post.created_at}
                   isDeleted={post.is_deleted}
+                  status={post.status}
                   title={post.title}
                 />
               </div>

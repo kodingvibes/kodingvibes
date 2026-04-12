@@ -11,6 +11,7 @@ interface PostActionsClientProps {
   userId: string
   createdAt: string
   isDeleted: boolean
+  status: 'draft' | 'published'
   title?: string
 }
 
@@ -19,6 +20,7 @@ export default function PostActionsClient({
   userId, 
   createdAt, 
   isDeleted,
+  status,
   title
 }: PostActionsClientProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -53,13 +55,17 @@ export default function PostActionsClient({
   const isOwner = currentUserId === userId
   
   // Calcular si está dentro de los 15 minutos de edición
+  // Solo aplica para posts publicados; los borradores se pueden editar sin límite
   const canEdit = () => {
     if (isDeleted) return false
     
     // Admins can always edit
     if (isAdmin) return true
     
-    // Owners can edit within 15 minutes
+    // Drafts can be edited without time limit
+    if (status === 'draft') return true
+    
+    // Owners can edit published posts within 15 minutes
     if (!isOwner) return false
     
     const created = new Date(createdAt)
