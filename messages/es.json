@@ -46,7 +46,7 @@
     "logout": "Cerrar sesión",
     "login": "Iniciar sesión",
     "register": "Registrarse",
-    "setUsernameHint": "Haz click en \"Mi perfil\" para poner tu pseudónimo",
+    "setUsernameHint": "Haz clic en \"Mi perfil\" para definir tu nombre de usuario",
     "member": "Miembro"
   },
   "home": {
