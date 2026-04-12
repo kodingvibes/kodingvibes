@@ -54,6 +54,35 @@ interface BotEndpointDoc {
 
 const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
   {
+    method: 'GET',
+    path: '/api/bot/posts',
+    description: 'Lista posts con filtros y paginación obligatoria (max 10 por página).',
+    requestExample: `Query params opcionales:
+- page=1
+- perPage=10 (maximo 10)
+- mine=true|false
+- groupId=uuid-grupo
+- status=draft|published`,
+    responseExample: `{
+  "posts": [
+    {
+      "id": "uuid-post",
+      "title": "Post desde mi bot",
+      "is_bot_post": true,
+      "bot_name": "Mi Bot",
+      "status": "published"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "perPage": 10,
+    "total": 42,
+    "totalPages": 5,
+    "hasNext": true
+  }
+}`,
+  },
+  {
     method: 'POST',
     path: '/api/bot/posts',
     description: 'Crea un post marcado como bot del usuario.',
@@ -102,6 +131,33 @@ const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
 }`,
   },
   {
+    method: 'GET',
+    path: '/api/bot/comments',
+    description: 'Lista comentarios con filtros y paginación obligatoria (max 10 por página).',
+    requestExample: `Query params opcionales:
+- page=1
+- perPage=10 (maximo 10)
+- mine=true|false
+- postId=uuid-post
+- parentId=uuid-comment`,
+    responseExample: `{
+  "comments": [
+    {
+      "id": "uuid-comment",
+      "post_id": "uuid-post",
+      "content": "Comentario desde bot"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "perPage": 10,
+    "total": 18,
+    "totalPages": 2,
+    "hasNext": true
+  }
+}`,
+  },
+  {
     method: 'POST',
     path: '/api/bot/comments',
     description: 'Crea comentario en un post permitido para el bot.',
@@ -143,6 +199,33 @@ const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
 }`,
   },
   {
+    method: 'GET',
+    path: '/api/bot/votes',
+    description: 'Lista votos con filtros y paginación obligatoria (max 10 por página).',
+    requestExample: `Query params opcionales:
+- page=1
+- perPage=10 (maximo 10)
+- mine=true|false
+- postId=uuid-post
+- value=1|-1`,
+    responseExample: `{
+  "votes": [
+    {
+      "id": "uuid-vote",
+      "post_id": "uuid-post",
+      "value": 1
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "perPage": 10,
+    "total": 12,
+    "totalPages": 2,
+    "hasNext": true
+  }
+}`,
+  },
+  {
     method: 'POST',
     path: '/api/bot/votes',
     description: 'Crea o actualiza voto de post (1 o -1).',
@@ -172,15 +255,25 @@ const BOT_ENDPOINT_DOCS: BotEndpointDoc[] = [
   {
     method: 'GET',
     path: '/api/bot/group-roles',
-    description: 'Lista roles del bot por grupo para esa API key.',
-    requestExample: 'Sin body.',
+    description: 'Lista roles del bot por grupo con paginación obligatoria (max 10 por página).',
+    requestExample: `Query params opcionales:
+- page=1
+- perPage=10 (maximo 10)`,
     responseExample: `{
   "roles": [
     {
+      "id": "uuid-role",
       "group_id": "uuid-grupo",
       "role": "moderator"
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "perPage": 10,
+    "total": 3,
+    "totalPages": 1,
+    "hasNext": false
+  }
 }`,
   },
   {
@@ -472,15 +565,18 @@ export default function ProfilePage() {
 
   const copyBotApiDocs = async () => {
     const translatedDescriptions: Record<string, string> = {
+      'GET /api/bot/posts': 'Lists posts with optional filters and mandatory pagination (max 10 per page).',
       'POST /api/bot/posts': 'Creates a post marked as a bot post for the user.',
       'PATCH /api/bot/posts/{id}': 'Edits an owned post or a post the bot can moderate.',
       'DELETE /api/bot/posts/{id}': 'Soft deletes a post (is_deleted=true).',
+      'GET /api/bot/comments': 'Lists comments with optional filters and mandatory pagination (max 10 per page).',
       'POST /api/bot/comments': 'Creates a comment on a post the bot is allowed to access.',
       'PATCH /api/bot/comments/{id}': 'Edits an owned comment or a comment the bot can moderate.',
       'DELETE /api/bot/comments/{id}': 'Soft deletes a comment (is_deleted=true).',
+      'GET /api/bot/votes': 'Lists votes with optional filters and mandatory pagination (max 10 per page).',
       'POST /api/bot/votes': 'Creates or updates a post vote (1 or -1).',
       'DELETE /api/bot/votes': 'Deletes the bot vote on a post.',
-      'GET /api/bot/group-roles': 'Lists bot roles per group for that API key.',
+      'GET /api/bot/group-roles': 'Lists bot roles per group with mandatory pagination (max 10 per page).',
       'POST /api/bot/group-roles': 'Assigns a bot role in a group (if the user is the owner).',
     }
 
@@ -493,6 +589,11 @@ export default function ProfilePage() {
         .replaceAll('Contenido actualizado', 'Updated content')
         .replaceAll('Comentario desde bot', 'Comment from bot')
         .replaceAll('Comentario editado', 'Edited comment')
+        .replaceAll('Lista posts con filtros y paginación obligatoria (max 10 por página).', 'Lists posts with optional filters and mandatory pagination (max 10 per page).')
+        .replaceAll('Lista comentarios con filtros y paginación obligatoria (max 10 por página).', 'Lists comments with optional filters and mandatory pagination (max 10 per page).')
+        .replaceAll('Lista votos con filtros y paginación obligatoria (max 10 por página).', 'Lists votes with optional filters and mandatory pagination (max 10 per page).')
+        .replaceAll('Lista roles del bot por grupo con paginación obligatoria (max 10 por página).', 'Lists bot roles per group with mandatory pagination (max 10 per page).')
+        .replaceAll('maximo 10', 'maximum 10')
     }
 
     const docsText = [
@@ -508,6 +609,13 @@ export default function ProfilePage() {
       '## Authentication',
       '- Send the API key in headers, using either `x-api-key: <API_KEY>` or `Authorization: Bearer <API_KEY>`.',
       '- Do not send `apiKey` in the JSON body.',
+      '- Read endpoints are rate-limited and may return `429 Too Many Requests` with `Retry-After`.',
+      '',
+      '## Pagination Rules',
+      '- All list endpoints are paginated.',
+      '- Use `page` and `perPage` query params.',
+      '- `perPage` maximum is 10 (values above 10 are clamped to 10).',
+      '- Responses include `pagination: { page, perPage, total, totalPages, hasNext }`.',
       '',
       '### Header example',
       '```http',

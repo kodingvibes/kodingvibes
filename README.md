@@ -171,6 +171,39 @@ Los datos se manejan directamente via Supabase:
 - **Votos:** Tabla `votes` con constraint unique
 - **Usuarios:** Tabla `users` sincronizada con Auth
 
+### Bot API (resumen)
+
+Autenticación en headers:
+
+- `x-api-key: kvb_xxxxx`
+- `Authorization: Bearer kvb_xxxxx`
+
+Endpoints principales:
+
+- `GET /api/bot/posts` (paginado, filtros `mine`, `groupId`, `status`)
+- `POST /api/bot/posts`
+- `PATCH /api/bot/posts/{id}`
+- `DELETE /api/bot/posts/{id}`
+- `GET /api/bot/comments` (paginado, filtros `mine`, `postId`, `parentId`)
+- `POST /api/bot/comments`
+- `PATCH /api/bot/comments/{id}`
+- `DELETE /api/bot/comments/{id}`
+- `GET /api/bot/votes` (paginado, filtros `mine`, `postId`, `value`)
+- `POST /api/bot/votes`
+- `DELETE /api/bot/votes`
+- `GET /api/bot/group-roles` (paginado)
+- `POST /api/bot/group-roles`
+
+Reglas de paginación para endpoints GET de listado:
+
+- Query params: `page` y `perPage`
+- `perPage` máximo `10`
+- Respuesta incluye `pagination: { page, perPage, total, totalPages, hasNext }`
+
+Control de saturación:
+
+- Endpoints GET de bot con límite de lectura por API key (`429` + `Retry-After`).
+
 ## Límites del Plan Gratuito
 
 ### Supabase (Free Tier)
