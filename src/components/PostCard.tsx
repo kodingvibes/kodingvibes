@@ -142,6 +142,8 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
                 createdAt={post.created_at}
                 isDeleted={post.is_deleted}
                 onDelete={onDelete || (() => {})}
+                title={post.title}
+                imageUrl={post.image_url}
               />
             )}
           </div>

@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
     const supabase = await createClient()
     const { data: post } = await supabase
       .from('posts')
-      .select('title, content, created_at, edited_at, tags, users:user_id (name, username)')
+      .select('title, content, image_url, created_at, edited_at, tags, users:user_id (name, username)')
       .eq('id', id)
       .eq('is_deleted', false)
       .single()
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
     
     // Construct OG image URL with version parameter for cache busting
     // v=3 = versión con imagen del post como background + overlay ajustado
-    const ogImageUrl = `https://www.kodingvibes.com/api/og?id=${encodeURIComponent(id)}&v=3`
+    const ogImageUrl = `https://www.kodingvibes.com/api/og?id=${encodeURIComponent(id)}${post.image_url ? `&image=${encodeURIComponent(post.image_url)}` : ''}&v=4`
     
     return {
       title: `${post.title} | KodingVibes`,
@@ -219,6 +219,7 @@ export default async function PostPage({ params }: PostPageProps) {
                   isDeleted={post.is_deleted}
                   status={post.status as 'draft' | 'published'}
                   title={post.title}
+                  imageUrl={post.image_url}
                 />
               </div>
 
@@ -313,6 +314,7 @@ export default async function PostPage({ params }: PostPageProps) {
                   isDeleted={post.is_deleted}
                   status={post.status as 'draft' | 'published'}
                   title={post.title}
+                  imageUrl={post.image_url}
                 />
               </div>
 

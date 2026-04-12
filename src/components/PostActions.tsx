@@ -13,6 +13,7 @@ interface PostActionsProps {
   isDeleted: boolean
   onDelete: () => void
   title?: string
+  imageUrl?: string | null
 }
 
 export default function PostActions({ 
@@ -22,7 +23,8 @@ export default function PostActions({
   createdAt, 
   isDeleted,
   onDelete,
-  title
+  title,
+  imageUrl
 }: PostActionsProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -114,7 +116,7 @@ export default function PostActions({
 
   const handleShare = async () => {
     try {
-      const ogUrl = `https://www.kodingvibes.com/api/og?id=${postId}${title ? `&title=${encodeURIComponent(title.substring(0, 80))}` : ''}&v=3`
+      const ogUrl = `https://www.kodingvibes.com/api/og?id=${postId}${title ? `&title=${encodeURIComponent(title.substring(0, 80))}` : ''}${imageUrl ? `&image=${encodeURIComponent(imageUrl)}` : ''}&v=4`
       fetch(ogUrl, { method: 'GET', mode: 'no-cors' }).catch(() => {})
 
       if (navigator.clipboard && window.isSecureContext) {
