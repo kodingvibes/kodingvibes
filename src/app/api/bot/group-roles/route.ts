@@ -14,7 +14,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'API key is required in headers' }, { status: 400 })
   }
 
-  const key = await getValidBotApiKey(apiKey)
+  let key
+  try {
+    key = await getValidBotApiKey(apiKey)
+  } catch (error) {
+    console.error('Error validating bot api key:', error)
+    return NextResponse.json({ error: 'No se pudo validar la API key' }, { status: 500 })
+  }
+
   if (!key) {
     return NextResponse.json({ error: 'API key inválida' }, { status: 401 })
   }
@@ -44,7 +51,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'API key in headers and groupId are required' }, { status: 400 })
   }
 
-  const key = await getValidBotApiKey(apiKey)
+  let key
+  try {
+    key = await getValidBotApiKey(apiKey)
+  } catch (error) {
+    console.error('Error validating bot api key:', error)
+    return NextResponse.json({ error: 'No se pudo validar la API key' }, { status: 500 })
+  }
+
   if (!key) {
     return NextResponse.json({ error: 'API key inválida' }, { status: 401 })
   }

@@ -25,9 +25,13 @@ export async function getValidBotApiKey(apiKey: string): Promise<BotApiKeyRecord
     .eq('key_hash', keyHash)
     .eq('is_active', true)
     .is('revoked_at', null)
-    .single()
+    .maybeSingle()
 
-  if (error || !data) return null
+  if (error) {
+    throw new Error(`Failed to validate bot API key: ${error.message}`)
+  }
+
+  if (!data) return null
   return data
 }
 
