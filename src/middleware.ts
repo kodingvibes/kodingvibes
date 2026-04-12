@@ -53,17 +53,6 @@ function getLocaleFromRequest(request: NextRequest): string {
 }
 
 export async function middleware(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
-  
-  if (!checkRateLimit(ip)) {
-    return new NextResponse('Too Many Requests', { 
-      status: 429,
-      headers: {
-        'Retry-After': '60'
-      }
-    })
-  }
-
   const { pathname } = request.nextUrl;
 
   if (
@@ -77,6 +66,17 @@ export async function middleware(request: NextRequest) {
         headers: request.headers,
       },
     });
+  }
+
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+
+  if (!checkRateLimit(ip)) {
+    return new NextResponse('Too Many Requests', {
+      status: 429,
+      headers: {
+        'Retry-After': '60'
+      }
+    })
   }
 
   if (pathname === '/auth/callback') {
