@@ -240,16 +240,16 @@ export default function Home() {
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           {heroLoading || heroPopularPosts.length === 0 ? (
             <div className="text-center h-[200px] sm:h-[240px] overflow-hidden flex flex-col justify-center">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 tracking-tight leading-tight">
                 Posts más populares
               </h1>
-              <p className="text-base sm:text-lg lg:text-xl text-white/90 max-w-3xl mx-auto mb-8 leading-relaxed">
+              <p className="text-sm sm:text-base lg:text-lg text-white/90 max-w-3xl mx-auto mb-6 leading-relaxed">
                 {heroLoading ? 'Cargando posts populares...' : 'No hay posts populares aún. ¡Sé el primero en compartir!'}
               </p>
               {!userHasPosts && (
                 <Link
                   href="/submit"
-                  className="inline-flex items-center gap-2 bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg mx-auto"
+                  className="inline-flex items-center gap-2 bg-white text-indigo-600 text-sm sm:text-base px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg mx-auto"
                 >
                   <Sparkles className="h-5 w-5" />
                   Crear tu primer post
@@ -269,7 +269,7 @@ export default function Home() {
                     {currentHeroPost.groups && (
                       <div className="flex justify-center mb-3">
                         <span
-                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white/95"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs sm:text-sm font-medium text-white/95"
                           style={{ backgroundColor: currentHeroPost.groups.color || '#6366f1' }}
                         >
                           <Hash className="h-4 w-4" />
@@ -279,19 +279,19 @@ export default function Home() {
                     )}
 
                     {/* Post title */}
-                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight leading-tight hover:text-white/90 transition-colors">
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 tracking-tight leading-tight hover:text-white/90 transition-colors">
                       {currentHeroPost.title}
                     </h1>
 
                     {/* Post preview */}
                     {currentHeroPost.content && (
-                      <p className="text-base sm:text-lg lg:text-xl text-white/90 max-w-3xl mx-auto mb-4 leading-relaxed">
+                      <p className="text-sm sm:text-base lg:text-lg text-white/90 max-w-3xl mx-auto mb-3 leading-relaxed">
                         {truncateContent(currentHeroPost.content, 150)}
                       </p>
                     )}
 
                     {/* Post metadata */}
-                    <div className="flex items-center justify-center gap-4 text-sm text-white/80 mb-6">
+                    <div className="flex items-center justify-center gap-3 text-xs sm:text-sm text-white/80 mb-5">
                       <span className="flex items-center gap-1.5">
                         <TrendingUp className="h-4 w-4" />
                         {currentHeroPost.vote_count} votos
@@ -335,7 +335,7 @@ export default function Home() {
               {!userHasPosts && (
                 <Link
                   href="/submit"
-                  className="inline-flex items-center gap-2 bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg mx-auto"
+                  className="inline-flex items-center gap-2 bg-white text-indigo-600 text-sm sm:text-base px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg mx-auto"
                 >
                   <Sparkles className="h-5 w-5" />
                   Crear tu primer post
@@ -371,7 +371,7 @@ export default function Home() {
           <div className="flex items-center gap-2 sm:ml-auto">
             <button 
               onClick={() => setSortBy('popular')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-xs sm:text-sm transition-colors ${
                 sortBy === 'popular' 
                   ? 'bg-primary text-primary-foreground' 
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -382,7 +382,7 @@ export default function Home() {
             </button>
             <button 
               onClick={() => setSortBy('recent')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-xs sm:text-sm transition-colors ${
                 sortBy === 'recent' 
                   ? 'bg-primary text-primary-foreground' 
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -421,14 +421,14 @@ export default function Home() {
               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="h-8 w-8 text-muted-foreground" />
               </div>
-              <p className="text-muted-foreground text-lg mb-2">
+              <p className="text-muted-foreground text-base sm:text-lg mb-2">
                 {selectedGroup 
                   ? `No hay posts en ${selectedGroup.name} aún` 
                   : 'No hay posts aún'}
               </p>
               <Link
                 href={selectedGroup ? `/submit?channel=${selectedGroup.id}` : '/submit'}
-                className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
+                className="inline-flex items-center gap-2 text-primary hover:underline font-medium text-sm sm:text-base"
               >
                 Sé el primero en publicar
               </Link>
