@@ -101,9 +101,10 @@ export async function middleware(request: NextRequest) {
 
   const locale = getLocaleFromRequest(request);
   
-  const response = NextResponse.redirect(
-    new URL(`/${locale}${pathname}`, request.url)
-  );
+  const redirectUrl = request.nextUrl.clone()
+  redirectUrl.pathname = `/${locale}${pathname}`
+
+  const response = NextResponse.redirect(redirectUrl);
 
   response.cookies.set('NEXT_LOCALE', locale, {
     path: '/',

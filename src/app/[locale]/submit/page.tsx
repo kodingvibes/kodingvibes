@@ -33,7 +33,6 @@ export default function SubmitPage() {
   const [groups, setGroups] = useState<Group[]>([])
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(preselectedGroupId)
   const [loadingGroups, setLoadingGroups] = useState(true)
-  const [_userMemberships, _setUserMemberships] = useState<Set<string>>(new Set())
   const [groupTags, setGroupTags] = useState<GroupTag[]>([])
   const [userRole, setUserRole] = useState<string | null>(null)
   const [canPost, setCanPost] = useState(true)
@@ -50,39 +49,29 @@ export default function SubmitPage() {
         return
       }
 
-      // Fetch all groups with their details
-      const { data: groupsData } = await supabase
-        .from('groups')
-        .select('*')
-        .eq('is_active', true)
-        .order('member_count', { ascending: false })
+      // Fetch only channels where the user is a member
+      const { data: memberships } = await supabase
+        .from('group_members')
+        .select('groups(*)')
+        .eq('user_id', user.id)
 
-      if (groupsData) {
-        // Fetch user's memberships
-        const { data: memberships } = await supabase
-          .from('group_members')
-          .select('group_id')
-          .eq('user_id', user.id)
+      const memberGroups = (memberships || [])
+        .map((membership) => membership.groups)
+        .filter((group): group is Group => Boolean(group && group.is_active))
+        .sort((a, b) => (b.member_count || 0) - (a.member_count || 0))
 
-        const membershipSet = new Set(memberships?.map(m => m.group_id) || [])
-        _setUserMemberships(membershipSet)
+      setGroups(memberGroups)
 
-        // Filter groups: public groups OR groups where user is member
-        const accessibleGroups = groupsData.filter(g => 
-          g.is_public || membershipSet.has(g.id)
-        )
-
-        setGroups(accessibleGroups)
-
-        // If no group preselected, default to 'comunidad' if available
-        if (!preselectedGroupId) {
-          const comunidadGroup = accessibleGroups.find(g => g.slug === 'comunidad')
-          if (comunidadGroup) {
-            setSelectedGroupId(comunidadGroup.id)
-          } else if (accessibleGroups.length > 0) {
-            setSelectedGroupId(accessibleGroups[0].id)
-          }
+      if (memberGroups.length > 0) {
+        if (preselectedGroupId) {
+          const preselectedExists = memberGroups.some((group) => group.id === preselectedGroupId)
+          setSelectedGroupId(preselectedExists ? preselectedGroupId : memberGroups[0].id)
+        } else {
+          const comunidadGroup = memberGroups.find((group) => group.slug === 'comunidad')
+          setSelectedGroupId(comunidadGroup ? comunidadGroup.id : memberGroups[0].id)
         }
+      } else {
+        setSelectedGroupId(null)
       }
 
       setLoadingGroups(false)
