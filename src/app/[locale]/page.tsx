@@ -50,6 +50,8 @@ export default function Home() {
   
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true)
+
       const { data: { user } } = await supabase.auth.getUser()
 
       // Check if user has any posts
