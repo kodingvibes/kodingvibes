@@ -16,7 +16,7 @@
   },
   "nav": {
     "home": "Startseite",
-    "groups": "Gruppen",
+    "groups": "Kanäle",
     "cardGame": "Kartenspiel",
     "profile": "Profil",
     "notifications": "Benachrichtigungen",
@@ -39,23 +39,23 @@
     "trending": "Trends",
     "recent": "Aktuell",
     "popular": "Beliebt",
-    "joinGroup": "Einer Gruppe beitreten",
-    "createGroup": "Gruppe erstellen",
+    "joinGroup": "Einem Kanal beitreten",
+    "createGroup": "Kanal erstellen",
     "startDiscussion": "Diskussion starten"
   },
   "groups": {
-    "title": "Gruppen",
-    "description": "Community-Gruppen entdecken",
-    "createNew": "Neue Gruppe erstellen",
-    "myGroups": "Meine Gruppen",
-    "joinedGroups": "Beigetretene Gruppen",
-    "suggested": "Vorgeschlagene Gruppen",
+    "title": "Kanäle",
+    "description": "Community-Kanäle entdecken",
+    "createNew": "Neuen Kanal erstellen",
+    "myGroups": "Meine Kanäle",
+    "joinedGroups": "Beigetretene Kanäle",
+    "suggested": "Vorgeschlagene Kanäle",
     "members": "Mitglieder",
     "posts": "Beiträge",
     "join": "Beitreten",
     "leave": "Verlassen",
     "manage": "Verwalten",
-    "delete": "Gruppe löschen",
+    "delete": "Kanal löschen",
     "settings": "Einstellungen",
     "members": "{count} Mitglieder"
   },
@@ -66,8 +66,8 @@
     "memberCount": "{count} Mitglieder",
     "postCount": "{count} Beiträge",
     "createdBy": "Erstellt von",
-    "joined": "Du bist der Gruppe beigetreten",
-    "left": "Du hast die Gruppe verlassen"
+    "joined": "Du bist dem Kanal beigetreten",
+    "left": "Du hast den Kanal verlassen"
   },
   "post": {
     "title": "Titel",
@@ -127,7 +127,7 @@
     "joined": "Beigetreten",
     "posts": "Beiträge",
     "comments": "Kommentare",
-    "groups": "Gruppen",
+    "groups": "Kanäle",
     "bookmarks": "Lesezeichen",
     "settings": "Einstellungen",
     "notifications": "Benachrichtigungen",
@@ -143,7 +143,7 @@
     "noNotifications": "Du hast keine Benachrichtigungen",
     "commentOnPost": "hat deinen Beitrag kommentiert",
     "replyToComment": "hat auf deinen Kommentar geantwortet",
-    "joinedGroup": "ist deiner Gruppe beigetreten",
+    "joinedGroup": "ist deinem Kanal beigetreten",
     "newPost": "hat einen neuen Beitrag veröffentlicht",
     "systemNotification": "Systembenachrichtigung"
   },
@@ -163,7 +163,7 @@
   },
   "submit": {
     "title": "Neuer Beitrag",
-    "selectGroup": "Gruppe auswählen",
+    "selectGroup": "Kanal auswählen",
     "postTitle": "Beitragstitel",
     "postContent": "Inhalt",
     "addMedia": "Medien hinzufügen",
@@ -173,7 +173,7 @@
   },
   "admin": {
     "title": "Administration",
-    "groupRequests": "Gruppenanfragen",
+    "groupRequests": "Kanalanfragen",
     "users": "Benutzer",
     "reports": "Berichte",
     "statistics": "Statistiken",

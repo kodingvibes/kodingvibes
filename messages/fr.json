@@ -16,7 +16,7 @@
   },
   "nav": {
     "home": "Accueil",
-    "groups": "Groupes",
+    "groups": "Chaînes",
     "cardGame": "Jeu de cartes",
     "profile": "Profil",
     "notifications": "Notifications",
@@ -39,23 +39,23 @@
     "trending": "Tendances",
     "recent": "Récent",
     "popular": "Populaire",
-    "joinGroup": "Rejoindre un groupe",
-    "createGroup": "Créer un groupe",
+    "joinGroup": "Rejoindre une chaîne",
+    "createGroup": "Créer une chaîne",
     "startDiscussion": "Démarrer une discussion"
   },
   "groups": {
-    "title": "Groupes",
-    "description": "Explorer les groupes communautaires",
-    "createNew": "Créer un nouveau groupe",
-    "myGroups": "Mes groupes",
-    "joinedGroups": "Groupes rejoints",
-    "suggested": "Groupes suggérés",
+    "title": "Chaînes",
+    "description": "Explorer les chaînes communautaires",
+    "createNew": "Créer une nouvelle chaîne",
+    "myGroups": "Mes chaînes",
+    "joinedGroups": "Chaînes rejointes",
+    "suggested": "Chaînes suggérées",
     "members": "membres",
     "posts": "publications",
     "join": "Rejoindre",
     "leave": "Quitter",
     "manage": "Gérer",
-    "delete": "Supprimer le groupe",
+    "delete": "Supprimer la chaîne",
     "settings": "Paramètres",
     "members": "{count} membres"
   },
@@ -66,8 +66,8 @@
     "memberCount": "{count} membres",
     "postCount": "{count} publications",
     "createdBy": "Créé par",
-    "joined": "Vous avez rejoint le groupe",
-    "left": "Vous avez quitté le groupe"
+    "joined": "Vous avez rejoint la chaîne",
+    "left": "Vous avez quitté la chaîne"
   },
   "post": {
     "title": "Titre",
@@ -127,7 +127,7 @@
     "joined": "Inscrit le",
     "posts": "Publications",
     "comments": "Commentaires",
-    "groups": "Groupes",
+    "groups": "Chaînes",
     "bookmarks": "Enregistrements",
     "settings": "Paramètres",
     "notifications": "Notifications",
@@ -143,7 +143,7 @@
     "noNotifications": "Vous n'avez pas de notifications",
     "commentOnPost": "a commenté votre publication",
     "replyToComment": "a répondu à votre commentaire",
-    "joinedGroup": "a rejoint votre groupe",
+    "joinedGroup": "a rejoint votre chaîne",
     "newPost": "a publié une nouvelle entrée",
     "systemNotification": "Notification système"
   },
@@ -163,7 +163,7 @@
   },
   "submit": {
     "title": "Nouvelle publication",
-    "selectGroup": "Sélectionner un groupe",
+    "selectGroup": "Sélectionner une chaîne",
     "postTitle": "Titre de la publication",
     "postContent": "Contenu",
     "addMedia": "Ajouter des médias",
@@ -173,7 +173,7 @@
   },
   "admin": {
     "title": "Administration",
-    "groupRequests": "Demandes de groupe",
+    "groupRequests": "Demandes de chaîne",
     "users": "Utilisateurs",
     "reports": "Rapports",
     "statistics": "Statistiques",

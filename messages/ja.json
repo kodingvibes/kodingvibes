@@ -16,7 +16,7 @@
   },
   "nav": {
     "home": "ホーム",
-    "groups": "グループ",
+    "groups": "チャンネル",
     "cardGame": "カードゲーム",
     "profile": "プロフィール",
     "notifications": "通知",
@@ -39,23 +39,23 @@
     "trending": "トレンド",
     "recent": "最近",
     "popular": "人気",
-    "joinGroup": "グループに参加",
-    "createGroup": "グループを作成",
+    "joinGroup": "チャンネルに参加",
+    "createGroup": "チャンネルを作成",
     "startDiscussion": "議論を開始"
   },
   "groups": {
-    "title": "グループ",
-    "description": "コミュニティグループを探す",
-    "createNew": "新しいグループを作成",
-    "myGroups": "マイグループ",
-    "joinedGroups": "参加済みのグループ",
-    "suggested": "おすすめグループ",
+    "title": "チャンネル",
+    "description": "コミュニティチャンネルを探す",
+    "createNew": "新しいチャンネルを作成",
+    "myGroups": "マイチャンネル",
+    "joinedGroups": "参加済みのチャンネル",
+    "suggested": "おすすめチャンネル",
     "members": "メンバー",
     "posts": "投稿",
     "join": "参加",
     "leave": "退出",
     "manage": "管理",
-    "delete": "グループを削除",
+    "delete": "チャンネルを削除",
     "settings": "設定",
     "members": "{count} メンバー"
   },
@@ -66,8 +66,8 @@
     "memberCount": "{count} メンバー",
     "postCount": "{count} 投稿",
     "createdBy": "作成者",
-    "joined": "グループに参加しました",
-    "left": "グループを退出しました"
+    "joined": "チャンネルに参加しました",
+    "left": "チャンネルを退出しました"
   },
   "post": {
     "title": "タイトル",
@@ -127,7 +127,7 @@
     "joined": "参加日",
     "posts": "投稿",
     "comments": "コメント",
-    "groups": "グループ",
+    "groups": "チャンネル",
     "bookmarks": "ブックマーク",
     "settings": "設定",
     "notifications": "通知",
@@ -143,7 +143,7 @@
     "noNotifications": "通知はありません",
     "commentOnPost": "あなたの投稿にコメントしました",
     "replyToComment": "あなたのコメントに返信しました",
-    "joinedGroup": "あなたのグループに参加しました",
+    "joinedGroup": "あなたのチャンネルに参加しました",
     "newPost": "新しい投稿をpublishedしました",
     "systemNotification": "システム通知"
   },
@@ -163,7 +163,7 @@
   },
   "submit": {
     "title": "新規投稿",
-    "selectGroup": "グループを選択",
+    "selectGroup": "チャンネルを選択",
     "postTitle": "投稿タイトル",
     "postContent": "内容",
     "addMedia": "メディアを追加",
@@ -173,7 +173,7 @@
   },
   "admin": {
     "title": "管理",
-    "groupRequests": "グループリクエスト",
+    "groupRequests": "チャンネルリクエスト",
     "users": "ユーザー",
     "reports": "報告",
     "statistics": "統計",

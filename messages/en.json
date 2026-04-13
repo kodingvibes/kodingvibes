@@ -16,7 +16,7 @@
   },
   "nav": {
     "home": "Home",
-    "groups": "Groups",
+    "groups": "Channels",
     "cardGame": "Card Game",
     "profile": "Profile",
     "notifications": "Notifications",
@@ -44,7 +44,7 @@
     "startDiscussion": "Start discussion"
   },
   "groups": {
-    "title": "Groups",
+    "title": "Channels",
     "description": "Explore community groups",
     "createNew": "Create new group",
     "myGroups": "My groups",
@@ -59,7 +59,7 @@
     "settings": "Settings",
     "members": "{count} members"
   },
-  "group": {
+  "channel": {
     "posts": "Posts",
     "about": "About",
     "rules": "Rules",
@@ -127,7 +127,7 @@
     "joined": "Joined",
     "posts": "Posts",
     "comments": "Comments",
-    "groups": "Groups",
+    "groups": "Channels",
     "bookmarks": "Bookmarks",
     "settings": "Settings",
     "notifications": "Notifications",

@@ -16,7 +16,7 @@
   },
   "nav": {
     "home": "首页",
-    "groups": "群组",
+    "groups": "频道",
     "cardGame": "卡牌游戏",
     "profile": "个人资料",
     "notifications": "通知",
@@ -39,23 +39,23 @@
     "trending": "热门",
     "recent": "最近",
     "popular": "最受欢迎",
-    "joinGroup": "加入群组",
-    "createGroup": "创建群组",
+    "joinGroup": "加入频道",
+    "createGroup": "创建频道",
     "startDiscussion": "开始讨论"
   },
   "groups": {
-    "title": "群组",
-    "description": "探索社区群组",
-    "createNew": "创建新群组",
-    "myGroups": "我的群组",
-    "joinedGroups": "已加入的群组",
-    "suggested": "推荐群组",
+    "title": "频道",
+    "description": "探索社区频道",
+    "createNew": "创建新频道",
+    "myGroups": "我的频道",
+    "joinedGroups": "已加入的频道",
+    "suggested": "推荐频道",
     "members": "成员",
     "posts": "帖子",
     "join": "加入",
     "leave": "离开",
     "manage": "管理",
-    "delete": "删除群组",
+    "delete": "删除频道",
     "settings": "设置",
     "members": "{count} 名成员"
   },
@@ -66,8 +66,8 @@
     "memberCount": "{count} 名成员",
     "postCount": "{count} 个帖子",
     "createdBy": "创建者",
-    "joined": "您已加入该群组",
-    "left": "您已离开该群组"
+    "joined": "您已加入该频道",
+    "left": "您已离开该频道"
   },
   "post": {
     "title": "标题",
@@ -127,7 +127,7 @@
     "joined": "加入时间",
     "posts": "帖子",
     "comments": "评论",
-    "groups": "群组",
+    "groups": "频道",
     "bookmarks": "收藏",
     "settings": "设置",
     "notifications": "通知",
@@ -143,7 +143,7 @@
     "noNotifications": "您没有通知",
     "commentOnPost": "评论了您的帖子",
     "replyToComment": "回复了您的评论",
-    "joinedGroup": "加入了您的群组",
+    "joinedGroup": "加入了您的频道",
     "newPost": "发布了新帖子",
     "systemNotification": "系统通知"
   },
@@ -163,7 +163,7 @@
   },
   "submit": {
     "title": "新帖子",
-    "selectGroup": "选择群组",
+    "selectGroup": "选择频道",
     "postTitle": "帖子标题",
     "postContent": "内容",
     "addMedia": "添加媒体",
@@ -173,7 +173,7 @@
   },
   "admin": {
     "title": "管理",
-    "groupRequests": "群组申请",
+    "groupRequests": "频道申请",
     "users": "用户",
     "reports": "举报",
     "statistics": "统计",
