@@ -279,7 +279,7 @@ export default function EditPostPage() {
           .single()
         
         if (groupData) {
-          router.push(`/group/${groupData.slug}`)
+          router.push(`/channel/${groupData.slug}`)
         } else {
           router.push('/')
         }

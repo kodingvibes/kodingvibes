@@ -81,7 +81,7 @@ export default function GroupPage() {
         .single()
 
       if (!groupData) {
-        router.push('/groups')
+        router.push('/channels')
         return
       }
 
@@ -183,7 +183,7 @@ export default function GroupPage() {
 
   const handleJoinGroup = async () => {
     if (!user) {
-      alert('Debes iniciar sesión para unirte a un grupo')
+      alert('Debes iniciar sesión para unirte a un canal')
       return
     }
 
@@ -194,7 +194,7 @@ export default function GroupPage() {
       .insert({ group_id: group.id, user_id: user.id })
 
     if (error) {
-      alert('Error al unirse al grupo: ' + error.message)
+      alert('Error al unirse al canal: ' + error.message)
       return
     }
 
@@ -231,7 +231,7 @@ export default function GroupPage() {
       .eq('user_id', user.id)
 
     if (error) {
-      alert('Error al salir del grupo: ' + error.message)
+      alert('Error al salir del canal: ' + error.message)
       return
     }
 
@@ -288,7 +288,7 @@ export default function GroupPage() {
       <main className="min-h-screen bg-background">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Canal no encontrado</h1>
-          <Link href="/groups" className="text-primary hover:underline">
+          <Link href="/channels" className="text-primary hover:underline">
             Ver todos los canales
           </Link>
         </div>
@@ -327,7 +327,7 @@ export default function GroupPage() {
         
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Link 
-            href="/groups" 
+            href="/channels" 
             className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -392,7 +392,7 @@ export default function GroupPage() {
                 <>
                   {canManageGroup && (
                     <Link
-                      href={`/group/${slug}/admin`}
+                      href={`/channel/${slug}/admin`}
                       className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full font-medium transition-colors"
                     >
                       <Settings className="h-4 w-4" />
@@ -498,7 +498,7 @@ export default function GroupPage() {
 
               {isMember && (
                 <Link
-                  href={`/submit?group=${group.id}`}
+                  href={`/submit?channel=${group.id}`}
                   className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full font-medium hover:opacity-90 transition-opacity text-sm"
                 >
                   <Plus className="h-4 w-4" />
@@ -541,7 +541,7 @@ export default function GroupPage() {
                 <p className="text-muted-foreground text-lg mb-4">No hay posts aún</p>
                 {isMember && (
                   <Link
-                    href={`/submit?group=${group.id}`}
+                    href={`/submit?channel=${group.id}`}
                     className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
                   >
                     <Plus className="h-4 w-4" />

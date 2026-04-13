@@ -137,13 +137,13 @@ export default function TagInput({ selectedTags, onChange, maxTags = 5, groupTag
               {filteredTags.length === 0 ? (
                 <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                   {groupTags.length === 0 
-                    ? 'Este grupo no tiene tags configurados' 
+                    ? 'Este canal no tiene tags configurados' 
                     : 'No se encontraron tags'}
                 </div>
               ) : (
                 <div>
                   <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Tags del Grupo
+                    Tags del Canal
                   </div>
                   {filteredTags.map(tag => (
                     <button

@@ -170,7 +170,7 @@ export default function Header() {
             <div className="flex items-center gap-2 sm:gap-4">
               <div className="hidden md:flex items-center gap-2">
                 <Link
-                  href="/groups"
+                  href="/channels"
                   className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-muted transition-colors text-sm font-medium text-foreground"
                 >
                   <Hash className="h-4 w-4" />
@@ -247,7 +247,7 @@ export default function Header() {
                             {userChannels.map((channel) => (
                               <Link
                                 key={channel.id}
-                                href={`/group/${channel.slug}`}
+                                href={`/channel/${channel.slug}`}
                                 onClick={() => setIsMenuOpen(false)}
                                 className="relative flex items-center gap-3 px-3 py-2.5 rounded-lg overflow-hidden group"
                                 style={{
@@ -366,7 +366,7 @@ export default function Header() {
           <div className="flex-1 overflow-y-auto py-4">
             <div className="px-4 space-y-1">
               <Link
-                href="/groups"
+                href="/channels"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted transition-colors text-foreground"
               >
@@ -402,7 +402,7 @@ export default function Header() {
                   {userChannels.map((channel) => (
                     <Link
                       key={channel.id}
-                      href={`/group/${channel.slug}`}
+                      href={`/channel/${channel.slug}`}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="relative flex items-center gap-3 px-4 py-3 rounded-lg overflow-hidden group"
                       style={{

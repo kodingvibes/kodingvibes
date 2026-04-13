@@ -380,7 +380,7 @@ export default function AdminDashboardPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs font-medium rounded">
-                          {request.group?.name || 'Grupo desconocido'}
+                          {request.group?.name || 'Canal desconocido'}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {formatDate(request.created_at)}

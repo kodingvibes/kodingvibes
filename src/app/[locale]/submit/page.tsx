@@ -19,7 +19,7 @@ type GroupTag = Tables<'group_tags'>
 export default function SubmitPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const preselectedGroupId = searchParams.get('group')
+  const preselectedGroupId = searchParams.get('channel') || searchParams.get('group')
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -133,7 +133,7 @@ export default function SubmitPage() {
       const selectedGroup = groups.find(g => g.id === selectedGroupId)
       if (!selectedGroup) {
         setCanPost(false)
-        setPostPermissionError('Grupo no encontrado')
+        setPostPermissionError('Canal no encontrado')
         return
       }
 
@@ -144,9 +144,9 @@ export default function SubmitPage() {
         setCanPost(false)
         setUserRole(null)
         if (!selectedGroup.is_public) {
-          setPostPermissionError('No eres miembro de este grupo privado')
+          setPostPermissionError('No eres miembro de este canal privado')
         } else {
-          setPostPermissionError('No eres miembro de este grupo')
+          setPostPermissionError('No eres miembro de este canal')
         }
         return
       }
@@ -160,7 +160,7 @@ export default function SubmitPage() {
       } else if (postCreationType === 'moderators_admins') {
         if (membership.role === 'member') {
           setCanPost(false)
-          setPostPermissionError('Solo moderadores y admins pueden crear posts en este grupo')
+          setPostPermissionError('Solo moderadores y admins pueden crear posts en este canal')
         } else {
           setCanPost(true)
           setPostPermissionError(null)
@@ -168,7 +168,7 @@ export default function SubmitPage() {
       } else if (postCreationType === 'admins_only') {
         if (membership.role !== 'admin') {
           setCanPost(false)
-          setPostPermissionError('Solo admins pueden crear posts en este grupo')
+          setPostPermissionError('Solo admins pueden crear posts en este canal')
         } else {
           setCanPost(true)
           setPostPermissionError(null)

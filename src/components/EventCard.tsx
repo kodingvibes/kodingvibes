@@ -74,7 +74,7 @@ export default function EventCard({ event, groupSlug }: EventCardProps) {
           </div>
 
           <Link 
-            href={`/group/${groupSlug}/event/${event.id}`}
+            href={`/channel/${groupSlug}/event/${event.id}`}
             className="block"
           >
             <h3 className="font-semibold text-foreground text-lg mb-1 hover:text-primary transition-colors line-clamp-2">

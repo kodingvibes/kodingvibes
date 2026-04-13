@@ -119,7 +119,7 @@ export default function CreateGroupPage() {
       }
 
       alert('¡Solicitud enviada! Un administrador la revisará pronto.')
-      router.push('/groups')
+      router.push('/channels')
     } catch (error) {
       console.error('Error creating request:', error)
       alert('Error al enviar la solicitud')
@@ -133,7 +133,7 @@ export default function CreateGroupPage() {
       <main className="min-h-screen bg-background">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Link 
-            href="/groups" 
+            href="/channels" 
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -163,7 +163,7 @@ export default function CreateGroupPage() {
               </p>
             </div>
             <Link
-              href="/groups"
+              href="/channels"
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full font-semibold hover:opacity-90 transition-opacity"
             >
               Ver todos los canales
@@ -178,7 +178,7 @@ export default function CreateGroupPage() {
     <main className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link 
-          href="/groups" 
+          href="/channels" 
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -317,7 +317,7 @@ export default function CreateGroupPage() {
 
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <Link
-              href="/groups"
+              href="/channels"
               className="px-6 py-2.5 border border-border rounded-full text-foreground hover:bg-muted font-medium transition-colors"
             >
               Cancelar

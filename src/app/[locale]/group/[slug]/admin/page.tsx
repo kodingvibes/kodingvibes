@@ -84,7 +84,7 @@ export default function GroupAdminPage() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
-          router.push('/groups')
+          router.push('/channels')
           return
         }
 
@@ -97,7 +97,7 @@ export default function GroupAdminPage() {
           .single()
 
         if (groupError || !groupData) {
-          router.push('/groups')
+          router.push('/channels')
           return
         }
 
@@ -121,7 +121,7 @@ export default function GroupAdminPage() {
         const userIsAdmin = memberData?.role === 'admin' || memberData?.role === 'moderator'
 
         if (!userIsCreator && !userIsAdmin) {
-          router.push(`/group/${slug}`)
+          router.push(`/channel/${slug}`)
           return
         }
 
@@ -233,7 +233,7 @@ export default function GroupAdminPage() {
 
   const handleUpdateGroupSettings = async () => {
     if (!groupName.trim()) {
-      setError('El nombre del grupo no puede estar vacío')
+      setError('El nombre del canal no puede estar vacío')
       return
     }
 
@@ -276,7 +276,7 @@ export default function GroupAdminPage() {
         .eq('id', group.id)
 
       if (updateError) {
-        setError('Error al actualizar el grupo: ' + updateError.message)
+        setError('Error al actualizar el canal: ' + updateError.message)
         return
       }
 
@@ -297,11 +297,11 @@ export default function GroupAdminPage() {
       setIconPreview(null)
       setBannerPreview(null)
       
-      setSuccess('Configuración del grupo actualizada exitosamente')
+      setSuccess('Configuración del canal actualizada exitosamente')
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
       console.error('Error:', err)
-      setError('Error al actualizar el grupo')
+      setError('Error al actualizar el canal')
     } finally {
       setSaving(false)
     }
@@ -314,7 +314,7 @@ export default function GroupAdminPage() {
     }
 
     if (tags.length >= 10) {
-      setError('No puedes tener más de 10 tags en un grupo')
+      setError('No puedes tener más de 10 tags en un canal')
       return
     }
 
@@ -344,7 +344,7 @@ export default function GroupAdminPage() {
 
       if (insertError) {
         if (insertError.message.includes('duplicate')) {
-          setError('Ya existe un tag con ese nombre en este grupo')
+          setError('Ya existe un tag con ese nombre en este canal')
         } else {
           setError('Error al crear el tag: ' + insertError.message)
         }
@@ -399,7 +399,7 @@ export default function GroupAdminPage() {
 
   const handleChangeRole = async (memberId: string, newRole: 'member' | 'moderator' | 'admin') => {
     if (!isCreator) {
-      setError('Solo el creador del grupo puede cambiar roles')
+      setError('Solo el creador del canal puede cambiar roles')
       return
     }
 
@@ -439,16 +439,16 @@ export default function GroupAdminPage() {
     if (!member) return
 
     if (!isCreator && member.role === 'moderator') {
-      setError('Solo el creador del grupo puede remover moderadores')
+      setError('Solo el creador del canal puede remover moderadores')
       return
     }
 
     if (memberUserId === group?.created_by) {
-      setError('No puedes remover al creador del grupo')
+      setError('No puedes remover al creador del canal')
       return
     }
 
-    if (!confirm(`¿Estás seguro de que quieres remover a ${member.users.username} del grupo?`)) {
+    if (!confirm(`¿Estás seguro de que quieres remover a ${member.users.username} del canal?`)) {
       return
     }
 
@@ -468,7 +468,7 @@ export default function GroupAdminPage() {
       }
 
       setMembers(members.filter(m => m.id !== memberId))
-      setSuccess(`${member.users.username} ha sido removido del grupo`)
+      setSuccess(`${member.users.username} ha sido removido del canal`)
       
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
@@ -501,7 +501,7 @@ export default function GroupAdminPage() {
         {/* Header */}
         <div className="mb-8">
           <Link
-            href={`/group/${slug}`}
+            href={`/channel/${slug}`}
             className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -520,9 +520,9 @@ export default function GroupAdminPage() {
                 <Settings className="w-8 h-8" />
                 Administrar {group.name}
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Gestiona la configuración de tu grupo
-              </p>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                 Gestiona la configuración de tu canal
+                </p>
             </div>
           </div>
         </div>
@@ -600,22 +600,22 @@ export default function GroupAdminPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center gap-2 mb-6">
               <Settings className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Ajustes del Grupo
-              </h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                 Ajustes del Canal
+                </h2>
             </div>
 
             <div className="space-y-6">
               {/* Group Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nombre del Grupo
+                  Nombre del Canal
                 </label>
                 <input
                   type="text"
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="Nombre del grupo"
+                  placeholder="Nombre del canal"
                   maxLength={100}
                   className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
@@ -629,7 +629,7 @@ export default function GroupAdminPage() {
                 <textarea
                   value={groupDescription}
                   onChange={(e) => setGroupDescription(e.target.value)}
-                  placeholder="Descripción del grupo"
+                  placeholder="Descripción del canal"
                   maxLength={500}
                   rows={4}
                   className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
@@ -639,10 +639,10 @@ export default function GroupAdminPage() {
                 </p>
               </div>
 
-              {/* Icono del Grupo */}
+              {/* Icono del Canal */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Icono del Grupo
+                  Icono del Canal
                 </label>
                 <div className="flex items-start gap-4">
                   {/* Preview */}
@@ -651,7 +651,7 @@ export default function GroupAdminPage() {
                       <div className="relative w-20 h-20 rounded-xl overflow-hidden">
                         <Image
                           src={iconPreview || groupIconUrl || ''}
-                          alt="Icono del grupo"
+                          alt="Icono del canal"
                           fill
                           className="object-cover"
                         />
@@ -696,17 +696,17 @@ export default function GroupAdminPage() {
                 </div>
               </div>
 
-              {/* Banner del Grupo */}
+              {/* Banner del Canal */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Banner del Grupo
+                  Banner del Canal
                 </label>
                 {bannerPreview || groupBannerUrl ? (
                   <div className="relative mb-2">
                     <div className="relative w-full h-32 rounded-xl overflow-hidden">
                       <Image
                         src={bannerPreview || groupBannerUrl || ''}
-                        alt="Banner del grupo"
+                        alt="Banner del canal"
                         fill
                         className="object-cover"
                       />
@@ -768,7 +768,7 @@ export default function GroupAdminPage() {
               {/* Slug info (read-only) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Slug del Grupo
+                  Slug del Canal
                 </label>
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg">
                   <code className="text-sm text-gray-900 dark:text-white font-mono">
@@ -776,7 +776,7 @@ export default function GroupAdminPage() {
                   </code>
                 </div>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  El slug del grupo no se puede modificar
+                  El slug del canal no se puede modificar
                 </p>
               </div>
 
@@ -795,7 +795,7 @@ export default function GroupAdminPage() {
                   <option value="admins_only">Solo admins</option>
                 </select>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Configura quién puede publicar en este grupo. Los admins siempre pueden crear posts.
+                  Configura quién puede publicar en este canal. Los admins siempre pueden crear posts.
                 </p>
               </div>
 
@@ -828,9 +828,9 @@ export default function GroupAdminPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center gap-2 mb-6">
               <Tag className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Tags del Grupo
-              </h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Tags del Canal
+                </h2>
               <span className="ml-auto text-sm text-gray-500 dark:text-gray-400">
                 {tags.length}/10
               </span>
@@ -940,8 +940,8 @@ export default function GroupAdminPage() {
                 <strong>Roles:</strong>
               </p>
               <ul className="text-sm text-purple-700 dark:text-purple-300 mt-2 space-y-1 ml-4">
-                <li><strong>Miembro:</strong> Puede ver y crear posts en el grupo</li>
-                <li><strong>Moderador:</strong> Puede gestionar tags y contenido del grupo</li>
+                <li><strong>Miembro:</strong> Puede ver y crear posts en el canal</li>
+                <li><strong>Moderador:</strong> Puede gestionar tags y contenido del canal</li>
                 <li><strong>Admin:</strong> Tiene todos los permisos excepto cambiar roles (solo el creador puede hacerlo)</li>
               </ul>
             </div>
@@ -995,7 +995,7 @@ export default function GroupAdminPage() {
                       ) : (
                         <>
                           <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                          <p>No hay miembros en el grupo</p>
+                          <p>No hay miembros en el canal</p>
                         </>
                       )}
                     </div>
@@ -1093,7 +1093,7 @@ export default function GroupAdminPage() {
                                 onClick={() => handleRemoveMember(member.id, member.user_id)}
                                 disabled={removingMember === member.id}
                                 className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
-                                title="Remover del grupo"
+                                title="Remover del canal"
                               >
                                 {removingMember === member.id ? (
                                   <LoadingSpinner size="sm" />

@@ -938,7 +938,7 @@ export default function ProfilePage() {
               <div className="mt-8">
                 <div className="flex items-center gap-2 mb-4">
                   <Users className="h-5 w-5 text-foreground" />
-                  <h2 className="text-xl font-bold text-foreground">Mis Grupos</h2>
+                  <h2 className="text-xl font-bold text-foreground">Mis Canales</h2>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {myGroups.map((group) => (
@@ -968,13 +968,13 @@ export default function ProfilePage() {
                       </div>
                       <div className="flex gap-2 mt-4 pt-4 border-t border-border">
                         <Link
-                          href={`/group/${group.slug}`}
+                          href={`/channel/${group.slug}`}
                           className="flex-1 px-3 py-2 text-center text-sm border border-border rounded-lg hover:bg-muted transition-colors"
                         >
-                          Ver grupo
+                          Ver canal
                         </Link>
                         <Link
-                          href={`/group/${group.slug}/admin`}
+                          href={`/channel/${group.slug}/admin`}
                           className="flex-1 px-3 py-2 text-center text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-1"
                         >
                           <Settings className="h-3 w-3" />
@@ -1179,10 +1179,10 @@ export default function ProfilePage() {
             {myGroups.length > 0 && (
               <div className="mt-5 border border-border rounded-lg p-4">
                 <h3 className="text-sm font-semibold text-foreground mb-3">
-                  Asignar rol del bot en tus grupos
+                  Asignar rol del bot en tus canales
                 </h3>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Como dueño del grupo, puedes dejar tu bot como moderador para que administre posts y comentarios del grupo.
+                  Como dueño del canal, puedes dejar tu bot como moderador para que administre posts y comentarios del canal.
                 </p>
                 <div className="space-y-3">
                   {myGroups.map((group) => {

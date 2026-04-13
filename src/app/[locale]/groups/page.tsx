@@ -79,7 +79,7 @@ export default function GroupsPage() {
 
   const handleJoinGroup = async (groupId: string) => {
     if (!user) {
-      alert('Debes iniciar sesión para unirte a un grupo')
+      alert('Debes iniciar sesión para unirte a un canal')
       return
     }
 
@@ -88,7 +88,7 @@ export default function GroupsPage() {
       .insert({ group_id: groupId, user_id: user.id })
 
     if (error) {
-      alert('Error al unirse al grupo: ' + error.message)
+      alert('Error al unirse al canal: ' + error.message)
       return
     }
 
@@ -120,7 +120,7 @@ export default function GroupsPage() {
       .eq('user_id', user.id)
 
     if (error) {
-      alert('Error al salir del grupo: ' + error.message)
+      alert('Error al salir del canal: ' + error.message)
       return
     }
 
@@ -145,11 +145,11 @@ export default function GroupsPage() {
               Canales
             </h1>
             <p className="text-muted-foreground mt-1">
-              Únete a grupos para compartir y descubrir contenido específico
+              Únete a canales para compartir y descubrir contenido específico
             </p>
           </div>
           <Link
-            href="/groups/create"
+            href="/channels/create"
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full font-semibold hover:opacity-90 transition-opacity"
           >
             <Plus className="h-5 w-5" />
@@ -324,7 +324,7 @@ function GroupCard({
 
         <div className="flex items-center gap-2 mt-auto pt-4">
           <Link
-            href={`/group/${group.slug}`}
+            href={`/channel/${group.slug}`}
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg font-medium transition-colors text-sm"
           >
             Ver canal

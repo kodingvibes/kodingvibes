@@ -3,9 +3,10 @@
 import { createClient } from '@/lib/supabase/client'
 import PostCard from '@/components/PostCard'
 import GoogleSearch from '@/components/GoogleSearch'
+import ChannelPicker from '@/components/ChannelPicker'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { TrendingUp, Clock, Sparkles, Hash, ChevronDown, Users } from 'lucide-react'
+import { TrendingUp, Clock, Sparkles, Hash } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Tables } from '@/types/database'
 
@@ -26,7 +27,7 @@ interface HeroPost extends PostWithUser {
 export default function Home() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const groupFilter = searchParams.get('group')
+  const groupFilter = searchParams.get('channel') || searchParams.get('group')
   
   const [posts, setPosts] = useState<PostWithUser[]>([])
   const [loading, setLoading] = useState(true)
@@ -37,7 +38,6 @@ export default function Home() {
   // Groups state
   const [groups, setGroups] = useState<Group[]>([])
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
-  const [showGroupDropdown, setShowGroupDropdown] = useState(false)
 
   // Hero popular posts state
   const [heroPopularPosts, setHeroPopularPosts] = useState<HeroPost[]>([])
@@ -171,10 +171,9 @@ export default function Home() {
 
   const handleGroupSelect = (group: Group | null) => {
     setSelectedGroup(group)
-    setShowGroupDropdown(false)
     
     if (group) {
-      router.push(`/?group=${group.slug}`)
+      router.push(`/?channel=${group.slug}`)
     } else {
       router.push('/')
     }
@@ -348,72 +347,22 @@ export default function Home() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32 sm:pb-8">
         {/* Channel Selector & Sort tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
-          {/* Group Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowGroupDropdown(!showGroupDropdown)}
-              className="flex items-center gap-2 px-4 py-2 bg-muted rounded-full font-medium text-sm hover:bg-muted/80 transition-colors"
-            >
-              <Hash className="h-4 w-4" />
-              <span>{selectedGroup?.name || 'Todos los canales'}</span>
-              <ChevronDown className="h-4 w-4" />
-            </button>
-            
-            {showGroupDropdown && (
-              <>
-                <div 
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowGroupDropdown(false)}
-                />
-                <div className="absolute top-full left-0 mt-2 w-64 bg-card border border-border rounded-xl shadow-lg z-50 py-2 max-h-80 overflow-y-auto">
-                  <button
-                    onClick={() => handleGroupSelect(null)}
-                    className={`w-full px-4 py-2 text-left hover:bg-muted transition-colors flex items-center gap-2 ${
-                      !selectedGroup ? 'bg-primary/10 text-primary' : ''
-                    }`}
-                  >
-                    <Hash className="h-4 w-4" />
-                    <span>Todos los canales</span>
-                  </button>
-                  
-                  <div className="border-t border-border my-2" />
-                  
-                  {groups.map((group) => (
-                    <button
-                      key={group.id}
-                      onClick={() => handleGroupSelect(group)}
-                      className={`w-full px-4 py-2 text-left hover:bg-muted transition-colors flex items-center gap-3 ${
-                        selectedGroup?.id === group.id ? 'bg-primary/10 text-primary' : ''
-                      }`}
-                    >
-                      <div 
-                        className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
-                        style={{ backgroundColor: group.color || '#6366f1' }}
-                      >
-                        {group.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{group.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {group.post_count} posts
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                  
-                  <div className="border-t border-border my-2" />
-                  
-                  <Link
-                    href="/groups"
-                    onClick={() => setShowGroupDropdown(false)}
-                    className="w-full px-4 py-2 text-left hover:bg-muted transition-colors flex items-center gap-2 text-primary"
-                  >
-                    <Users className="h-4 w-4" />
-                    <span>Ver todos los canales</span>
-                  </Link>
-                </div>
-              </>
-            )}
+          {/* Group Filter */}
+          <div className="relative w-full sm:w-[340px]">
+            <ChannelPicker
+              channels={groups}
+              selectedChannelId={selectedGroup?.id || null}
+              onSelect={(channelId) => {
+                if (!channelId) {
+                  handleGroupSelect(null)
+                  return
+                }
+                const group = groups.find((item) => item.id === channelId) || null
+                handleGroupSelect(group)
+              }}
+              allowAll
+              allLabel="Todos los canales"
+            />
           </div>
 
           {/* Sort tabs */}
@@ -476,7 +425,7 @@ export default function Home() {
                   : 'No hay posts aún'}
               </p>
               <Link
-                href={selectedGroup ? `/submit?group=${selectedGroup.id}` : '/submit'}
+                href={selectedGroup ? `/submit?channel=${selectedGroup.id}` : '/submit'}
                 className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
               >
                 Sé el primero en publicar
