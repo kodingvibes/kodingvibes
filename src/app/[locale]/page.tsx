@@ -239,7 +239,7 @@ export default function Home() {
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           {heroLoading || heroPopularPosts.length === 0 ? (
-            <div className="text-center min-h-[200px] sm:min-h-[240px] flex flex-col justify-center">
+            <div className="text-center h-[200px] sm:h-[240px] overflow-hidden flex flex-col justify-center">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight leading-tight">
                 Posts más populares
               </h1>
@@ -257,7 +257,7 @@ export default function Home() {
               )}
             </div>
           ) : (
-            <div className="text-center min-h-[200px] sm:min-h-[240px] flex flex-col justify-center">
+            <div className="text-center h-[200px] sm:h-[240px] overflow-hidden flex flex-col justify-center">
               <div
                 className={`transition-all duration-500 ease-in-out transform ${
                   isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
