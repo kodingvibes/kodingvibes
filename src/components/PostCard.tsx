@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import VoteButtons from './VoteButtons'
 import PostActions from './PostActions'
 import { createClient } from '@/lib/supabase/client'
@@ -45,6 +46,7 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [groupTags, setGroupTags] = useState<GroupTag[]>([])
   const supabase = createClient()
+  const router = useRouter()
 
   useEffect(() => {
     const getUser = async () => {
@@ -103,26 +105,62 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
     )
   }
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Evitar navegación si se hizo clic en botones de acción o votos
+    const target = e.target as HTMLElement
+    if (target.closest('button') || target.closest('[data-no-navigate]')) {
+      return
+    }
+    router.push(`/post/${post.id}`)
+  }
+
+  const hasImage = !!post.image_url
+
   return (
-    <article className="group bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg hover:border-primary/20 transition-all duration-300 animate-slide-up">
-      <div className="flex">
+    <article 
+      onClick={handleCardClick}
+      className={`group relative border border-border rounded-xl overflow-hidden cursor-pointer hover:shadow-xl hover:border-primary/30 transition-all duration-300 animate-slide-up ${
+        hasImage ? 'min-h-[180px]' : ''
+      }`}
+    >
+      {/* Background image with blur effect */}
+      {hasImage && (
+        <>
+          <div 
+            className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+            style={{ backgroundImage: `url(${post.image_url})` }}
+          />
+          <div className="absolute inset-0 backdrop-blur-md bg-gradient-to-br from-black/70 via-black/60 to-black/80" />
+        </>
+      )}
+
+      {/* Content */}
+      <div className={`relative flex ${hasImage ? 'text-white' : 'bg-card text-foreground'}`}>
         {/* Vote section */}
-        <div className="bg-muted/50 p-3 flex items-center">
+        <div className={`p-3 flex items-center ${hasImage ? 'bg-black/20' : 'bg-muted/50'}`} data-no-navigate>
           <VoteButtons postId={post.id} initialVotes={post.vote_count} />
         </div>
 
         {/* Content section */}
         <div className="flex-1 p-4">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-[10px]">
+            <div className={`flex items-center gap-2 text-xs ${hasImage ? 'text-white/80' : 'text-muted-foreground'}`}>
+              <span className={`w-6 h-6 rounded-full flex items-center justify-center font-semibold text-[10px] ${
+                hasImage 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
+              }`}>
                 {displayAvatarInitial}
               </span>
-              <span className="font-medium text-foreground/80">
+              <span className={`font-medium ${hasImage ? 'text-white' : 'text-foreground/80'}`}>
                 {displayAuthor}
               </span>
               {post.is_bot_post && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5">
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${
+                  hasImage 
+                    ? 'bg-emerald-500/30 text-emerald-200' 
+                    : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                }`}>
                   <Bot className="h-3 w-3" />
                   bot
                 </span>
@@ -135,48 +173,52 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
             </div>
             
             {!isLoading && (
-              <PostActions 
-                postId={post.id}
-                userId={post.user_id}
-                currentUserId={currentUserId}
-                createdAt={post.created_at}
-                isDeleted={post.is_deleted}
-                onDelete={onDelete || (() => {})}
-                title={post.title}
-                imageUrl={post.image_url}
-              />
+              <div data-no-navigate>
+                <PostActions 
+                  postId={post.id}
+                  userId={post.user_id}
+                  currentUserId={currentUserId}
+                  createdAt={post.created_at}
+                  isDeleted={post.is_deleted}
+                  onDelete={onDelete || (() => {})}
+                  title={post.title}
+                  imageUrl={post.image_url}
+                />
+              </div>
             )}
           </div>
 
-          <Link href={`/post/${post.id}`} className="block group/link">
-            {/* Tags sobre el título */}
-            {post.tags && post.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {post.tags.map((tagValue) => {
-                  // Buscar el tag en los tags del grupo
-                  const groupTag = groupTags.find(gt => 
-                    gt.name.toLowerCase().replace(/\s+/g, '-') === tagValue
-                  )
-                  
-                  return (
-                    <span
-                      key={tagValue}
-                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white"
-                      style={{ backgroundColor: groupTag?.color || '#6b7280' }}
-                    >
-                      {groupTag?.name || tagValue}
-                    </span>
-                  )
-                })}
-              </div>
-            )}
-            
-            <h2 className="text-lg font-semibold text-foreground group-hover/link:text-primary transition-colors mb-2">
-              {post.title}
-            </h2>
-          </Link>
+          {/* Tags sobre el título */}
+          {post.tags && post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {post.tags.map((tagValue) => {
+                const groupTag = groupTags.find(gt => 
+                  gt.name.toLowerCase().replace(/\s+/g, '-') === tagValue
+                )
+                
+                return (
+                  <span
+                    key={tagValue}
+                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white"
+                    style={{ backgroundColor: groupTag?.color || '#6b7280' }}
+                  >
+                    {groupTag?.name || tagValue}
+                  </span>
+                )
+              })}
+            </div>
+          )}
+          
+          <h2 className={`text-lg font-semibold mb-2 transition-colors ${
+            hasImage 
+              ? 'text-white group-hover:text-white/90' 
+              : 'text-foreground group-hover:text-primary'
+          }`}>
+            {post.title}
+          </h2>
 
-          {post.image_url && (
+          {/* Preview image - only show if post doesn't have cover image */}
+          {!hasImage && post.image_url && (
             <div className="mb-3 overflow-hidden rounded-lg">
               <Image
                 src={post.image_url}
@@ -188,14 +230,15 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
             </div>
           )}
 
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <Link
-              href={`/post/${post.id}`}
-              className="flex items-center gap-1.5 hover:bg-muted px-3 py-1.5 rounded-full transition-colors"
-            >
+          <div className={`flex items-center gap-4 text-sm ${hasImage ? 'text-white/70' : 'text-muted-foreground'}`}>
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${
+              hasImage 
+                ? 'hover:bg-white/10' 
+                : 'hover:bg-muted'
+            }`}>
               <MessageSquare className="h-4 w-4" />
               <span>{post.comments_count || 0} comentarios</span>
-            </Link>
+            </div>
           </div>
         </div>
       </div>
