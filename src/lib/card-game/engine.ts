@@ -120,6 +120,10 @@ function getSideName(side: PlayerSide): string {
   return side === 'player' ? 'Runner' : 'Corp'
 }
 
+function shouldAutoPassTurn(player: PlayerState): boolean {
+  return player.deck.length === 0 && player.hand.length === 0 && player.field.length === 0
+}
+
 function drawCards(state: GameState, side: PlayerSide, count: number): void {
   const player = getPlayerState(state, side)
   const sideName = getSideName(side)
@@ -561,37 +565,49 @@ export function processAction(state: GameState, action: GameAction): GameState {
     }
 
     case 'end_turn': {
-      const currentSide = action.playerSide
-      const currentPlayer = getPlayerState(newState, currentSide)
-      const nextSide = getOpponentSide(currentSide)
-      const nextPlayer = getPlayerState(newState, nextSide)
+      let currentSide = action.playerSide
+      let autoPassCount = 0
 
-      // Process temporary buff durations for the player ending their turn
-      for (const card of currentPlayer.field) {
-        tickCardBuffs(card)
+      while (autoPassCount < 2) {
+        const currentPlayer = getPlayerState(newState, currentSide)
+        const nextSide = getOpponentSide(currentSide)
+        const nextPlayer = getPlayerState(newState, nextSide)
+
+        // Process temporary buff durations for the player ending their turn
+        for (const card of currentPlayer.field) {
+          tickCardBuffs(card)
+        }
+
+        // Increment turn when going back to player's turn
+        if (nextSide === 'player') {
+          newState.turn++
+        }
+
+        newState.activePlayer = nextSide
+
+        // Refresh RAM
+        nextPlayer.maxRam = Math.min(MAX_RAM, nextPlayer.maxRam + 1)
+        nextPlayer.currentRam = nextPlayer.maxRam
+
+        // Unexhaust all cards
+        for (const card of nextPlayer.field) {
+          card.isExhausted = false
+        }
+
+        if (shouldAutoPassTurn(nextPlayer)) {
+          addLog(newState, `⏭️ ${nextSide === 'player' ? 'Runner' : 'Corp'} no tiene cartas (deck/mano/mesa). Turno pasado automáticamente.`, 'system')
+          currentSide = nextSide
+          autoPassCount++
+          continue
+        }
+
+        // Draw a card
+        drawCards(newState, nextSide, 1)
+
+        newState.phase = 'main'
+        addLog(newState, `--- Turno ${newState.turn}: ${nextSide === 'player' ? 'Runner' : 'Corp'} ---`, 'system')
+        break
       }
-
-      // Increment turn when going back to player's turn
-      if (nextSide === 'player') {
-        newState.turn++
-      }
-
-      newState.activePlayer = nextSide
-
-      // Refresh RAM
-      nextPlayer.maxRam = Math.min(MAX_RAM, nextPlayer.maxRam + 1)
-      nextPlayer.currentRam = nextPlayer.maxRam
-
-      // Unexhaust all cards
-      for (const card of nextPlayer.field) {
-        card.isExhausted = false
-      }
-
-      // Draw a card
-      drawCards(newState, nextSide, 1)
-
-      newState.phase = 'main'
-      addLog(newState, `--- Turno ${newState.turn}: ${nextSide === 'player' ? 'Runner' : 'Corp'} ---`, 'system')
       break
     }
 
