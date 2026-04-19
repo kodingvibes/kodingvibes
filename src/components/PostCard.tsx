@@ -217,15 +217,15 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
             {post.title}
           </h2>
 
-          {/* Preview image - only show if post doesn't have cover image */}
-          {!hasImage && post.image_url && (
-            <div className="mb-3 overflow-hidden rounded-lg">
+          {/* Post image preview */}
+          {hasImage && (
+            <div className="mb-3 overflow-hidden rounded-lg border border-white/20">
               <Image
-                src={post.image_url}
+                src={post.image_url!}
                 alt={post.title}
                 width={600}
                 height={400}
-                className="w-full max-h-80 object-cover group-hover:scale-105 transition-transform duration-500"
+                className="w-full max-h-60 object-cover group-hover:scale-105 transition-transform duration-500"
               />
             </div>
           )}
