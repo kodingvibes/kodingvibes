@@ -34,6 +34,7 @@ export default function SubmitPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(preselectedGroupId)
   const [loadingGroups, setLoadingGroups] = useState(true)
   const [groupTags, setGroupTags] = useState<GroupTag[]>([])
+  const [userRole, setUserRole] = useState<string | null>(null)
   const [canPost, setCanPost] = useState(true)
   const [postPermissionError, setPostPermissionError] = useState<string | null>(null)
   const supabase = createClient()

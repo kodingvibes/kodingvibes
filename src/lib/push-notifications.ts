@@ -105,7 +105,10 @@ export async function unsubscribeFromPushNotifications(): Promise<void> {
 }
 
 // Verificar estado de suscripción
-export async function checkPushSubscriptionStatus(_vapidPublicKey: string): Promise<{
+export async function checkPushSubscriptionStatus(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _vapidPublicKey: string
+): Promise<{
   supported: boolean;
   subscribed: boolean;
   permission: NotificationPermission;
