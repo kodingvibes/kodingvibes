@@ -30,10 +30,10 @@ export default function HeroSection() {
   const isTablet = viewportWidth >= 640 && viewportWidth < 1024
 
   const fanConfig = isMobile
-    ? { spacing: 78, rotation: 13, lift: 16, containerHeight: 230, maxWidth: 420 }
+    ? { spacing: 70, rotation: 12, lift: 14, containerHeight: 200, maxWidth: 380 }
     : isTablet
-      ? { spacing: 116, rotation: 17, lift: 24, containerHeight: 280, maxWidth: 760 }
-      : { spacing: 168, rotation: 23, lift: 34, containerHeight: 340, maxWidth: 1120 }
+      ? { spacing: 100, rotation: 15, lift: 20, containerHeight: 240, maxWidth: 680 }
+      : { spacing: 140, rotation: 20, lift: 28, containerHeight: 280, maxWidth: 1000 }
 
   return (
     <section className="relative min-h-[90vh] flex flex-col items-center justify-center overflow-hidden pt-0">
@@ -130,9 +130,9 @@ export default function HeroSection() {
         )}
 
         {/* Main title - BELOW THE CARDS */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h1 
-            className="text-5xl md:text-7xl lg:text-8xl font-bold mb-4 tracking-wider"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-3 tracking-wider"
             style={{
               fontFamily: 'var(--font-michroma)',
               background: 'linear-gradient(135deg, #00ffff 0%, #ffffff 50%, #ff00ff 100%)',
@@ -146,7 +146,7 @@ export default function HeroSection() {
             NETRUN
           </h1>
           <p 
-            className="text-lg md:text-xl lg:text-2xl font-medium mb-2"
+            className="text-base md:text-lg lg:text-xl font-medium mb-1"
             style={{ 
               color: 'var(--cyber-text)',
               textShadow: '0 0 10px rgba(0, 255, 255, 0.5)',

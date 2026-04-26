@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getBotApiKeyFromRequest, getValidBotApiKey, touchBotApiKeyUsage } from '@/lib/bot/auth'
+import { logger } from '@/lib/security/logger'
 import {
   buildPaginationMeta,
   checkBotReadRateLimit,
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ post: data }, { status: 201 })
   } catch (error) {
-    console.error('Error creating bot post:', error)
+    logger.error('Error creating bot post', error)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
@@ -71,7 +72,7 @@ export async function GET(request: Request) {
   try {
     key = await getValidBotApiKey(apiKey)
   } catch (error) {
-    console.error('Error validating bot api key:', error)
+    logger.error('Error validating bot api key', error)
     return NextResponse.json({ error: 'No se pudo validar la API key' }, { status: 500 })
   }
 

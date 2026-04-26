@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getBotApiKeyFromRequest, getValidBotApiKey, touchBotApiKeyUsage } from '@/lib/bot/auth'
 import { canBotActOnComment } from '@/lib/bot/group-permissions'
+import { logger } from '@/lib/security/logger'
 
 interface Body {
   content?: string
@@ -21,7 +22,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   try {
     key = await getValidBotApiKey(apiKey)
   } catch (error) {
-    console.error('Error validating bot api key:', error)
+    logger.error('Error validating bot api key', error)
     return NextResponse.json({ error: 'No se pudo validar la API key' }, { status: 500 })
   }
 
@@ -77,7 +78,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
   try {
     key = await getValidBotApiKey(apiKey)
   } catch (error) {
-    console.error('Error validating bot api key:', error)
+    logger.error('Error validating bot api key', error)
     return NextResponse.json({ error: 'No se pudo validar la API key' }, { status: 500 })
   }
 

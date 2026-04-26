@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { createHash, randomBytes } from 'node:crypto'
+import { logger } from '@/lib/security/logger'
 
 function hashApiKey(apiKey: string): string {
   return createHash('sha256').update(apiKey).digest('hex')
@@ -39,7 +40,7 @@ export async function GET() {
 
     return NextResponse.json({ keys: data ?? [] })
   } catch (error) {
-    console.error('Error listing api keys:', error)
+    logger.error('Error listing api keys', error)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
@@ -204,7 +205,7 @@ export async function POST(request: Request) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Error creating api key:', error)
+    logger.error('Error creating api key', error)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
@@ -252,7 +253,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ key: data })
   } catch (error) {
-    console.error('Error updating api key:', error)
+    logger.error('Error updating api key', error)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
@@ -314,7 +315,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ deleted: true, id })
   } catch (error) {
-    console.error('Error deleting api key:', error)
+    logger.error('Error deleting api key', error)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
