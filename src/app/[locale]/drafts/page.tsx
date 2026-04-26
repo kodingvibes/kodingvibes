@@ -185,6 +185,7 @@ export default function DraftsPage() {
 
                   {draft.image_url && (
                     <div className="relative w-20 h-20 flex-shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={draft.image_url}
                         alt=""

@@ -1026,6 +1026,7 @@ export default function GroupAdminPage() {
 
                         if (hasAvatar) {
                           return (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img
                               src={member.users.avatar_url!}
                               alt={member.users.username}

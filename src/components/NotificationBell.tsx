@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Check, Trash2, ArrowUp, MessageCircle, MessageSquare, Shield, Ban, AlertTriangle, CheckCircle, XCircle, Users } from 'lucide-react';
+import { Bell, Check, Trash2, ArrowUp, MessageCircle, MessageSquare, Ban, AlertTriangle, CheckCircle, XCircle, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useNotifications, useNotificationPermission } from '@/hooks/useNotifications';
 import { Notification, NotificationType } from '@/types/notifications';

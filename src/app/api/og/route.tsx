@@ -163,6 +163,7 @@ export async function GET(request: NextRequest) {
       >
         {imageData ? (
           <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageData}
               alt=""
@@ -434,12 +435,14 @@ export async function GET(request: NextRequest) {
                 border: '1px solid rgba(255,255,255,0.1)',
               }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imageData}
                 style={{
                   width: '440px',
                   height: '340px',
                 }}
+                alt=""
               />
               {/* Gradiente inferior para blend con fondo oscuro */}
               <div

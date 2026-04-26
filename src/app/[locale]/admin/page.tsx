@@ -114,6 +114,7 @@ export default function AdminDashboardPage() {
     }
 
     checkAdminAndFetch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, fetchData])
 
   const handleApproveModeration = async (requestId: string) => {

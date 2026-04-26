@@ -32,6 +32,7 @@ export default function VoteButtons({ postId, initialVotes }: VoteButtonsProps) 
       }
     }
     getUserVote()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId])
 
   const handleVote = async (value: number) => {

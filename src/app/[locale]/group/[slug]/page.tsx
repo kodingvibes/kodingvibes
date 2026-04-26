@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { 
   Users, Lock, Globe, Plus, ArrowLeft, Hash,
   TrendingUp, Clock, Settings, UserPlus, LogOut,

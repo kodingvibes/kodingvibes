@@ -105,6 +105,7 @@ export default function ChannelPicker({
           <>
             {selectedChannel.icon_url ? (
               <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-background/20">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={selectedChannel.icon_url} alt="" className="w-full h-full object-cover" />
               </div>
             ) : (
@@ -215,6 +216,7 @@ export default function ChannelPicker({
 
                   {channel.icon_url ? (
                     <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-background/20">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={channel.icon_url} alt="" className="w-full h-full object-cover" />
                     </div>
                   ) : (

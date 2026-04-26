@@ -34,7 +34,6 @@ export default function SubmitPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(preselectedGroupId)
   const [loadingGroups, setLoadingGroups] = useState(true)
   const [groupTags, setGroupTags] = useState<GroupTag[]>([])
-  const [userRole, setUserRole] = useState<string | null>(null)
   const [canPost, setCanPost] = useState(true)
   const [postPermissionError, setPostPermissionError] = useState<string | null>(null)
   const supabase = createClient()
@@ -373,8 +372,6 @@ export default function SubmitPage() {
       setLoading(false)
     }
   }
-
-  const selectedGroup = groups.find(g => g.id === selectedGroupId)
 
   return (
     <main className="min-h-screen bg-background">

@@ -223,7 +223,7 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
     let channelCleanup: (() => void) | null = null;
 
     const init = async () => {
-      const result = await fetchNotifications(0, false);
+      await fetchNotifications(0, false);
       if (!isMounted) return;
       
       setupRealtimeSubscription();
