@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   --background: #f8fafc;
@@ -44,7 +44,7 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
@@ -54,6 +54,10 @@ body {
   }
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+  }
+  html {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
   }
 }
 
