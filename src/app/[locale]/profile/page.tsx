@@ -3,9 +3,12 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
-import { User, Save, ArrowLeft, AtSign, AlertCircle, Users, Settings, KeyRound, Copy, Bot, Power, Check, Trash2 } from 'lucide-react'
+import { User, Save, ArrowLeft, AtSign, AlertCircle, Users, Settings, KeyRound, Copy, Bot, Power, Check, Trash2, Upload, X } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { LoadingSpinner } from '@/components/ui/Loading'
+import { validateFile } from '@/lib/security/validation'
+import { compressImage } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -297,6 +300,10 @@ export default function ProfilePage() {
   const [, setProfile] = useState<Profile | null>(null)
   const [username, setUsername] = useState('')
   const [name, setName] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null)
+  const [removeAvatar, setRemoveAvatar] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -324,7 +331,7 @@ export default function ProfilePage() {
     return `${base}${random}`.substring(0, 20)
   }, [])
 
-  const createProfile = useCallback(async (id: string, email: string) => {
+  const createProfile = useCallback(async (id: string, email: string, initialAvatarUrl: string | null) => {
     const newUsername = generateUsername(email)
     const newName = email.split('@')[0]
 
@@ -335,6 +342,7 @@ export default function ProfilePage() {
         email,
         name: newName,
         username: newUsername,
+        avatar_url: initialAvatarUrl,
       })
       .select()
       .single()
@@ -346,10 +354,37 @@ export default function ProfilePage() {
       setProfile(data)
       setUsername(data.username || '')
       setName(data.name || '')
+      setAvatarUrl(data.avatar_url || null)
+      setAvatarPreview(data.avatar_url || null)
+      setNewAvatarFile(null)
+      setRemoveAvatar(false)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     }
   }, [supabase, generateUsername])
+
+  const uploadAvatar = useCallback(async (file: File): Promise<string | null> => {
+    if (!userId) return null
+
+    const fileExt = file.name.split('.').pop() || 'webp'
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${fileExt}`
+    const filePath = `avatars/${userId}/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('images')
+      .upload(filePath, file)
+
+    if (uploadError) {
+      setError('No se pudo subir la imagen de avatar')
+      return null
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from('images').getPublicUrl(filePath)
+
+    return publicUrl
+  }, [supabase, userId])
 
   const loadApiKeys = useCallback(async () => {
     try {
@@ -397,6 +432,10 @@ export default function ProfilePage() {
 
         setUserId(user.id)
         setUserEmail(user.email || '')
+        const metadataAvatar =
+          typeof user.user_metadata?.avatar_url === 'string' && user.user_metadata.avatar_url.trim().length > 0
+            ? user.user_metadata.avatar_url.trim()
+            : null
 
         // Intentar cargar el perfil
         const { data, error: fetchError } = await supabase
@@ -413,9 +452,14 @@ export default function ProfilePage() {
           setProfile(data)
           setUsername(data.username || '')
           setName(data.name || '')
+          const effectiveAvatar = data.avatar_url || metadataAvatar
+          setAvatarUrl(effectiveAvatar)
+          setAvatarPreview(effectiveAvatar)
+          setNewAvatarFile(null)
+          setRemoveAvatar(false)
         } else {
           // Perfil no existe, crearlo automáticamente
-          await createProfile(user.id, user.email || '')
+          await createProfile(user.id, user.email || '', metadataAvatar)
         }
 
         // Cargar grupos creados por el usuario
@@ -763,11 +807,24 @@ export default function ProfilePage() {
       }
     }
 
+    let finalAvatarUrl = removeAvatar ? null : avatarUrl
+
+    if (newAvatarFile) {
+      const compressedAvatar = await compressImage(newAvatarFile, { maxSizeMB: 1, maxWidthOrHeight: 1024 })
+      const uploadedAvatarUrl = await uploadAvatar(compressedAvatar)
+      if (!uploadedAvatarUrl) {
+        setSaving(false)
+        return
+      }
+      finalAvatarUrl = uploadedAvatarUrl
+    }
+
     const { error: updateError } = await supabase
       .from('users')
       .update({
         username: username || null,
         name: name || null,
+        avatar_url: finalAvatarUrl,
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
@@ -780,11 +837,46 @@ export default function ProfilePage() {
         console.error('Update error:', updateError)
       }
     } else {
+      setAvatarUrl(finalAvatarUrl)
+      setAvatarPreview(finalAvatarUrl)
+      setNewAvatarFile(null)
+      setRemoveAvatar(false)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     }
 
     setSaving(false)
+  }
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const validation = validateFile(file, {
+      maxSizeMB: 5,
+      allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    })
+
+    if (!validation.valid) {
+      setError(validation.error || 'Archivo no válido')
+      return
+    }
+
+    setError(null)
+    setNewAvatarFile(file)
+    setRemoveAvatar(false)
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveAvatar = () => {
+    setNewAvatarFile(null)
+    setAvatarPreview(null)
+    setRemoveAvatar(true)
   }
 
   if (loading) {
@@ -812,8 +904,18 @@ export default function ProfilePage() {
         </Link>
 
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
-            <User className="h-6 w-6 text-white" />
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            {avatarPreview ? (
+              <Image
+                src={avatarPreview}
+                alt="Avatar"
+                width={48}
+                height={48}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User className="h-6 w-6 text-white" />
+            )}
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Tu Perfil</h1>
@@ -865,6 +967,52 @@ export default function ProfilePage() {
         {activeTab === 'profile' && (
           <>
             <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Avatar</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full overflow-hidden border border-border bg-muted flex items-center justify-center">
+                    {avatarPreview ? (
+                      <Image
+                        src={avatarPreview}
+                        alt="Avatar"
+                        width={64}
+                        height={64}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-7 w-7 text-muted-foreground" />
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-sm hover:bg-muted transition-colors cursor-pointer">
+                      <Upload className="h-4 w-4" />
+                      Subir imagen
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {(avatarPreview || avatarUrl || newAvatarFile) && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-sm hover:bg-muted transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                        Quitar
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Formatos: PNG, JPG, GIF o WebP. Tamaño máximo: 5MB.
+                </p>
+              </div>
+
               <div>
                 <label htmlFor="username" className="block text-sm font-medium text-foreground mb-2">
                   <div className="flex items-center gap-2">

@@ -6,6 +6,14 @@ import MarkdownContent from './MarkdownContent'
 import { Send, CornerDownRight, ArrowBigUp, ArrowBigDown, Eye } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 import { validateString, checkUserRateLimit, sanitizeMarkdown } from '@/lib/security/validation'
+import Image from 'next/image'
+
+type CommentUser = {
+  name: string | null
+  username: string | null
+  email: string
+  avatar_url?: string | null
+}
 
 interface Comment {
   id: string
@@ -18,6 +26,7 @@ interface Comment {
     name: string | null
     username: string | null
     email: string
+    avatar_url?: string | null
   } | null
   replies?: Comment[]
 }
@@ -70,6 +79,7 @@ const CommentItem = ({
 
   const userVote = userVotes.get(comment.id)
   const isVoting = voteLoading === comment.id
+  const avatarUrl = comment.users?.avatar_url || null
 
   return (
     <div className={`${depth > 0 ? 'ml-6 sm:ml-8 border-l-2 border-border pl-4' : ''}`}>
@@ -109,9 +119,19 @@ const CommentItem = ({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs">
-                {(comment.users?.name || comment.users?.email || 'A').charAt(0).toUpperCase()}
-              </div>
+              {avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt=""
+                  width={24}
+                  height={24}
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs">
+                  {(comment.users?.name || comment.users?.email || 'A').charAt(0).toUpperCase()}
+                </div>
+              )}
               <span className="font-medium text-foreground">
                 @{comment.users?.username || comment.users?.name || comment.users?.email?.split('@')[0] || 'anónimo'}
               </span>
@@ -264,7 +284,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
         .from('comments')
         .select(`
           *,
-          users:user_id (name, username, email)
+          users:user_id (name, username, email, avatar_url)
         `)
         .eq('post_id', postId)
         .order('created_at', { ascending: true })
@@ -276,19 +296,24 @@ export default function CommentSection({ postId }: CommentSectionProps) {
         return
       }
 
-      if (data) {
-        const commentMap = new Map<string, Comment & { replies: Comment[] }>()
-        const rootComments: Comment[] = []
+        if (data) {
+          const normalizedData = data.map((comment) => ({
+            ...comment,
+            users: comment.users as CommentUser | null,
+          }))
 
-        data.forEach(comment => {
-          const commentWithReplies = { ...comment, vote_count: comment.vote_count || 0, replies: [] }
-          commentMap.set(comment.id, commentWithReplies)
-        })
+          const commentMap = new Map<string, Comment & { replies: Comment[] }>()
+          const rootComments: Comment[] = []
 
-        data.forEach(comment => {
-          if (comment.parent_id && commentMap.has(comment.parent_id)) {
-            commentMap.get(comment.parent_id)!.replies.push(commentMap.get(comment.id)!)
-          } else {
+          normalizedData.forEach(comment => {
+            const commentWithReplies = { ...comment, vote_count: comment.vote_count || 0, replies: [] }
+            commentMap.set(comment.id, commentWithReplies)
+          })
+
+          normalizedData.forEach(comment => {
+            if (comment.parent_id && commentMap.has(comment.parent_id)) {
+              commentMap.get(comment.parent_id)!.replies.push(commentMap.get(comment.id)!)
+            } else {
             rootComments.push(commentMap.get(comment.id)!)
           }
         })

@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { Plus, Sun, Moon, LogOut, User as UserIcon, Settings, Hash, Crown, Gamepad2, Menu, X, FileText } from 'lucide-react'
@@ -45,6 +46,7 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null)
   const [userChannels, setUserChannels] = useState<ChannelInfo[]>([])
   const userMenuRef = useRef<HTMLDivElement>(null)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
@@ -76,13 +78,19 @@ export default function Header() {
       setUser(user)
       
       if (user) {
+        const metadataAvatar =
+          typeof user.user_metadata?.avatar_url === 'string' && user.user_metadata.avatar_url.trim().length > 0
+            ? user.user_metadata.avatar_url.trim()
+            : null
+
         const { data: userData } = await supabase
           .from('users')
-          .select('is_admin')
+          .select('is_admin, avatar_url')
           .eq('id', user.id)
           .single()
         
         setIsAdmin(userData?.is_admin || false)
+        setProfileAvatarUrl(userData?.avatar_url || metadataAvatar)
 
         const { data: memberships } = await supabase
           .from('group_members')
@@ -115,6 +123,9 @@ export default function Header() {
           setUserChannels(channels)
         }
       }
+      else {
+        setProfileAvatarUrl(null)
+      }
       
       setLoading(false)
     }
@@ -125,6 +136,7 @@ export default function Header() {
       if (!session?.user) {
         setIsAdmin(false)
         setUserChannels([])
+        setProfileAvatarUrl(null)
       }
     })
 
@@ -223,9 +235,19 @@ export default function Header() {
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                     className="flex items-center gap-2 p-2 rounded-full hover:bg-muted transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                      {user.email?.charAt(0).toUpperCase() || 'U'}
-                    </div>
+                    {profileAvatarUrl ? (
+                      <Image
+                        src={profileAvatarUrl}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                        {user.email?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                    )}
                   </button>
 
                   {isMenuOpen && (
@@ -451,9 +473,19 @@ export default function Header() {
             {user && (
               <div className="mt-6 px-4 border-t border-border pt-6">
                 <div className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                    {user.email?.charAt(0).toUpperCase() || 'U'}
-                  </div>
+                  {profileAvatarUrl ? (
+                    <Image
+                      src={profileAvatarUrl}
+                      alt=""
+                      width={40}
+                      height={40}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                      {user.email?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-foreground truncate">{user.email}</p>
                     <p className="text-sm text-muted-foreground">{tProfile('member')}</p>

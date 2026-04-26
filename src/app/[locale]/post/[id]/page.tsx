@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
     const supabase = await createClient()
     const { data: post } = await supabase
       .from('posts')
-      .select('title, content, image_url, created_at, edited_at, tags, users:user_id (name, username)')
+      .select('title, content, image_url, created_at, edited_at, tags, users:user_id (name, username, avatar_url)')
       .eq('id', id)
       .eq('is_deleted', false)
       .single()
@@ -103,7 +103,7 @@ export default async function PostPage({ params }: PostPageProps) {
     .from('posts')
     .select(`
       *,
-      users:user_id (name, username, email)
+      users:user_id (name, username, email, avatar_url)
     `)
     .eq('id', id)
     .eq('is_deleted', false)
@@ -151,6 +151,8 @@ export default async function PostPage({ params }: PostPageProps) {
       .charAt(0)
       .toUpperCase()
 
+  const displayAvatarUrl = post.users?.avatar_url || null
+
   return (
     <main className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-32 sm:pb-6">
@@ -185,9 +187,19 @@ export default async function PostPage({ params }: PostPageProps) {
 
               <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                    {displayAvatarInitial}
-                  </div>
+                  {displayAvatarUrl ? (
+                    <Image
+                      src={displayAvatarUrl}
+                      alt=""
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                      {displayAvatarInitial}
+                    </div>
+                  )}
                   <div>
                     <p className="font-medium text-foreground">
                       {displayAuthor}
@@ -280,9 +292,19 @@ export default async function PostPage({ params }: PostPageProps) {
 
               <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                    {displayAvatarInitial}
-                  </div>
+                  {displayAvatarUrl ? (
+                    <Image
+                      src={displayAvatarUrl}
+                      alt=""
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                      {displayAvatarInitial}
+                    </div>
+                  )}
                   <div>
                     <p className="font-medium text-foreground">
                       {displayAuthor}

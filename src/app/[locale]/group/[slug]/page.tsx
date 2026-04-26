@@ -23,7 +23,7 @@ interface User extends SupabaseUser {
 
 type Group = Tables<'groups'>
 type Post = Tables<'posts'> & {
-  users: { name: string | null; username: string | null; email: string } | null
+  users: { name: string | null; username: string | null; email: string; avatar_url: string | null } | null
   comments: { count: number }[]
 }
 type GroupMember = {
@@ -163,7 +163,7 @@ export default function GroupPage() {
           .from('posts')
           .select(`
             *,
-            users:user_id (name, username, email),
+            users:user_id (name, username, email, avatar_url),
             comments:comments (count)
           `)
           .eq('group_id', groupData.id)
@@ -250,7 +250,7 @@ export default function GroupPage() {
       .from('posts')
       .select(`
         *,
-        users:user_id (name, username, email),
+        users:user_id (name, username, email, avatar_url),
         comments:comments (count)
       `)
       .eq('group_id', group.id)

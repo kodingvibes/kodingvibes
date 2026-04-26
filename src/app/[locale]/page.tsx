@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Tables } from '@/types/database'
 
 interface PostWithUser extends Tables<'posts'> {
-  users: { name: string | null; username: string | null; email: string } | null
+  users: { name: string | null; username: string | null; email: string; avatar_url: string | null } | null
   comments?: { count: number }[]
   groups?: { name: string; slug: string; color: string } | null
 }
@@ -110,7 +110,7 @@ export default function Home() {
         .from('posts')
         .select(`
           *,
-          users:user_id (name, username, email),
+          users:user_id (name, username, email, avatar_url),
           comments:comments (count)
         `)
         .eq('is_deleted', false)
@@ -169,7 +169,7 @@ export default function Home() {
         .from('posts')
         .select(`
           *,
-          users:user_id (name, username, email),
+          users:user_id (name, username, email, avatar_url),
           groups:group_id (name, slug, color)
         `)
         .eq('is_deleted', false)

@@ -23,6 +23,7 @@ interface Post {
     name: string | null
     username: string | null
     email: string
+    avatar_url?: string | null
   } | null
   comments_count?: number
 }
@@ -70,6 +71,8 @@ export default function PostCard({
       : post.users?.username || post.users?.name || post.users?.email || 'A')
       .charAt(0)
       .toUpperCase()
+
+  const displayAvatarUrl = post.users?.avatar_url || null
 
   if (post.is_deleted) {
     return (
@@ -119,13 +122,23 @@ export default function PostCard({
         <div className="flex-1 p-4">
           <div className="flex items-center justify-between mb-2">
             <div className={`flex items-center gap-2 text-xs ${hasImage ? 'text-white/80' : 'text-muted-foreground'}`}>
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center font-semibold text-[10px] ${
-                hasImage 
-                  ? 'bg-white/20 text-white' 
-                  : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
-              }`}>
-                {displayAvatarInitial}
-              </span>
+              {displayAvatarUrl ? (
+                <Image
+                  src={displayAvatarUrl}
+                  alt=""
+                  width={24}
+                  height={24}
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+              ) : (
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center font-semibold text-[10px] ${
+                  hasImage 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
+                }`}>
+                  {displayAvatarInitial}
+                </span>
+              )}
               <span className={`font-medium ${hasImage ? 'text-white' : 'text-foreground/80'}`}>
                 {displayAuthor}
               </span>
