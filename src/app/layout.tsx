@@ -4,6 +4,13 @@ import { ClientLayout } from "@/components/ClientLayout";
 import Script from "next/script";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { Analytics } from "@vercel/analytics/next";
+import { Plus_Jakarta_Sans } from "next/font/google";
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-plus-jakarta",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -92,7 +99,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" className={plusJakartaSans.variable} suppressHydrationWarning>
       <head>
         <Script
           id="sw-register"
@@ -100,7 +107,7 @@ export default function RootLayout({
           src="/register-sw.js"
         />
       </head>
-      <body className="antialiased min-h-screen">
+      <body className="font-sans antialiased min-h-screen">
         <ClientLayout>
           {children}
         </ClientLayout>
