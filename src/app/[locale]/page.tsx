@@ -6,7 +6,7 @@ import GoogleSearch from '@/components/GoogleSearch'
 import ChannelPicker from '@/components/ChannelPicker'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { TrendingUp, Clock, Sparkles, Hash } from 'lucide-react'
+import { TrendingUp, Clock, Hash } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Tables } from '@/types/database'
 
@@ -43,28 +43,11 @@ export default function Home() {
   const [heroPopularPosts, setHeroPopularPosts] = useState<HeroPost[]>([])
   const [heroLoading, setHeroLoading] = useState(true)
 
-  // User posts state
-  const [userHasPosts, setUserHasPosts] = useState(false)
-
   const supabase = createClient()
   
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
-
-      const { data: { user } } = await supabase.auth.getUser()
-
-      // Check if user has any posts
-      if (user) {
-        const { data: userPosts } = await supabase
-          .from('posts')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('is_deleted', false)
-          .limit(1)
-
-        setUserHasPosts(!!(userPosts && userPosts.length > 0))
-      }
 
       // Fetch groups
       const { data: groupsData, error: groupsError } = await supabase
@@ -247,15 +230,6 @@ export default function Home() {
               <p className="text-sm sm:text-base lg:text-lg text-white/90 max-w-3xl mx-auto mb-6 leading-relaxed">
                 {heroLoading ? 'Cargando posts populares...' : 'No hay posts populares aún. ¡Sé el primero en compartir!'}
               </p>
-              {!userHasPosts && (
-                <Link
-                  href="/submit"
-                  className="inline-flex items-center gap-2 bg-white text-indigo-600 text-sm sm:text-base px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg mx-auto"
-                >
-                  <Sparkles className="h-5 w-5" />
-                  Crear tu primer post
-                </Link>
-              )}
             </div>
           ) : (
             <div className="text-center h-[200px] sm:h-[240px] overflow-hidden flex flex-col justify-center">
@@ -333,15 +307,6 @@ export default function Home() {
                 ))}
               </div>
 
-              {!userHasPosts && (
-                <Link
-                  href="/submit"
-                  className="inline-flex items-center gap-2 bg-white text-indigo-600 text-sm sm:text-base px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors shadow-lg mx-auto"
-                >
-                  <Sparkles className="h-5 w-5" />
-                  Crear tu primer post
-                </Link>
-              )}
             </div>
           )}
         </div>
