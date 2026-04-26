@@ -37,6 +37,7 @@ export default function Header() {
   const t = useTranslations('nav')
   const tCommon = useTranslations('common')
   const tProfile = useTranslations('profile')
+  const netRunUrl = 'https://netrun.kodingvibes.com'
   
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -177,7 +178,7 @@ export default function Header() {
                   {t('groups')}
                 </Link>
                 <Link
-                  href="/card-game"
+                  href={netRunUrl}
                   className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-muted transition-colors text-sm font-medium text-foreground"
                 >
                   <Gamepad2 className="h-4 w-4" />
@@ -375,7 +376,7 @@ export default function Header() {
                 <span className="font-medium">{t('groups')}</span>
               </Link>
               <Link
-                href="/card-game"
+                href={netRunUrl}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted transition-colors text-foreground"
               >

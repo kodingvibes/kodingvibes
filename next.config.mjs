@@ -22,6 +22,30 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/card-game',
+        destination: 'https://netrun.kodingvibes.com',
+        permanent: true,
+      },
+      {
+        source: '/card-game/:path*',
+        destination: 'https://netrun.kodingvibes.com/:path*',
+        permanent: true,
+      },
+      {
+        source: '/:locale(es|en|de|fr|it|pt|ru|zh|ja)/card-game',
+        destination: 'https://netrun.kodingvibes.com',
+        permanent: true,
+      },
+      {
+        source: '/:locale(es|en|de|fr|it|pt|ru|zh|ja)/card-game/:path*',
+        destination: 'https://netrun.kodingvibes.com/:path*',
+        permanent: true,
+      },
+    ]
+  },
   async headers() {
     return [
       {
