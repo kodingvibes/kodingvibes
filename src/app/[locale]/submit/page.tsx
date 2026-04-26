@@ -34,7 +34,6 @@ export default function SubmitPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(preselectedGroupId)
   const [loadingGroups, setLoadingGroups] = useState(true)
   const [groupTags, setGroupTags] = useState<GroupTag[]>([])
-  const [userRole, setUserRole] = useState<string | null>(null)
   const [canPost, setCanPost] = useState(true)
   const [postPermissionError, setPostPermissionError] = useState<string | null>(null)
   const supabase = createClient()
@@ -131,7 +130,6 @@ export default function SubmitPage() {
       // If user is not a member, they can't post
       if (!membership) {
         setCanPost(false)
-        setUserRole(null)
         if (!selectedGroup.is_public) {
           setPostPermissionError('No eres miembro de este canal privado')
         } else {
@@ -139,8 +137,6 @@ export default function SubmitPage() {
         }
         return
       }
-
-      setUserRole(membership.role)
 
       // Check post permissions based on post_creation_type
       if (postCreationType === 'anyone') {

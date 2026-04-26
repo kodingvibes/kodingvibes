@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { 
   Users, Lock, Globe, Plus, ArrowLeft, Hash,
   TrendingUp, Clock, Settings, UserPlus, LogOut,
@@ -45,6 +45,14 @@ interface EventWithAttendees extends Event {
   attendee_count?: number
 }
 
+type GroupTagRow = {
+  group_id: string
+  name: string
+  color: string
+}
+
+const normalizeTagValue = (value: string) => value.toLowerCase().trim().replace(/\s+/g, '-')
+
 export default function GroupPage() {
   const router = useRouter()
   const params = useParams()
@@ -55,6 +63,7 @@ export default function GroupPage() {
   const [members, setMembers] = useState<GroupMember[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [isMember, setIsMember] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<'popular' | 'recent'>('recent')
@@ -64,13 +73,26 @@ export default function GroupPage() {
   const [events, setEvents] = useState<EventWithAttendees[]>([])
   const [showEventForm, setShowEventForm] = useState(false)
   const [eventFilter, setEventFilter] = useState<'upcoming' | 'past' | 'all'>('upcoming')
+  const [tagStylesByKey, setTagStylesByKey] = useState<Record<string, { name: string; color: string }>>({})
   const MEMBERS_PER_PAGE = 12
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     const fetchGroupData = async () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       setUser(currentUser)
+
+      if (currentUser) {
+        const { data: userRoleData } = await supabase
+          .from('users')
+          .select('is_admin')
+          .eq('id', currentUser.id)
+          .single()
+
+        setIsAdmin(Boolean(userRoleData?.is_admin))
+      } else {
+        setIsAdmin(false)
+      }
 
       // Fetch group
       const { data: groupData } = await supabase
@@ -155,6 +177,28 @@ export default function GroupPage() {
         }))
 
         setPosts(postsWithCount)
+
+        const uniqueGroupIds = Array.from(
+          new Set((postsData || []).map((post) => post.group_id).filter((groupId): groupId is string => Boolean(groupId)))
+        )
+
+        if (uniqueGroupIds.length > 0) {
+          const { data: tagRows } = await supabase
+            .from('group_tags')
+            .select('group_id, name, color')
+            .in('group_id', uniqueGroupIds)
+
+          const nextTagStyles: Record<string, { name: string; color: string }> = {}
+
+          for (const tag of (tagRows || []) as GroupTagRow[]) {
+            const key = `${tag.group_id}:${normalizeTagValue(tag.name)}`
+            nextTagStyles[key] = { name: tag.name, color: tag.color }
+          }
+
+          setTagStylesByKey(nextTagStyles)
+        } else {
+          setTagStylesByKey({})
+        }
 
         // Fetch events
         const { data: eventsData } = await supabase
@@ -298,9 +342,9 @@ export default function GroupPage() {
 
   const canViewContent = group.is_public || isMember
   const isGroupCreator = group.created_by === user?.id
-  const isAdmin = userRole === 'admin' || user?.is_admin
+  const hasAdminAccess = userRole === 'admin' || isAdmin || Boolean(user?.is_admin)
   const isModerator = userRole === 'moderator'
-  const canManageGroup = isGroupCreator || isAdmin || isModerator
+  const canManageGroup = isGroupCreator || hasAdminAccess || isModerator
 
   return (
     <main className="min-h-screen bg-background">
@@ -530,7 +574,13 @@ export default function GroupPage() {
             ) : sortedPosts.length > 0 ? (
               <div className="space-y-4">
                 {sortedPosts.map((post) => (
-                  <PostCard key={post.id} post={post} />
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    currentUserId={user?.id ?? null}
+                    isAdmin={hasAdminAccess}
+                    tagStylesByKey={tagStylesByKey}
+                  />
                 ))}
               </div>
             ) : (

@@ -7,14 +7,12 @@ import ChannelPicker from '@/components/ChannelPicker'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { TrendingUp, Clock, Hash } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Tables } from '@/types/database'
-
-export const dynamic = 'force-dynamic'
 
 interface PostWithUser extends Tables<'posts'> {
   users: { name: string | null; username: string | null; email: string } | null
-  comments: { count: number }[]
+  comments?: { count: number }[]
   groups?: { name: string; slug: string; color: string } | null
 }
 
@@ -23,6 +21,14 @@ type Group = Tables<'groups'>
 interface HeroPost extends PostWithUser {
   groups: { name: string; slug: string; color: string } | null
 }
+
+type GroupTagRow = {
+  group_id: string
+  name: string
+  color: string
+}
+
+const normalizeTagValue = (value: string) => value.toLowerCase().trim().replace(/\s+/g, '-')
 
 export default function Home() {
   const router = useRouter()
@@ -42,8 +48,37 @@ export default function Home() {
   // Hero popular posts state
   const [heroPopularPosts, setHeroPopularPosts] = useState<HeroPost[]>([])
   const [heroLoading, setHeroLoading] = useState(true)
+  const [tagStylesByKey, setTagStylesByKey] = useState<Record<string, { name: string; color: string }>>({})
 
-  const supabase = createClient()
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  const supabase = useMemo(() => createClient(), [])
+
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      setCurrentUserId(user?.id ?? null)
+
+      if (!user) {
+        setIsAdmin(false)
+        return
+      }
+
+      const { data: userRoleData } = await supabase
+        .from('users')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single()
+
+      setIsAdmin(Boolean(userRoleData?.is_admin))
+    }
+
+    loadCurrentUser()
+  }, [supabase])
   
   useEffect(() => {
     const fetchData = async () => {
@@ -97,13 +132,34 @@ export default function Home() {
         console.error('Error fetching posts:', postsError)
       }
 
+      const groupIds = Array.from(
+        new Set((postsData || []).map((post) => post.group_id).filter((groupId): groupId is string => Boolean(groupId)))
+      )
+
+      if (groupIds.length > 0) {
+        const { data: tagRows } = await supabase
+          .from('group_tags')
+          .select('group_id, name, color')
+          .in('group_id', groupIds)
+
+        const nextTagStyles: Record<string, { name: string; color: string }> = {}
+
+        for (const tag of (tagRows || []) as GroupTagRow[]) {
+          const key = `${tag.group_id}:${normalizeTagValue(tag.name)}`
+          nextTagStyles[key] = { name: tag.name, color: tag.color }
+        }
+
+        setTagStylesByKey(nextTagStyles)
+      } else {
+        setTagStylesByKey({})
+      }
+
       setPosts(postsData || [])
       setLoading(false)
     }
     
     fetchData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupFilter])
+  }, [groupFilter, supabase])
 
   // Fetch popular posts for hero carousel
   useEffect(() => {
@@ -114,8 +170,7 @@ export default function Home() {
         .select(`
           *,
           users:user_id (name, username, email),
-          groups:group_id (name, slug, color),
-          comments:comments (count)
+          groups:group_id (name, slug, color)
         `)
         .eq('is_deleted', false)
         .eq('status', 'published')
@@ -133,8 +188,7 @@ export default function Home() {
     }
 
     fetchHeroPopularPosts()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [supabase])
 
   // Hero carousel rotation
   useEffect(() => {
@@ -165,17 +219,19 @@ export default function Home() {
     }
   }
 
-  const postsWithCount = posts.map(post => ({
-    ...post,
-    comments_count: post.comments?.[0]?.count || 0
-  }))
+  const sortedPosts = useMemo(() => {
+    const postsWithCount = posts.map(post => ({
+      ...post,
+      comments_count: post.comments?.[0]?.count || 0,
+    }))
 
-  const sortedPosts = [...postsWithCount].sort((a, b) => {
-    if (sortBy === 'popular') {
-      return b.vote_count - a.vote_count
-    }
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  })
+    return postsWithCount.sort((a, b) => {
+      if (sortBy === 'popular') {
+        return b.vote_count - a.vote_count
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+  }, [posts, sortBy])
 
   const currentHeroPost = heroPopularPosts[currentMessageIndex]
 
@@ -380,7 +436,14 @@ export default function Home() {
             </div>
           ) : !loading && sortedPosts.length > 0 ? (
             sortedPosts.map((post) => (
-              <PostCard key={post.id} post={post} onDelete={handleDelete} />
+              <PostCard
+                key={post.id}
+                post={post}
+                onDelete={handleDelete}
+                currentUserId={currentUserId}
+                isAdmin={isAdmin}
+                tagStylesByKey={tagStylesByKey}
+              />
             ))
           ) : (
             <div className="text-center py-16 bg-card rounded-xl border border-border border-dashed">

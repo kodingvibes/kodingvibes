@@ -1,18 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import VoteButtons from './VoteButtons'
 import PostActions from './PostActions'
-import { createClient } from '@/lib/supabase/client'
 import { MessageSquare, Clock, Bot } from 'lucide-react'
-
-interface GroupTag {
-  id: string
-  name: string
-  color: string
-}
 
 interface Post {
   id: string
@@ -38,38 +30,21 @@ interface Post {
 interface PostCardProps {
   post: Post
   onDelete?: () => void
+  currentUserId?: string | null
+  isAdmin?: boolean
+  tagStylesByKey?: Record<string, { name: string; color: string }>
 }
 
-export default function PostCard({ post, onDelete }: PostCardProps) {
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [groupTags, setGroupTags] = useState<GroupTag[]>([])
-  const supabase = createClient()
+const normalizeTagValue = (value: string) => value.toLowerCase().trim().replace(/\s+/g, '-')
+
+export default function PostCard({
+  post,
+  onDelete,
+  currentUserId = null,
+  isAdmin = false,
+  tagStylesByKey,
+}: PostCardProps) {
   const router = useRouter()
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setCurrentUserId(user?.id || null)
-      setIsLoading(false)
-    }
-    getUser()
-
-    // Cargar tags del grupo si existe
-    const loadGroupTags = async () => {
-      if (post.group_id) {
-        const { data } = await supabase
-          .from('group_tags')
-          .select('*')
-          .eq('group_id', post.group_id)
-        
-        if (data) {
-          setGroupTags(data)
-        }
-      }
-    }
-    loadGroupTags()
-  }, [post.user_id, post.group_id, supabase])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -171,37 +146,36 @@ export default function PostCard({ post, onDelete }: PostCardProps) {
               </span>
             </div>
             
-            {!isLoading && (
-              <div data-no-navigate>
-                <PostActions 
-                  postId={post.id}
-                  userId={post.user_id}
-                  currentUserId={currentUserId}
-                  createdAt={post.created_at}
-                  isDeleted={post.is_deleted}
-                  onDelete={onDelete || (() => {})}
-                  title={post.title}
-                  imageUrl={post.image_url}
-                />
-              </div>
-            )}
+            <div data-no-navigate>
+              <PostActions 
+                postId={post.id}
+                userId={post.user_id}
+                currentUserId={currentUserId}
+                createdAt={post.created_at}
+                isDeleted={post.is_deleted}
+                isAdmin={isAdmin}
+                onDelete={onDelete || (() => {})}
+                title={post.title}
+                imageUrl={post.image_url}
+              />
+            </div>
           </div>
 
           {/* Tags sobre el título */}
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2">
               {post.tags.map((tagValue) => {
-                const groupTag = groupTags.find(gt => 
-                  gt.name.toLowerCase().replace(/\s+/g, '-') === tagValue
-                )
-                
+                const normalizedTag = normalizeTagValue(tagValue)
+                const tagKey = `${post.group_id ?? 'global'}:${normalizedTag}`
+                const tagMeta = tagStylesByKey?.[tagKey]
+
                 return (
                   <span
                     key={tagValue}
                     className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white"
-                    style={{ backgroundColor: groupTag?.color || '#6b7280' }}
+                    style={{ backgroundColor: tagMeta?.color || '#6b7280' }}
                   >
-                    {groupTag?.name || tagValue}
+                    {tagMeta?.name || tagValue}
                   </span>
                 )
               })}

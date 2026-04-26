@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { MoreVertical, Pencil, Trash2, Shield, Share2, Link as LinkIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -12,6 +12,7 @@ interface PostActionsProps {
   createdAt: string
   isDeleted: boolean
   onDelete: () => void
+  isAdmin?: boolean
   title?: string
   imageUrl?: string | null
 }
@@ -23,33 +24,16 @@ export default function PostActions({
   createdAt, 
   isDeleted,
   onDelete,
+  isAdmin = false,
   title,
   imageUrl
 }: PostActionsProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
   const [copied, setCopied] = useState(false)
   const supabase = createClient()
   
   const postUrl = `https://www.kodingvibes.com/post/${postId}`
-
-  // Check if user is admin
-  useEffect(() => {
-    const checkAdmin = async () => {
-      if (!currentUserId) return
-      
-      const { data } = await supabase
-        .from('users')
-        .select('is_admin')
-        .eq('id', currentUserId)
-        .single()
-      
-      setIsAdmin(data?.is_admin || false)
-    }
-    
-    checkAdmin()
-  }, [currentUserId, supabase])
 
   // Verificar si el usuario actual es el dueño del post
   const isOwner = currentUserId === userId
