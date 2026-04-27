@@ -37,3 +37,6 @@ next-env.d.ts
 
 # temporary image compression directory
 .temp-images/
+
+# Supabase CLI local metadata
+supabase/.temp/
