@@ -9,6 +9,7 @@ import Image from 'next/image'
 import { LoadingSpinner } from '@/components/ui/Loading'
 import { validateFile } from '@/lib/security/validation'
 import { compressImage } from '@/lib/utils'
+import { getPublicProfileHref } from '@/lib/profile'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +19,16 @@ interface Profile {
   name: string | null
   username: string | null
   avatar_url: string | null
+  banner_url: string | null
+}
+
+type ProfileUpsert = {
+  id: string
+  email: string
+  name: string | null
+  username: string | null
+  avatar_url: string | null
+  banner_url: string | null
 }
 
 interface Group {
@@ -304,6 +315,10 @@ export default function ProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null)
   const [removeAvatar, setRemoveAvatar] = useState(false)
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null)
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null)
+  const [newBannerFile, setNewBannerFile] = useState<File | null>(null)
+  const [removeBanner, setRemoveBanner] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -324,6 +339,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'bots'>('profile')
   const router = useRouter()
   const supabase = createClient()
+  const publicProfileHref = getPublicProfileHref(username || null, userId)
 
   const generateUsername = useCallback((email: string): string => {
     const base = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -337,12 +353,13 @@ export default function ProfilePage() {
 
     const { data, error: insertError } = await supabase
       .from('users')
-      .insert({
+      .insert<ProfileUpsert>({
         id,
         email,
         name: newName,
         username: newUsername,
         avatar_url: initialAvatarUrl,
+        banner_url: null,
       })
       .select()
       .single()
@@ -358,6 +375,10 @@ export default function ProfilePage() {
       setAvatarPreview(data.avatar_url || null)
       setNewAvatarFile(null)
       setRemoveAvatar(false)
+      setBannerUrl(data.banner_url || null)
+      setBannerPreview(data.banner_url || null)
+      setNewBannerFile(null)
+      setRemoveBanner(false)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     }
@@ -376,6 +397,29 @@ export default function ProfilePage() {
 
     if (uploadError) {
       setError('No se pudo subir la imagen de avatar')
+      return null
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from('images').getPublicUrl(filePath)
+
+    return publicUrl
+  }, [supabase, userId])
+
+  const uploadBanner = useCallback(async (file: File): Promise<string | null> => {
+    if (!userId) return null
+
+    const fileExt = file.name.split('.').pop() || 'webp'
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${fileExt}`
+    const filePath = `banners/${userId}/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('images')
+      .upload(filePath, file)
+
+    if (uploadError) {
+      setError('No se pudo subir la imagen de banner')
       return null
     }
 
@@ -457,6 +501,10 @@ export default function ProfilePage() {
           setAvatarPreview(effectiveAvatar)
           setNewAvatarFile(null)
           setRemoveAvatar(false)
+          setBannerUrl(data.banner_url || null)
+          setBannerPreview(data.banner_url || null)
+          setNewBannerFile(null)
+          setRemoveBanner(false)
         } else {
           // Perfil no existe, crearlo automáticamente
           await createProfile(user.id, user.email || '', metadataAvatar)
@@ -808,6 +856,7 @@ export default function ProfilePage() {
     }
 
     let finalAvatarUrl = removeAvatar ? null : avatarUrl
+    let finalBannerUrl = removeBanner ? null : bannerUrl
 
     if (newAvatarFile) {
       const compressedAvatar = await compressImage(newAvatarFile, { maxSizeMB: 1, maxWidthOrHeight: 1024 })
@@ -819,12 +868,23 @@ export default function ProfilePage() {
       finalAvatarUrl = uploadedAvatarUrl
     }
 
+    if (newBannerFile) {
+      const compressedBanner = await compressImage(newBannerFile, { maxSizeMB: 2, maxWidthOrHeight: 2200 })
+      const uploadedBannerUrl = await uploadBanner(compressedBanner)
+      if (!uploadedBannerUrl) {
+        setSaving(false)
+        return
+      }
+      finalBannerUrl = uploadedBannerUrl
+    }
+
     const { error: updateError } = await supabase
       .from('users')
       .update({
         username: username || null,
         name: name || null,
         avatar_url: finalAvatarUrl,
+        banner_url: finalBannerUrl,
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
@@ -841,6 +901,10 @@ export default function ProfilePage() {
       setAvatarPreview(finalAvatarUrl)
       setNewAvatarFile(null)
       setRemoveAvatar(false)
+      setBannerUrl(finalBannerUrl)
+      setBannerPreview(finalBannerUrl)
+      setNewBannerFile(null)
+      setRemoveBanner(false)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     }
@@ -877,6 +941,37 @@ export default function ProfilePage() {
     setNewAvatarFile(null)
     setAvatarPreview(null)
     setRemoveAvatar(true)
+  }
+
+  const handleBannerChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const validation = validateFile(file, {
+      maxSizeMB: 8,
+      allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    })
+
+    if (!validation.valid) {
+      setError(validation.error || 'Archivo no válido')
+      return
+    }
+
+    setError(null)
+    setNewBannerFile(file)
+    setRemoveBanner(false)
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setBannerPreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveBanner = () => {
+    setNewBannerFile(null)
+    setBannerPreview(null)
+    setRemoveBanner(true)
   }
 
   if (loading) {
@@ -920,6 +1015,9 @@ export default function ProfilePage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Tu Perfil</h1>
             <p className="text-sm text-muted-foreground">{userEmail}</p>
+            <Link href={publicProfileHref} className="text-xs text-primary hover:underline">
+              Ver perfil publico
+            </Link>
           </div>
         </div>
 
@@ -1010,6 +1108,51 @@ export default function ProfilePage() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   Formatos: PNG, JPG, GIF o WebP. Tamaño máximo: 5MB.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Banner del perfil</label>
+                <div className="space-y-3">
+                  <div className="relative w-full h-32 rounded-xl overflow-hidden border border-border bg-muted">
+                    {bannerPreview ? (
+                      <Image
+                        src={bannerPreview}
+                        alt="Banner"
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-r from-slate-700 via-slate-600 to-slate-500" />
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-sm hover:bg-muted transition-colors cursor-pointer">
+                      <Upload className="h-4 w-4" />
+                      {bannerPreview || bannerUrl ? 'Cambiar banner' : 'Subir banner'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerChange}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {(bannerPreview || bannerUrl || newBannerFile) && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveBanner}
+                        className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-sm hover:bg-muted transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                        Quitar
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Formatos: PNG, JPG, GIF o WebP. Tamaño máximo: 8MB.
                 </p>
               </div>
 

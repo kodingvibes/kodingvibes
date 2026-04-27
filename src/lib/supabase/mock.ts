@@ -4,6 +4,7 @@ const mockUser = {
   name: 'Demo User',
   username: 'demouser',
   avatar_url: null,
+  banner_url: null,
   is_admin: true,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),

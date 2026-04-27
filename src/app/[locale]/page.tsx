@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { TrendingUp, Clock, Hash } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { Tables } from '@/types/database'
+import { getPublicProfileHref } from '@/lib/profile'
 
 interface PostWithUser extends Tables<'posts'> {
   users: { name: string | null; username: string | null; email: string; avatar_url: string | null } | null
@@ -328,9 +329,12 @@ export default function Home() {
                         {currentHeroPost.vote_count} votos
                       </span>
                       <span>•</span>
-                      <span>
+                      <Link
+                        href={getPublicProfileHref(currentHeroPost.users?.username, currentHeroPost.user_id)}
+                        className="hover:text-white transition-colors"
+                      >
                         @{currentHeroPost.users?.username || currentHeroPost.users?.name || 'anónimo'}
-                      </span>
+                      </Link>
                       <span>•</span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />

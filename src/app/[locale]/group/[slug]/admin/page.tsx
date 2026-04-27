@@ -14,6 +14,7 @@ import Image from 'next/image'
 import { compressImage } from '@/lib/utils'
 import { LoadingSpinner } from '@/components/ui/Loading'
 import type { Tables } from '@/types/database'
+import { getPublicProfileHref } from '@/lib/profile'
 
 type Group = Tables<'groups'>
 type GroupTag = {
@@ -1050,16 +1051,21 @@ export default function GroupAdminPage() {
                         >
                           {/* Avatar */}
                           <div className="flex-shrink-0">
-                            <AvatarDisplay />
+                            <Link href={getPublicProfileHref(member.users.username, member.user_id)}>
+                              <AvatarDisplay />
+                            </Link>
                           </div>
 
                           {/* User Info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate flex items-center gap-2">
-                                {member.users.name || member.users.username}
+                              <Link
+                                href={getPublicProfileHref(member.users.username, member.user_id)}
+                                className="text-sm font-medium text-gray-900 dark:text-white truncate flex items-center gap-2 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                              >
+                                <span>{member.users.name || member.users.username}</span>
                                 {changingRole === member.id && <LoadingSpinner size="sm" />}
-                              </p>
+                              </Link>
                               {isGroupCreator && (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 flex-shrink-0">
                                   Creador
@@ -1071,9 +1077,12 @@ export default function GroupAdminPage() {
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            <Link
+                              href={getPublicProfileHref(member.users.username, member.user_id)}
+                              className="text-xs text-gray-500 dark:text-gray-400 truncate hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                            >
                               @{member.users.username}
-                            </p>
+                            </Link>
                           </div>
 
                           {/* Role Selector - Only for non-creators */}

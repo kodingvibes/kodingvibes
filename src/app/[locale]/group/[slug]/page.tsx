@@ -16,6 +16,7 @@ import EventForm from '@/components/EventForm'
 import Image from 'next/image'
 import type { Tables } from '@/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { getPublicProfileHref } from '@/lib/profile'
 
 interface User extends SupabaseUser {
   is_admin?: boolean
@@ -644,15 +645,21 @@ export default function GroupPage() {
                           key={member.id} 
                           className="bg-card border border-border rounded-lg p-3 flex flex-col items-center gap-2 hover:border-primary/50 transition-colors"
                         >
-                          <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                          <Link
+                            href={getPublicProfileHref(member.users?.username, member.user_id)}
+                            className="w-10 h-10 bg-muted rounded-full flex items-center justify-center hover:opacity-90 transition-opacity"
+                          >
                             <span className="text-sm font-medium text-muted-foreground">
                               {member.users?.username?.charAt(0).toUpperCase() || '?'}
                             </span>
-                          </div>
+                          </Link>
                           <div className="text-center min-w-0 w-full">
-                            <p className="font-medium text-foreground text-sm truncate">
+                            <Link
+                              href={getPublicProfileHref(member.users?.username, member.user_id)}
+                              className="font-medium text-foreground text-sm truncate inline-block hover:text-primary transition-colors"
+                            >
                               @{member.users?.username || 'usuario'}
-                            </p>
+                            </Link>
                             {member.role === 'admin' && (
                               <span className="inline-flex items-center gap-1 text-xs text-orange-500">
                                 <Crown className="h-3 w-3" />

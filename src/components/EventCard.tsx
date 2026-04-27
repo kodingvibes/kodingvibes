@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Calendar, MapPin, Video, Users } from 'lucide-react'
 import type { Tables } from '@/types/database'
+import { getPublicProfileHref } from '@/lib/profile'
 
 type Event = Tables<'events'> & {
   users?: { name: string | null; username: string | null } | null
@@ -130,9 +131,12 @@ export default function EventCard({ event, groupSlug }: EventCardProps) {
             <div className="mt-3 pt-3 border-t border-border">
               <p className="text-sm text-muted-foreground">
                 Organizado por{' '}
-                <span className="font-medium text-foreground">
+                <Link
+                  href={getPublicProfileHref(event.users.username || null, event.created_by)}
+                  className="font-medium text-foreground hover:text-primary transition-colors"
+                >
                   @{event.users.username || 'usuario'}
-                </span>
+                </Link>
               </p>
             </div>
           )}
