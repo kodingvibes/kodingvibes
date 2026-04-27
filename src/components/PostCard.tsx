@@ -1,10 +1,12 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import VoteButtons from './VoteButtons'
 import PostActions from './PostActions'
 import { MessageSquare, Clock, Bot } from 'lucide-react'
+import { getPublicProfileHref } from '@/lib/profile'
 
 interface Post {
   id: string
@@ -73,6 +75,7 @@ export default function PostCard({
       .toUpperCase()
 
   const displayAvatarUrl = post.users?.avatar_url || null
+  const profileHref = getPublicProfileHref(post.users?.username, post.user_id)
 
   if (post.is_deleted) {
     return (
@@ -122,26 +125,34 @@ export default function PostCard({
         <div className="flex-1 p-4">
           <div className="flex items-center justify-between mb-2">
             <div className={`flex items-center gap-2 text-xs ${hasImage ? 'text-white/80' : 'text-muted-foreground'}`}>
-              {displayAvatarUrl ? (
-                <Image
-                  src={displayAvatarUrl}
-                  alt=""
-                  width={24}
-                  height={24}
-                  className="w-6 h-6 rounded-full object-cover"
-                />
-              ) : (
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center font-semibold text-[10px] ${
-                  hasImage 
-                    ? 'bg-white/20 text-white' 
-                    : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
-                }`}>
-                  {displayAvatarInitial}
+              <Link
+                href={profileHref}
+                data-no-navigate
+                className={`inline-flex items-center gap-2 rounded-md transition-opacity hover:opacity-90 ${
+                  hasImage ? 'text-white' : 'text-foreground/80'
+                }`}
+              >
+                {displayAvatarUrl ? (
+                  <Image
+                    src={displayAvatarUrl}
+                    alt=""
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center font-semibold text-[10px] ${
+                    hasImage
+                      ? 'bg-white/20 text-white'
+                      : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
+                  }`}>
+                    {displayAvatarInitial}
+                  </span>
+                )}
+                <span className={`font-medium ${hasImage ? 'text-white' : 'text-foreground/80'}`}>
+                  {displayAuthor}
                 </span>
-              )}
-              <span className={`font-medium ${hasImage ? 'text-white' : 'text-foreground/80'}`}>
-                {displayAuthor}
-              </span>
+              </Link>
               {post.is_bot_post && (
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${
                   hasImage 

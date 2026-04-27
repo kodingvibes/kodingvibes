@@ -7,6 +7,8 @@ import { Send, CornerDownRight, ArrowBigUp, ArrowBigDown, Eye } from 'lucide-rea
 import type { User } from '@supabase/supabase-js'
 import { validateString, checkUserRateLimit, sanitizeMarkdown } from '@/lib/security/validation'
 import Image from 'next/image'
+import Link from 'next/link'
+import { getPublicProfileHref } from '@/lib/profile'
 
 type CommentUser = {
   name: string | null
@@ -80,6 +82,7 @@ const CommentItem = ({
   const userVote = userVotes.get(comment.id)
   const isVoting = voteLoading === comment.id
   const avatarUrl = comment.users?.avatar_url || null
+  const profileHref = getPublicProfileHref(comment.users?.username, comment.user_id)
 
   return (
     <div className={`${depth > 0 ? 'ml-6 sm:ml-8 border-l-2 border-border pl-4' : ''}`}>
@@ -119,22 +122,24 @@ const CommentItem = ({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-              {avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt=""
-                  width={24}
-                  height={24}
-                  className="w-6 h-6 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs">
-                  {(comment.users?.name || comment.users?.email || 'A').charAt(0).toUpperCase()}
-                </div>
-              )}
-              <span className="font-medium text-foreground">
-                @{comment.users?.username || comment.users?.name || comment.users?.email?.split('@')[0] || 'anónimo'}
-              </span>
+              <Link href={profileHref} className="inline-flex items-center gap-2 rounded-md hover:opacity-90 transition-opacity">
+                {avatarUrl ? (
+                  <Image
+                    src={avatarUrl}
+                    alt=""
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs">
+                    {(comment.users?.name || comment.users?.email || 'A').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="font-medium text-foreground">
+                  @{comment.users?.username || comment.users?.name || comment.users?.email?.split('@')[0] || 'anónimo'}
+                </span>
+              </Link>
               <span>•</span>
               <span>{formatDate(comment.created_at)}</span>
             </div>

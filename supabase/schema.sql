@@ -11,6 +11,7 @@ create table if not exists public.users (
   name text,
   username text unique,
   avatar_url text,
+  banner_url text,
   is_admin boolean default false,
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null

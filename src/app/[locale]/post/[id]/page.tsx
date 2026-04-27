@@ -8,6 +8,7 @@ import MarkdownContent from '@/components/MarkdownContent'
 import PostActionsClient from '@/components/PostActionsClient'
 import { ArrowLeft, Clock, Edit3, Bot } from 'lucide-react'
 import type { Metadata } from 'next'
+import { getPublicProfileHref } from '@/lib/profile'
 
 interface PostPageProps {
   params: Promise<{
@@ -152,6 +153,7 @@ export default async function PostPage({ params }: PostPageProps) {
       .toUpperCase()
 
   const displayAvatarUrl = post.users?.avatar_url || null
+  const profileHref = getPublicProfileHref(post.users?.username, post.user_id)
 
   return (
     <main className="min-h-screen bg-background">
@@ -187,23 +189,25 @@ export default async function PostPage({ params }: PostPageProps) {
 
               <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground mb-4">
                 <div className="flex items-center gap-3">
-                  {displayAvatarUrl ? (
-                    <Image
-                      src={displayAvatarUrl}
-                      alt=""
-                      width={32}
-                      height={32}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                      {displayAvatarInitial}
-                    </div>
-                  )}
-                  <div>
+                  <Link href={profileHref} className="inline-flex items-center gap-3 rounded-md hover:opacity-90 transition-opacity">
+                    {displayAvatarUrl ? (
+                      <Image
+                        src={displayAvatarUrl}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                        {displayAvatarInitial}
+                      </div>
+                    )}
                     <p className="font-medium text-foreground">
                       {displayAuthor}
                     </p>
+                  </Link>
+                  <div>
                     {post.is_bot_post && (
                       <p className="inline-flex items-center gap-1 text-xs mt-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5">
                         <Bot className="h-3 w-3" />
@@ -292,23 +296,25 @@ export default async function PostPage({ params }: PostPageProps) {
 
               <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground mb-4">
                 <div className="flex items-center gap-3">
-                  {displayAvatarUrl ? (
-                    <Image
-                      src={displayAvatarUrl}
-                      alt=""
-                      width={32}
-                      height={32}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                      {displayAvatarInitial}
-                    </div>
-                  )}
-                  <div>
+                  <Link href={profileHref} className="inline-flex items-center gap-3 rounded-md hover:opacity-90 transition-opacity">
+                    {displayAvatarUrl ? (
+                      <Image
+                        src={displayAvatarUrl}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                        {displayAvatarInitial}
+                      </div>
+                    )}
                     <p className="font-medium text-foreground">
                       {displayAuthor}
                     </p>
+                  </Link>
+                  <div>
                     {post.is_bot_post && (
                       <p className="inline-flex items-center gap-1 text-xs mt-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5">
                         <Bot className="h-3 w-3" />
