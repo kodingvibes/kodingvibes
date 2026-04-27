@@ -182,8 +182,8 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
           )}
         </div>
 
-        <section className="bg-card border border-border rounded-2xl overflow-hidden mb-6">
-          <div className="relative h-40 sm:h-48">
+        <section className="bg-card border border-border rounded-2xl overflow-hidden mb-6 isolate">
+          <div className="relative h-40 sm:h-48 z-0">
             {profile.banner_url ? (
               <Image
                 src={profile.banner_url}
@@ -198,7 +198,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
           </div>
 
-          <div className="px-5 sm:px-6 pb-6">
+          <div className="relative z-10 px-5 sm:px-6 pb-6">
             <div className="-mt-12 flex flex-col sm:flex-row sm:items-end gap-4 mb-5">
               <div className="w-24 h-24 rounded-full ring-4 ring-card bg-muted overflow-hidden flex items-center justify-center">
                 {profile.avatar_url ? (
