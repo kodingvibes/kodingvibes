@@ -9,6 +9,7 @@ import Link from 'next/link'
 import MarkdownContent from '@/components/MarkdownContent'
 import { validateString, validateFile, checkUserRateLimit, sanitizeMarkdown } from '@/lib/security/validation'
 import { compressImage } from '@/lib/utils'
+import { getYouTubeThumbnailUrl, normalizeYouTubeUrl } from '@/lib/youtube'
 import TagInput from '@/components/TagInput'
 import ChannelSelector from '@/components/ChannelSelector'
 import type { Tables } from '@/types/database'
@@ -231,31 +232,10 @@ export default function SubmitPage() {
     setImagePreview(null)
   }
 
-  const extractYoutubeId = (url: string): string | null => {
-    const patterns = [
-      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
-      /^([a-zA-Z0-9_-]{11})$/
-    ]
-    for (const pattern of patterns) {
-      const match = url.match(pattern)
-      if (match) return match[1]
-    }
-    return null
-  }
-
-  const getYoutubeThumbnail = (videoId: string): string => {
-    return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
-  }
-
   const handleYoutubeUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value
     setYoutubeUrl(url)
-    const videoId = extractYoutubeId(url)
-    if (videoId) {
-      setYoutubeThumbnail(getYoutubeThumbnail(videoId))
-    } else {
-      setYoutubeThumbnail(null)
-    }
+    setYoutubeThumbnail(getYouTubeThumbnailUrl(url))
   }
 
   const useYoutubeThumbnail = () => {
@@ -371,9 +351,7 @@ export default function SubmitPage() {
         imageUrl = youtubeThumbnail
       }
 
-      const videoUrl = youtubeUrl && extractYoutubeId(youtubeUrl)
-        ? `https://youtube.com/watch?v=${extractYoutubeId(youtubeUrl)}`
-        : null
+      const videoUrl = normalizeYouTubeUrl(youtubeUrl)
 
       const basePayload = {
         title: titleValidation.sanitized || title.trim(),

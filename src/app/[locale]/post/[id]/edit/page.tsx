@@ -10,6 +10,7 @@ import MarkdownContent from '@/components/MarkdownContent'
 import TagInput from '@/components/TagInput'
 import { validateFile } from '@/lib/security/validation'
 import { compressImage } from '@/lib/utils'
+import { getYouTubeThumbnailUrl, normalizeYouTubeUrl } from '@/lib/youtube'
 import type { Tables } from '@/types/database'
 
 type Post = Tables<'posts'>
@@ -159,10 +160,7 @@ export default function EditPostPage() {
         // Load YouTube video URL if exists
         if (postData.video_url) {
           setYoutubeUrl(postData.video_url)
-          const videoId = extractYoutubeId(postData.video_url)
-          if (videoId) {
-            setYoutubeThumbnail(`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`)
-          }
+          setYoutubeThumbnail(getYouTubeThumbnailUrl(postData.video_url))
         }
 
         // Cargar tags del grupo si el post pertenece a un grupo
@@ -235,31 +233,10 @@ export default function EditPostPage() {
     setExistingImageUrl(null)
   }
 
-  const extractYoutubeId = (url: string): string | null => {
-    const patterns = [
-      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
-      /^([a-zA-Z0-9_-]{11})$/
-    ]
-    for (const pattern of patterns) {
-      const match = url.match(pattern)
-      if (match) return match[1]
-    }
-    return null
-  }
-
-  const getYoutubeThumbnail = (videoId: string): string => {
-    return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
-  }
-
   const handleYoutubeUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value
     setYoutubeUrl(url)
-    const videoId = extractYoutubeId(url)
-    if (videoId) {
-      setYoutubeThumbnail(getYoutubeThumbnail(videoId))
-    } else {
-      setYoutubeThumbnail(null)
-    }
+    setYoutubeThumbnail(getYouTubeThumbnailUrl(url))
   }
 
   const useYoutubeThumbnail = () => {
@@ -386,9 +363,7 @@ export default function EditPostPage() {
         imageUrl = uploadedUrl
       }
 
-      const videoUrl = youtubeUrl && extractYoutubeId(youtubeUrl)
-        ? `https://youtube.com/watch?v=${extractYoutubeId(youtubeUrl)}`
-        : null
+      const videoUrl = normalizeYouTubeUrl(youtubeUrl)
 
       const baseUpdatePayload = {
         title: title.trim(),

@@ -6,6 +6,7 @@ import VoteButtons from '@/components/VoteButtons'
 import CommentSection from '@/components/CommentSection'
 import MarkdownContent from '@/components/MarkdownContent'
 import PostActionsClient from '@/components/PostActionsClient'
+import { getYouTubeEmbedUrl } from '@/lib/youtube'
 import { ArrowLeft, Clock, Edit3, Bot } from 'lucide-react'
 import type { Metadata } from 'next'
 import { getPublicProfileHref } from '@/lib/profile'
@@ -154,6 +155,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
   const displayAvatarUrl = post.users?.avatar_url || null
   const profileHref = getPublicProfileHref(post.users?.username, post.user_id)
+  const videoEmbedUrl = post.video_url ? getYouTubeEmbedUrl(post.video_url) : null
 
   return (
     <main className="min-h-screen bg-background">
@@ -175,10 +177,10 @@ export default async function PostPage({ params }: PostPageProps) {
 
             {/* Content section */}
             <div className="flex-1 p-6">
-              {post.video_url && (
+              {videoEmbedUrl && (
                 <div className="mb-6 overflow-hidden rounded-xl">
                   <iframe
-                    src={`https://www.youtube.com/embed/${post.video_url.split('v=')[1] || post.video_url.split('/').pop()}`}
+                    src={videoEmbedUrl}
                     className="w-full aspect-video rounded-xl"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
@@ -293,10 +295,10 @@ export default async function PostPage({ params }: PostPageProps) {
 
             {/* Content section */}
             <div className="p-4">
-              {post.video_url && (
+              {videoEmbedUrl && (
                 <div className="mb-6 overflow-hidden rounded-xl">
                   <iframe
-                    src={`https://www.youtube.com/embed/${post.video_url.split('v=')[1] || post.video_url.split('/').pop()}`}
+                    src={videoEmbedUrl}
                     className="w-full aspect-video rounded-xl"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
