@@ -87,6 +87,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          video_url: string | null
           vote_count: number
           group_id: string | null
         }
@@ -106,6 +107,7 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          video_url?: string | null
           vote_count?: number
           group_id?: string | null
         }
@@ -125,6 +127,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          video_url?: string | null
           vote_count?: number
           group_id?: string | null
         }

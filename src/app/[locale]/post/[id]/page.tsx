@@ -175,6 +175,17 @@ export default async function PostPage({ params }: PostPageProps) {
 
             {/* Content section */}
             <div className="flex-1 p-6">
+              {post.video_url && (
+                <div className="mb-6 overflow-hidden rounded-xl">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${post.video_url.split('v=')[1] || post.video_url.split('/').pop()}`}
+                    className="w-full aspect-video rounded-xl"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
+
               {post.image_url && (
                 <div className="mb-6 overflow-hidden rounded-xl">
                   <Image
@@ -282,6 +293,17 @@ export default async function PostPage({ params }: PostPageProps) {
 
             {/* Content section */}
             <div className="p-4">
+              {post.video_url && (
+                <div className="mb-6 overflow-hidden rounded-xl">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${post.video_url.split('v=')[1] || post.video_url.split('/').pop()}`}
+                    className="w-full aspect-video rounded-xl"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
+
               {post.image_url && (
                 <div className="mb-6 overflow-hidden rounded-xl">
                   <Image

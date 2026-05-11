@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
-import { ArrowLeft, Save, Clock, Eye, EyeOff, Code, AlertCircle, Trash2, ImageIcon, X } from 'lucide-react'
+import { ArrowLeft, Save, Clock, Eye, Code, AlertCircle, Trash2, ImageIcon, X, Youtube, Link as LinkIcon, HelpCircle } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import MarkdownContent from '@/components/MarkdownContent'
@@ -34,6 +34,8 @@ export default function EditPostPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [showMarkdownHelp, setShowMarkdownHelp] = useState(false)
+  const [editMode, setEditMode] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [timeRemaining, setTimeRemaining] = useState<number>(0)
   const [isAuthorized, setIsAuthorized] = useState(false)
@@ -41,6 +43,10 @@ export default function EditPostPage() {
   const [isGroupAdmin, setIsGroupAdmin] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+
+  // YouTube state
+  const [youtubeUrl, setYoutubeUrl] = useState('')
+  const [youtubeThumbnail, setYoutubeThumbnail] = useState<string | null>(null)
 
   const checkEditWindow = useCallback((createdAt: string): number => {
     const created = new Date(createdAt).getTime()
@@ -150,6 +156,15 @@ export default function EditPostPage() {
         setTimeRemaining(remaining)
         setIsAuthorized(true)
 
+        // Load YouTube video URL if exists
+        if (postData.video_url) {
+          setYoutubeUrl(postData.video_url)
+          const videoId = extractYoutubeId(postData.video_url)
+          if (videoId) {
+            setYoutubeThumbnail(`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`)
+          }
+        }
+
         // Cargar tags del grupo si el post pertenece a un grupo
         if (postData.group_id) {
           const { data: tagsData } = await supabase
@@ -218,6 +233,46 @@ export default function EditPostPage() {
     setImage(null)
     setImagePreview(null)
     setExistingImageUrl(null)
+  }
+
+  const extractYoutubeId = (url: string): string | null => {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+      /^([a-zA-Z0-9_-]{11})$/
+    ]
+    for (const pattern of patterns) {
+      const match = url.match(pattern)
+      if (match) return match[1]
+    }
+    return null
+  }
+
+  const getYoutubeThumbnail = (videoId: string): string => {
+    return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+  }
+
+  const handleYoutubeUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value
+    setYoutubeUrl(url)
+    const videoId = extractYoutubeId(url)
+    if (videoId) {
+      setYoutubeThumbnail(getYoutubeThumbnail(videoId))
+    } else {
+      setYoutubeThumbnail(null)
+    }
+  }
+
+  const useYoutubeThumbnail = () => {
+    if (youtubeThumbnail) {
+      setImagePreview(youtubeThumbnail)
+      setImage(null)
+      setExistingImageUrl(null)
+    }
+  }
+
+  const removeYoutube = () => {
+    setYoutubeUrl('')
+    setYoutubeThumbnail(null)
   }
 
   const uploadImage = async (file: File): Promise<string | null> => {
@@ -325,6 +380,10 @@ export default function EditPostPage() {
         imageUrl = uploadedUrl
       }
 
+      const videoUrl = youtubeUrl && extractYoutubeId(youtubeUrl)
+        ? `https://youtube.com/watch?v=${extractYoutubeId(youtubeUrl)}`
+        : null
+
       const { error: updateError } = await supabase
         .from('posts')
         .update({
@@ -332,6 +391,7 @@ export default function EditPostPage() {
           content: content.trim() || null,
           tags: tags,
           image_url: imageUrl,
+          video_url: videoUrl,
           edited_at: new Date().toISOString(),
         })
         .eq('id', postId)
@@ -469,6 +529,61 @@ export default function EditPostPage() {
             )}
           </div>
 
+          {/* YouTube Video */}
+          <div className="mb-6">
+            <label htmlFor="youtubeUrl" className="block text-sm font-medium text-foreground mb-2">
+              <Youtube className="h-4 w-4 inline mr-1" />
+              Video de YouTube
+              <span className="text-xs text-muted-foreground font-normal ml-2">(opcional)</span>
+            </label>
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="url"
+                  id="youtubeUrl"
+                  value={youtubeUrl}
+                  onChange={handleYoutubeUrlChange}
+                  placeholder="https://youtube.com/watch?v=..."
+                  className="w-full pl-10 p-3 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  disabled={saving}
+                />
+              </div>
+              {youtubeThumbnail && (
+                <button
+                  type="button"
+                  onClick={useYoutubeThumbnail}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm"
+                  disabled={saving}
+                >
+                  Usar thumbnail
+                </button>
+              )}
+              {youtubeUrl && (
+                <button
+                  type="button"
+                  onClick={removeYoutube}
+                  className="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors text-sm"
+                  disabled={saving}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            {youtubeThumbnail && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <Image
+                  src={youtubeThumbnail}
+                  alt="Thumbnail"
+                  width={120}
+                  height={68}
+                  className="rounded object-cover"
+                />
+                <span>Thumbnail listo para usar</span>
+              </div>
+            )}
+          </div>
+
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <label htmlFor="content" className="block text-sm font-medium text-foreground">
@@ -477,23 +592,70 @@ export default function EditPostPage() {
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <Code className="h-3 w-3" />
-                  Soporta Markdown
+                  Markdown
                 </span>
                 <button
                   type="button"
-                  onClick={() => setShowPreview(!showPreview)}
+                  onClick={() => setShowMarkdownHelp(!showMarkdownHelp)}
                   className="text-xs text-primary hover:underline flex items-center gap-1"
                   disabled={saving}
                 >
-                  {showPreview ? (
-                    <><EyeOff className="h-3 w-3" /> Editar</>
-                  ) : (
-                    <><Eye className="h-3 w-3" /> Preview</>
-                  )}
+                  <HelpCircle className="h-3 w-3" />
+                  {showMarkdownHelp ? 'Ocultar' : 'Sintaxis'}
                 </button>
+                <div className="flex items-center gap-1 border border-input rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditMode(true)
+                      setShowPreview(false)
+                    }}
+                    className={`px-3 py-1 text-xs flex items-center gap-1 transition-colors ${
+                      editMode && !showPreview
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-muted'
+                    }`}
+                    disabled={saving}
+                  >
+                    <Code className="h-3 w-3" />
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditMode(false)
+                      setShowPreview(true)
+                    }}
+                    className={`px-3 py-1 text-xs flex items-center gap-1 transition-colors ${
+                      showPreview && !editMode
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-muted'
+                    }`}
+                    disabled={saving}
+                  >
+                    <Eye className="h-3 w-3" />
+                    Preview
+                  </button>
+                </div>
               </div>
             </div>
-            
+
+            {showMarkdownHelp && (
+              <div className="mb-3 bg-muted/50 rounded-lg p-3 text-xs">
+                <p className="font-medium text-foreground mb-2">Sintaxis Markdown:</p>
+                <div className="grid grid-cols-2 gap-2 text-muted-foreground">
+                  <div><code className="bg-background px-1 rounded">**texto**</code> → negrita</div>
+                  <div><code className="bg-background px-1 rounded">*texto*</code> → cursiva</div>
+                  <div><code className="bg-background px-1 rounded">`código`</code> → código inline</div>
+                  <div><code className="bg-background px-1 rounded">```código```</code> → bloque</div>
+                  <div><code className="bg-background px-1 rounded">[texto](url)</code> → enlace</div>
+                  <div><code className="bg-background px-1 rounded">- item</code> → lista</div>
+                  <div><code className="bg-background px-1 rounded"># título</code> → título</div>
+                  <div><code className="bg-background px-1 rounded">&gt; quote</code> → cita</div>
+                </div>
+              </div>
+            )}
+
             {showPreview ? (
               <div className="w-full min-h-[150px] p-3 bg-muted border border-input rounded-lg">
                 {content ? (
