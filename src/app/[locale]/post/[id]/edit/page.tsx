@@ -275,6 +275,12 @@ export default function EditPostPage() {
     setYoutubeThumbnail(null)
   }
 
+  const isMissingVideoUrlColumn = (error: unknown): boolean => {
+    if (!error || typeof error !== 'object') return false
+    const maybeError = error as { code?: string; message?: string }
+    return maybeError.code === '42703' || maybeError.message?.includes('video_url') === true
+  }
+
   const uploadImage = async (file: File): Promise<string | null> => {
     const validation = validateFile(file, {
       maxSizeMB: 2, // Reducido porque ya está comprimida
@@ -384,17 +390,27 @@ export default function EditPostPage() {
         ? `https://youtube.com/watch?v=${extractYoutubeId(youtubeUrl)}`
         : null
 
-      const { error: updateError } = await supabase
+      const baseUpdatePayload = {
+        title: title.trim(),
+        content: content.trim() || null,
+        tags: tags,
+        image_url: imageUrl,
+        edited_at: new Date().toISOString(),
+      }
+
+      let updateResponse = await supabase
         .from('posts')
-        .update({
-          title: title.trim(),
-          content: content.trim() || null,
-          tags: tags,
-          image_url: imageUrl,
-          video_url: videoUrl,
-          edited_at: new Date().toISOString(),
-        })
+        .update(videoUrl ? { ...baseUpdatePayload, video_url: videoUrl } : baseUpdatePayload)
         .eq('id', postId)
+
+      if (updateResponse.error && videoUrl && isMissingVideoUrlColumn(updateResponse.error)) {
+        updateResponse = await supabase
+          .from('posts')
+          .update(baseUpdatePayload)
+          .eq('id', postId)
+      }
+
+      const updateError = updateResponse.error
 
       if (updateError) {
         throw updateError

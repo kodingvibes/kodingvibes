@@ -273,6 +273,12 @@ export default function SubmitPage() {
     }
   }
 
+  const isMissingVideoUrlColumn = (error: unknown): boolean => {
+    if (!error || typeof error !== 'object') return false
+    const maybeError = error as { code?: string; message?: string }
+    return maybeError.code === '42703' || maybeError.message?.includes('video_url') === true
+  }
+
   const uploadImage = async (file: File): Promise<string | null> => {
     const validation = validateFile(file, {
       maxSizeMB: 2,
@@ -369,24 +375,35 @@ export default function SubmitPage() {
         ? `https://youtube.com/watch?v=${extractYoutubeId(youtubeUrl)}`
         : null
 
-      const { data: post, error } = await supabase
+      const basePayload = {
+        title: titleValidation.sanitized || title.trim(),
+        content: sanitizedContent,
+        image_url: imageUrl,
+        tags: tags,
+        user_id: user.id,
+        group_id: selectedGroupId,
+        status: postStatus,
+      }
+
+      let postResponse = await supabase
         .from('posts')
-        .insert({
-          title: titleValidation.sanitized || title.trim(),
-          content: sanitizedContent,
-          image_url: imageUrl,
-          video_url: videoUrl,
-          tags: tags,
-          user_id: user.id,
-          group_id: selectedGroupId,
-          status: postStatus,
-        })
+        .insert(videoUrl ? { ...basePayload, video_url: videoUrl } : basePayload)
         .select()
         .single()
 
-      if (error) {
-        throw error
+      if (postResponse.error && videoUrl && isMissingVideoUrlColumn(postResponse.error)) {
+        postResponse = await supabase
+          .from('posts')
+          .insert(basePayload)
+          .select()
+          .single()
       }
+
+      if (postResponse.error) {
+        throw postResponse.error
+      }
+
+      const post = postResponse.data
 
       if (postStatus === 'draft') {
         router.push(`/drafts`)
