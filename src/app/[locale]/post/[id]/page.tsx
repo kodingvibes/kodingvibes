@@ -190,7 +190,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 </div>
               )}
 
-              {post.image_url && (
+              {post.image_url && !videoEmbedUrl && (
                 <div className="mb-6 overflow-hidden rounded-xl">
                   <Image
                     src={post.image_url}
@@ -308,7 +308,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 </div>
               )}
 
-              {post.image_url && (
+              {post.image_url && !videoEmbedUrl && (
                 <div className="mb-6 overflow-hidden rounded-xl">
                   <Image
                     src={post.image_url}
