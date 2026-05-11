@@ -61,3 +61,13 @@ export const getYouTubeEmbedUrl = (value: string): string | null => {
   const id = extractYouTubeVideoId(value)
   return id ? `https://www.youtube.com/embed/${id}` : null
 }
+
+export const getYouTubeEmbedUrlFromThumbnail = (value: string): string | null => {
+  const input = value.trim()
+  if (!input) return null
+
+  const match = input.match(/(?:img\.youtube\.com|i\.ytimg\.com)\/vi(?:_webp)?\/([A-Za-z0-9_-]{11})\//)
+  if (!match) return null
+
+  return `https://www.youtube.com/embed/${match[1]}`
+}

@@ -6,7 +6,7 @@ import VoteButtons from '@/components/VoteButtons'
 import CommentSection from '@/components/CommentSection'
 import MarkdownContent from '@/components/MarkdownContent'
 import PostActionsClient from '@/components/PostActionsClient'
-import { getYouTubeEmbedUrl } from '@/lib/youtube'
+import { getYouTubeEmbedUrl, getYouTubeEmbedUrlFromThumbnail } from '@/lib/youtube'
 import { ArrowLeft, Clock, Edit3, Bot } from 'lucide-react'
 import type { Metadata } from 'next'
 import { getPublicProfileHref } from '@/lib/profile'
@@ -155,7 +155,9 @@ export default async function PostPage({ params }: PostPageProps) {
 
   const displayAvatarUrl = post.users?.avatar_url || null
   const profileHref = getPublicProfileHref(post.users?.username, post.user_id)
-  const videoEmbedUrl = post.video_url ? getYouTubeEmbedUrl(post.video_url) : null
+  const videoEmbedUrl =
+    (post.video_url ? getYouTubeEmbedUrl(post.video_url) : null) ||
+    (post.image_url ? getYouTubeEmbedUrlFromThumbnail(post.image_url) : null)
 
   return (
     <main className="min-h-screen bg-background">
