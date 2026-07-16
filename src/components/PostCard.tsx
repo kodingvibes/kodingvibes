@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import VoteButtons from './VoteButtons'
 import PostActions from './PostActions'
+import MarkdownContent from './MarkdownContent'
 import { MessageSquare, Clock, Bot } from 'lucide-react'
 import { getPublicProfileHref } from '@/lib/profile'
 
@@ -96,12 +97,13 @@ export default function PostCard({
 
   const hasImage = !!post.image_url
 
-  const splitParagraphs = (text: string): string[] =>
-    text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean)
-
-  const paragraphs = post.content ? splitParagraphs(post.content) : []
-  const previewParagraphs = hasImage ? [] : paragraphs.slice(0, 2)
-  const hasMoreParagraphs = !hasImage && paragraphs.length > 2
+  const PREVIEW_MAX = 280
+  const contentText = post.content ?? ''
+  const previewContent = hasImage
+    ? ''
+    : contentText.length > PREVIEW_MAX
+      ? contentText.slice(0, PREVIEW_MAX).trimEnd() + '…'
+      : contentText
 
   return (
     <article 
@@ -235,19 +237,15 @@ export default function PostCard({
           )}
 
           {/* Text preview (only when there's no image) */}
-          {!hasImage && previewParagraphs.length > 0 && (
+          {!hasImage && previewContent && (
             <div
               data-no-navigate
               className={`mb-3 text-sm leading-relaxed line-clamp-[10] ${
                 hasImage ? 'text-white/80' : 'text-foreground/80'
               }`}
             >
-              {previewParagraphs.map((paragraph, index) => (
-                <p key={index} className="mb-2 last:mb-0">
-                  {paragraph}
-                </p>
-              ))}
-              {hasMoreParagraphs && (
+              <MarkdownContent content={previewContent} />
+              {contentText.length > PREVIEW_MAX && (
                 <Link
                   href={`/post/${post.id}`}
                   data-no-navigate
