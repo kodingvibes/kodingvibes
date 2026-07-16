@@ -96,6 +96,13 @@ export default function PostCard({
 
   const hasImage = !!post.image_url
 
+  const splitParagraphs = (text: string): string[] =>
+    text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean)
+
+  const paragraphs = post.content ? splitParagraphs(post.content) : []
+  const previewParagraphs = hasImage ? [] : paragraphs.slice(0, 2)
+  const hasMoreParagraphs = !hasImage && paragraphs.length > 2
+
   return (
     <article 
       onClick={handleCardClick}
@@ -224,6 +231,32 @@ export default function PostCard({
                 height={400}
                 className="w-full max-h-60 object-cover group-hover:scale-105 transition-transform duration-500"
               />
+            </div>
+          )}
+
+          {/* Text preview (only when there's no image) */}
+          {!hasImage && previewParagraphs.length > 0 && (
+            <div
+              data-no-navigate
+              className={`mb-3 text-sm leading-relaxed line-clamp-[10] ${
+                hasImage ? 'text-white/80' : 'text-foreground/80'
+              }`}
+            >
+              {previewParagraphs.map((paragraph, index) => (
+                <p key={index} className="mb-2 last:mb-0">
+                  {paragraph}
+                </p>
+              ))}
+              {hasMoreParagraphs && (
+                <Link
+                  href={`/post/${post.id}`}
+                  data-no-navigate
+                  className="text-primary hover:underline font-medium"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  leer más...
+                </Link>
+              )}
             </div>
           )}
 

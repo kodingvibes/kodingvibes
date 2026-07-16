@@ -613,6 +613,35 @@ export default function CommentSection({ postId }: CommentSectionProps) {
         </div>
       )}
 
+      {hasAnyHiddenComments(comments) && (
+        <div className="mb-4">
+          <button
+            onClick={toggleShowAllHidden}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {visibleHidden.size > 0
+              ? `${hiddenCount} comentario${hiddenCount > 1 ? 's' : ''} oculto${hiddenCount > 1 ? 's' : ''}`
+              : `Mostrar ${hiddenCount} comentario${hiddenCount > 1 ? 's' : ''} oculto${hiddenCount > 1 ? 's' : ''}`
+            }
+          </button>
+        </div>
+      )}
+
+      <div className="space-y-2 mb-8">
+        {comments.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+              <CornerDownRight className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground">
+              No hay comentarios aún. Sé el primero en comentar.
+            </p>
+          </div>
+        ) : (
+          renderComments(comments)
+        )}
+      </div>
+
       {user ? (
         <form onSubmit={(e) => handleSubmit(e)} className="mb-8">
           <div className="bg-card border border-border rounded-xl p-4">
@@ -642,35 +671,6 @@ Soporta Markdown: **negrita**, *cursiva*, \`código\``}
           <p className="text-muted-foreground mb-2">Inicia sesión para participar en la conversación</p>
         </div>
       )}
-
-      {hasAnyHiddenComments(comments) && (
-        <div className="mb-4">
-          <button
-            onClick={toggleShowAllHidden}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {visibleHidden.size > 0
-              ? `${hiddenCount} comentario${hiddenCount > 1 ? 's' : ''} oculto${hiddenCount > 1 ? 's' : ''}`
-              : `Mostrar ${hiddenCount} comentario${hiddenCount > 1 ? 's' : ''} oculto${hiddenCount > 1 ? 's' : ''}`
-            }
-          </button>
-        </div>
-      )}
-
-      <div className="space-y-2">
-        {comments.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-              <CornerDownRight className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <p className="text-muted-foreground">
-              No hay comentarios aún. Sé el primero en comentar.
-            </p>
-          </div>
-        ) : (
-          renderComments(comments)
-        )}
-      </div>
     </div>
   )
 }
