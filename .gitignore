@@ -40,3 +40,5 @@ next-env.d.ts
 
 # Supabase CLI local metadata
 supabase/.temp/
+.env*
+!.env.local.example
