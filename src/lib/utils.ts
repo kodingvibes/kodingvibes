@@ -46,7 +46,7 @@ export async function compressImage(
 ): Promise<File> {
   const defaultOptions = {
     maxSizeMB: 1, // Máximo 1MB
-    maxWidthOrHeight: 1920, // Máximo 1920px de ancho o alto
+    maxWidthOrHeight: 1280, // Máximo 1280px de ancho o alto (suficiente para móvil 3G)
     useWebWorker: true,
     fileType: 'image/webp', // Convertir a WebP para mejor compresión
   };

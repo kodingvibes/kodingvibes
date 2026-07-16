@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { compressImage } from '@/lib/utils'
+import { validateFile } from '@/lib/security/validation'
 import { LoadingSpinner } from '@/components/ui/Loading'
 import type { Tables } from '@/types/database'
 import { getPublicProfileHref } from '@/lib/profile'
@@ -182,7 +183,7 @@ export default function GroupAdminPage() {
 
     const { error: uploadError } = await supabase.storage
       .from('images')
-      .upload(filePath, file)
+      .upload(filePath, file, { contentType: file.type || 'image/webp', upsert: true })
 
     if (uploadError) {
       console.error(`Error uploading ${type}:`, uploadError)
@@ -200,6 +201,15 @@ export default function GroupAdminPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
+    const validation = validateFile(file, {
+      maxSizeMB: 5,
+      allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    })
+    if (!validation.valid) {
+      setError(validation.error || 'Imagen no válida')
+      return
+    }
+
     const reader = new FileReader()
     reader.onloadend = () => {
       setIconPreview(reader.result as string)
@@ -211,6 +221,15 @@ export default function GroupAdminPage() {
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    const validation = validateFile(file, {
+      maxSizeMB: 25,
+      allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    })
+    if (!validation.valid) {
+      setError(validation.error || 'Imagen no válida')
+      return
+    }
 
     const reader = new FileReader()
     reader.onloadend = () => {
@@ -691,7 +710,7 @@ export default function GroupAdminPage() {
                       Subir icono
                     </label>
                     <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                      Imagen cuadrada. Se recomienda mínimo 128x128px.
+                      Imagen cuadrada. Hasta 5MB. Se reduce y convierte a WebP.
                     </p>
                   </div>
                 </div>
@@ -735,9 +754,9 @@ export default function GroupAdminPage() {
                   <Upload className="w-4 h-4" />
                   {groupBannerUrl ? 'Cambiar banner' : 'Subir banner'}
                 </label>
-                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  Imagen wide. Se recomienda mínimo 600x200px.
-                </p>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Imagen wide. Hasta 25MB. Se reduce y convierte a WebP.
+                  </p>
               </div>
 
               {/* Color fallback del Icono */}

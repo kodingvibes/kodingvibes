@@ -393,7 +393,7 @@ export default function ProfilePage() {
 
     const { error: uploadError } = await supabase.storage
       .from('images')
-      .upload(filePath, file)
+      .upload(filePath, file, { contentType: file.type || 'image/webp', upsert: true })
 
     if (uploadError) {
       setError('No se pudo subir la imagen de avatar')
@@ -416,7 +416,7 @@ export default function ProfilePage() {
 
     const { error: uploadError } = await supabase.storage
       .from('images')
-      .upload(filePath, file)
+      .upload(filePath, file, { contentType: file.type || 'image/webp', upsert: true })
 
     if (uploadError) {
       setError('No se pudo subir la imagen de banner')
@@ -917,7 +917,7 @@ export default function ProfilePage() {
     if (!file) return
 
     const validation = validateFile(file, {
-      maxSizeMB: 5,
+      maxSizeMB: 10,
       allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
     })
 
@@ -948,7 +948,7 @@ export default function ProfilePage() {
     if (!file) return
 
     const validation = validateFile(file, {
-      maxSizeMB: 8,
+      maxSizeMB: 25,
       allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
     })
 
@@ -1107,7 +1107,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Formatos: PNG, JPG, GIF o WebP. Tamaño máximo: 5MB.
+                  Formatos: PNG, JPG, GIF o WebP. Tamaño máximo: 10MB (se reduce a WebP).
                 </p>
               </div>
 
@@ -1152,7 +1152,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Formatos: PNG, JPG, GIF o WebP. Tamaño máximo: 8MB.
+                  Formatos: PNG, JPG, GIF o WebP. Tamaño máximo: 25MB (se reduce a WebP).
                 </p>
               </div>
 

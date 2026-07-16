@@ -175,7 +175,7 @@ export default function SubmitPage() {
           const file = new File([blob], `pasted-image-${Date.now()}.png`, { type: blob.type })
 
           const validation = validateFile(file, {
-            maxSizeMB: 5,
+            maxSizeMB: 50,
             allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
           })
 
@@ -208,7 +208,7 @@ export default function SubmitPage() {
     const file = e.target.files?.[0]
     if (file) {
       const validation = validateFile(file, {
-        maxSizeMB: 5,
+        maxSizeMB: 50,
         allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
       })
 
@@ -261,7 +261,7 @@ export default function SubmitPage() {
 
   const uploadImage = async (file: File): Promise<string | null> => {
     const validation = validateFile(file, {
-      maxSizeMB: 2,
+      maxSizeMB: 50,
       allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
     })
 
@@ -276,7 +276,7 @@ export default function SubmitPage() {
 
     const { error: uploadError } = await supabase.storage
       .from('images')
-      .upload(filePath, file)
+      .upload(filePath, file, { contentType: file.type || 'image/webp', upsert: true })
 
     if (uploadError) {
       console.error('Error uploading image:', uploadError)
@@ -569,8 +569,8 @@ Puedes usar Markdown:
                   <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
                     <ImageIcon className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <span className="text-sm text-muted-foreground">Haz click para subir una imagen</span>
-                  <span className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF hasta 5MB</span>
+                <span className="text-sm text-muted-foreground">Haz click para subir una imagen</span>
+                <span className="text-xs text-muted-foreground mt-1">Hasta 50MB, se reduce y convierte a WebP</span>
                 </div>
                 <input
                   type="file"
