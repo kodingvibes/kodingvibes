@@ -4,7 +4,6 @@ import { ClientLayout } from "@/components/ClientLayout";
 import Script from "next/script";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { HomepagePrompt } from "@/components/HomepagePrompt";
-import { Analytics } from "@vercel/analytics/next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -114,7 +113,6 @@ export default function RootLayout({
         </ClientLayout>
         <PushNotificationPrompt />
         <HomepagePrompt />
-        <Analytics />
       </body>
     </html>
   );
