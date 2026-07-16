@@ -11,7 +11,8 @@
     "security:audit": "npm audit",
     "security:check": "npm audit --audit-level=moderate",
     "pwa:icons": "node scripts/generate-pwa-icons.js",
-    "images:compress": "node scripts/compress-existing-images.js"
+    "images:compress": "node scripts/compress-existing-images.js",
+    "images:rewrite": "node scripts/rewrite-image-urls.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
