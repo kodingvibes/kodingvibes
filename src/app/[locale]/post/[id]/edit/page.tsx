@@ -233,6 +233,49 @@ export default function EditPostPage() {
     setExistingImageUrl(null)
   }
 
+  const handlePaste = useCallback(async (e: ClipboardEvent) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      if (item.type.indexOf('image') !== -1) {
+        e.preventDefault()
+        const blob = item.getAsFile()
+        if (blob) {
+          const file = new File([blob], `pasted-image-${Date.now()}.png`, { type: blob.type })
+
+          const validation = validateFile(file, {
+            maxSizeMB: 5,
+            allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+          })
+
+          if (!validation.valid) {
+            setError(validation.error || 'Imagen no válida')
+            return
+          }
+
+          const compressedFile = await compressImage(file)
+          setImage(compressedFile)
+          setExistingImageUrl(null)
+          const reader = new FileReader()
+          reader.onloadend = () => {
+            setImagePreview(reader.result as string)
+          }
+          reader.readAsDataURL(compressedFile)
+        }
+        break
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    document.addEventListener('paste', handlePaste)
+    return () => {
+      document.removeEventListener('paste', handlePaste)
+    }
+  }, [handlePaste])
+
   const handleYoutubeUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value
     setYoutubeUrl(url)
@@ -495,7 +538,7 @@ export default function EditPostPage() {
                   type="button"
                   onClick={removeImage}
                   disabled={saving}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg disabled:opacity-50"
+                  className="absolute top-2 right-2 z-10 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg disabled:opacity-50"
                 >
                   <X className="h-4 w-4" />
                 </button>

@@ -659,7 +659,7 @@ export default function GroupAdminPage() {
                         <button
                           type="button"
                           onClick={removeIcon}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                          className="absolute top-1 right-1 z-10 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -715,7 +715,7 @@ export default function GroupAdminPage() {
                     <button
                       type="button"
                       onClick={removeBanner}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors"
+                      className="absolute top-2 right-2 z-10 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
