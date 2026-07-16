@@ -160,8 +160,24 @@ export default async function PostPage({ params }: PostPageProps) {
     (post.image_url ? getYouTubeEmbedUrlFromThumbnail(post.image_url) : null)
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-32 sm:pb-6">
+    <main className="min-h-screen bg-background relative">
+      {/* Hero: blurred image of the post with a gradient that fades
+          into the page background. Only when the post has an image
+          and it's not a YouTube video (which has its own embed). */}
+      {post.image_url && !videoEmbedUrl && (
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-[420px] sm:h-[520px] overflow-hidden pointer-events-none"
+        >
+          <div
+            className="absolute inset-0 bg-cover bg-center scale-110"
+            style={{ backgroundImage: `url(${post.image_url})`, filter: 'blur(28px)' }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/70 to-background" />
+        </div>
+      )}
+
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-32 sm:pb-6">
         <Link
           href="/"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -170,9 +186,25 @@ export default async function PostPage({ params }: PostPageProps) {
           <span>Volver al inicio</span>
         </Link>
 
-        <article className="bg-card border border-border rounded-xl overflow-hidden relative">
+        <article className="bg-card border border-border rounded-xl overflow-hidden relative shadow-sm">
+                {/* Blurred image background of the card itself. Sits
+                    under all content with a soft gradient that fades
+                    into the card color so text stays readable. */}
+          {post.image_url && !videoEmbedUrl && (
+            <div
+              aria-hidden
+              className="absolute inset-0 overflow-hidden pointer-events-none"
+            >
+              <div
+                className="absolute inset-0 bg-cover bg-center scale-110"
+                style={{ backgroundImage: `url(${post.image_url})`, filter: 'blur(36px)' }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-card/40 via-card/80 to-card" />
+            </div>
+          )}
+
                 {/* Desktop: Vote section lateral */}
-          <div className="hidden sm:flex">
+          <div className="relative hidden sm:flex">
             <div className="bg-muted/30 p-4 flex items-start">
               <VoteButtons postId={post.id} initialVotes={post.vote_count} />
             </div>
@@ -289,7 +321,7 @@ export default async function PostPage({ params }: PostPageProps) {
           </div>
 
                 {/* Mobile: Vote section floating */}
-          <div className="sm:hidden">
+          <div className="relative sm:hidden">
             {/* Floating vote buttons - positioned left to avoid overlap with create button */}
             <div className="fixed bottom-6 left-6 z-50 flex flex-col items-center gap-1 bg-card border border-border rounded-xl shadow-2xl p-2">
               <VoteButtons postId={post.id} initialVotes={post.vote_count} />
