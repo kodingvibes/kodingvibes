@@ -1,271 +1,207 @@
 /**
- * Script para comprimir imágenes existentes en el bucket de Supabase
- * 
- * Este script:
- * 1. Lista todas las imágenes del bucket
- * 2. Descarga cada imagen
- * 3. La comprime usando sharp
- * 4. Reemplaza la imagen original con la versión comprimida
- * 
+ * Script para comprimir imágenes existentes en el bucket de Supabase.
+ *
+ * Itera TODAS las carpetas del bucket (posts/, avatars/, banners/, groups/...),
+ * pagina resultados, descarga cada archivo, lo recomprime con sharp
+ * (max 1920px ancho, WebP/JPEG/PNG según convenga) y lo reemplaza
+ * si el ahorro es > 5%.
+ *
+ * Requiere: SUPABASE_SERVICE_ROLE_KEY en .env.local
  * Uso: node scripts/compress-existing-images.js
  */
 
-const sharp = require('sharp');
-const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs').promises;
-const path = require('path');
+const sharp = require('sharp')
+const { createClient } = require('@supabase/supabase-js')
+const fs = require('fs').promises
+const path = require('path')
 
-// Cargar variables de entorno
-require('dotenv').config({ path: '.env.local' });
+require('dotenv').config({ path: '.env.local' })
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('❌ Faltan variables de entorno NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY');
-  process.exit(1);
+  console.error('Faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en .env.local')
+  process.exit(1)
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-const BUCKET_NAME = 'images';
-const MAX_WIDTH = 1920;
-const QUALITY = 80; // Calidad de compresión (0-100)
-const TEMP_DIR = path.join(__dirname, '../.temp-images');
+const BUCKET_NAME = 'images'
+const MAX_WIDTH = 1920
+const QUALITY = 80
+const SAVINGS_THRESHOLD = 5
+const PAGE_SIZE = 100
+const TEMP_DIR = path.join(__dirname, '../.temp-images')
 
-async function ensureTempDir() {
-  try {
-    await fs.mkdir(TEMP_DIR, { recursive: true });
-  } catch (error) {
-    console.error('Error creando directorio temporal:', error);
-  }
-}
-
-async function cleanupTempDir() {
-  try {
-    await fs.rm(TEMP_DIR, { recursive: true, force: true });
-  } catch (error) {
-    console.error('Error limpiando directorio temporal:', error);
-  }
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
 }
 
 async function compressImage(buffer, filename) {
-  const ext = path.extname(filename).toLowerCase();
-  
-  let sharpInstance = sharp(buffer)
-    .resize(MAX_WIDTH, null, {
-      width: MAX_WIDTH,
-      withoutEnlargement: true,
-      fit: 'inside'
-    });
+  const ext = path.extname(filename).toLowerCase()
 
-  // Convertir a WebP para mejor compresión
+  if (ext === '.gif') return buffer
+
+  let s = sharp(buffer).resize(MAX_WIDTH, null, {
+    withoutEnlargement: true,
+    fit: 'inside',
+  })
+
   if (ext === '.webp') {
-    sharpInstance = sharpInstance.webp({ quality: QUALITY });
+    s = s.webp({ quality: QUALITY })
   } else if (ext === '.png') {
-    // Mantener PNG si tiene transparencia, sino convertir a WebP
-    const metadata = await sharp(buffer).metadata();
-    if (metadata.hasAlpha) {
-      sharpInstance = sharpInstance.png({ quality: QUALITY, compressionLevel: 9 });
+    const meta = await sharp(buffer).metadata()
+    if (meta.hasAlpha) {
+      s = s.png({ quality: QUALITY, compressionLevel: 9 })
     } else {
-      sharpInstance = sharpInstance.webp({ quality: QUALITY });
+      s = s.webp({ quality: QUALITY })
     }
-  } else if (ext === '.jpg' || ext === '.jpeg') {
-    sharpInstance = sharpInstance.jpeg({ quality: QUALITY, progressive: true });
-  } else if (ext === '.gif') {
-    // GIFs se mantienen como están (sharp no soporta bien GIFs animados)
-    return buffer;
+  } else {
+    s = s.jpeg({ quality: QUALITY, progressive: true })
   }
 
-  return await sharpInstance.toBuffer();
+  return s.toBuffer()
 }
 
-async function getFileSize(buffer) {
-  return buffer.length;
-}
+async function listAllFiles(prefix) {
+  const files = []
+  let offset = 0
 
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-}
-
-async function processImage(file) {
-  const filename = file.name;
-  console.log(`\n📸 Procesando: ${filename}`);
-
-  try {
-    // Descargar la imagen original
-    const { data: downloadData, error: downloadError } = await supabase.storage
+  while (true) {
+    const { data, error } = await supabase.storage
       .from(BUCKET_NAME)
-      .download(filename);
+      .list(prefix, { limit: PAGE_SIZE, offset, sortBy: { column: 'name', order: 'asc' } })
 
-    if (downloadError) {
-      console.error(`  ❌ Error descargando ${filename}:`, downloadError.message);
-      return { success: false, error: downloadError.message };
+    if (error) {
+      console.error(`  Error listando ${prefix || 'raiz'}:`, error.message)
+      return files
+    }
+    if (!data || data.length === 0) break
+
+    for (const item of data) {
+      const fullName = prefix ? `${prefix}/${item.name}` : item.name
+      if (item.id === null) {
+        const nested = await listAllFiles(fullName)
+        files.push(...nested)
+      } else {
+        files.push(fullName)
+      }
     }
 
-    const originalBuffer = Buffer.from(await downloadData.arrayBuffer());
-    const originalSize = getFileSize(originalBuffer);
-    console.log(`  📦 Tamaño original: ${formatBytes(originalSize)}`);
-
-    // Comprimir la imagen
-    const compressedBuffer = await compressImage(originalBuffer, filename);
-    const compressedSize = getFileSize(compressedBuffer);
-    const savings = ((originalSize - compressedSize) / originalSize * 100).toFixed(2);
-
-    console.log(`  📦 Tamaño comprimido: ${formatBytes(compressedSize)}`);
-    console.log(`  💾 Ahorro: ${savings}%`);
-
-    // Solo actualizar si hay ahorro significativo (más del 5%)
-    if (parseFloat(savings) < 5) {
-      console.log(`  ⏭️  Ahorro insignificante, omitiendo actualización`);
-      return { success: true, skipped: true, originalSize, compressedSize };
-    }
-
-    // Guardar temporalmente
-    const tempPath = path.join(TEMP_DIR, path.basename(filename));
-    await fs.writeFile(tempPath, compressedBuffer);
-
-    // Eliminar la imagen original
-    const { error: deleteError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .remove([filename]);
-
-    if (deleteError) {
-      console.error(`  ❌ Error eliminando original:`, deleteError.message);
-      return { success: false, error: deleteError.message };
-    }
-
-    // Subir la versión comprimida
-    const { error: uploadError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(filename, compressedBuffer, {
-        contentType: downloadData.type,
-        upsert: true
-      });
-
-    if (uploadError) {
-      console.error(`  ❌ Error subiendo comprimida:`, uploadError.message);
-      return { success: false, error: uploadError.message };
-    }
-
-    // Limpiar archivo temporal
-    await fs.unlink(tempPath);
-
-    console.log(`  ✅ Comprimida exitosamente`);
-    return { success: true, originalSize, compressedSize, savings: parseFloat(savings) };
-
-  } catch (error) {
-    console.error(`  ❌ Error procesando ${filename}:`, error.message);
-    return { success: false, error: error.message };
+    if (data.length < PAGE_SIZE) break
+    offset += PAGE_SIZE
   }
+
+  return files
+}
+
+async function processFile(filename) {
+  const { data: downloadData, error: downloadError } = await supabase.storage
+    .from(BUCKET_NAME)
+    .download(filename)
+
+  if (downloadError || !downloadData) {
+    return { success: false, error: downloadError?.message || 'download null' }
+  }
+
+  const originalBuffer = Buffer.from(await downloadData.arrayBuffer())
+  const originalSize = originalBuffer.length
+
+  const compressedBuffer = await compressImage(originalBuffer, filename)
+  const compressedSize = compressedBuffer.length
+  const savings = originalSize === 0 ? 0 : ((originalSize - compressedSize) / originalSize) * 100
+
+  if (savings < SAVINGS_THRESHOLD) {
+    return { success: true, skipped: true, originalSize, compressedSize }
+  }
+
+  const { error: deleteError } = await supabase.storage
+    .from(BUCKET_NAME)
+    .remove([filename])
+
+  if (deleteError) {
+    return { success: false, error: `delete: ${deleteError.message}` }
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from(BUCKET_NAME)
+    .upload(filename, compressedBuffer, {
+      contentType: downloadData.type,
+      upsert: true,
+    })
+
+  if (uploadError) {
+    // intento restaurar el original si el upload falla
+    await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(filename, originalBuffer, { contentType: downloadData.type, upsert: true })
+    return { success: false, error: `upload: ${uploadError.message}` }
+  }
+
+  return { success: true, originalSize, compressedSize, savings }
 }
 
 async function main() {
-  console.log('🚀 Iniciando compresión de imágenes existentes...\n');
+  console.log('Comprimiendo imagenes del bucket', BUCKET_NAME)
 
-  await ensureTempDir();
+  await fs.mkdir(TEMP_DIR, { recursive: true })
 
-  try {
-    // Listar todos los archivos del bucket
-    const { data: files, error: listError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .list('posts', {
-        limit: 1000,
-        sortBy: { column: 'created_at', order: 'desc' }
-      });
+  const files = await listAllFiles('')
+  console.log(`Encontrados ${files.length} archivos\n`)
 
-    if (listError) {
-      console.error('❌ Error listando archivos:', listError);
-      process.exit(1);
+  const stats = { total: files.length, processed: 0, skipped: 0, failed: 0, original: 0, compressed: 0 }
+
+  for (let i = 0; i < files.length; i++) {
+    const filename = files[i]
+    process.stdout.write(`[${i + 1}/${files.length}] ${filename} ... `)
+
+    const r = await processFile(filename)
+
+    if (!r.success) {
+      stats.failed++
+      console.log(`FAIL (${r.error})`)
+      continue
     }
 
-    if (!files || files.length === 0) {
-      console.log('ℹ️  No se encontraron imágenes en el bucket');
-      return;
+    stats.processed++
+    if (r.skipped) {
+      stats.skipped++
+      console.log(`skip (${formatBytes(r.originalSize)} -> ${formatBytes(r.compressedSize)})`)
+      continue
     }
 
-    console.log(`📊 Encontradas ${files.length} imágenes en el bucket\n`);
+    stats.original += r.originalSize
+    stats.compressed += r.compressedSize
+    console.log(`${formatBytes(r.originalSize)} -> ${formatBytes(r.compressedSize)} (-${r.savings.toFixed(1)}%)`)
 
-    let stats = {
-      total: files.length,
-      processed: 0,
-      failed: 0,
-      skipped: 0,
-      totalOriginalSize: 0,
-      totalCompressedSize: 0
-    };
-
-    // Procesar cada imagen
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const filename = `posts/${file.name}`;
-
-      console.log(`[${i + 1}/${files.length}]`);
-
-      const result = await processImage({ name: filename });
-
-      if (result.success) {
-        stats.processed++;
-        if (result.skipped) {
-          stats.skipped++;
-        }
-        if (result.originalSize && result.compressedSize) {
-          stats.totalOriginalSize += result.originalSize;
-          stats.totalCompressedSize += result.compressedSize;
-        }
-      } else {
-        stats.failed++;
-      }
-
-      // Pequeña pausa para no sobrecargar la API
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-    // Resumen final
-    console.log('\n' + '='.repeat(60));
-    console.log('📈 RESUMEN DE COMPRESIÓN');
-    console.log('='.repeat(60));
-    console.log(`Total de imágenes: ${stats.total}`);
-    console.log(`Procesadas: ${stats.processed}`);
-    console.log(`Omitidas (sin ahorro): ${stats.skipped}`);
-    console.log(`Fallidas: ${stats.failed}`);
-    console.log(`\nTamaño total original: ${formatBytes(stats.totalOriginalSize)}`);
-    console.log(`Tamaño total comprimido: ${formatBytes(stats.totalCompressedSize)}`);
-    
-    if (stats.totalOriginalSize > 0) {
-      const totalSavings = ((stats.totalOriginalSize - stats.totalCompressedSize) / stats.totalOriginalSize * 100).toFixed(2);
-      const savedSpace = stats.totalOriginalSize - stats.totalCompressedSize;
-      console.log(`\n💾 Ahorro total: ${formatBytes(savedSpace)} (${totalSavings}%)`);
-    }
-    console.log('='.repeat(60));
-
-  } catch (error) {
-    console.error('\n❌ Error fatal:', error);
-    process.exit(1);
-  } finally {
-    await cleanupTempDir();
+    await new Promise((res) => setTimeout(res, 200))
   }
+
+  console.log('\n' + '='.repeat(60))
+  console.log('RESUMEN')
+  console.log('='.repeat(60))
+  console.log(`Total: ${stats.total}`)
+  console.log(`Procesados: ${stats.processed}`)
+  console.log(`Omitidos (<5% ahorro): ${stats.skipped}`)
+  console.log(`Fallidos: ${stats.failed}`)
+
+  if (stats.original > 0) {
+    const saved = stats.original - stats.compressed
+    const pct = ((saved / stats.original) * 100).toFixed(2)
+    console.log(`\nOriginal: ${formatBytes(stats.original)}`)
+    console.log(`Comprimido: ${formatBytes(stats.compressed)}`)
+    console.log(`Ahorro: ${formatBytes(saved)} (${pct}%)`)
+  }
+
+  await fs.rm(TEMP_DIR, { recursive: true, force: true })
 }
 
-// Verificar que sharp esté instalado
-try {
-  require.resolve('sharp');
-} catch (e) {
-  console.error('❌ Sharp no está instalado. Ejecuta: npm install sharp');
-  process.exit(1);
-}
+try { require.resolve('sharp') } catch { console.error('Instala sharp: npm i sharp'); process.exit(1) }
+try { require.resolve('dotenv') } catch { console.error('Instala dotenv: npm i dotenv'); process.exit(1) }
 
-// Verificar que dotenv esté instalado
-try {
-  require.resolve('dotenv');
-} catch (e) {
-  console.error('❌ dotenv no está instalado. Ejecuta: npm install dotenv');
-  process.exit(1);
-}
-
-// Ejecutar el script
-main().catch(console.error);
+main().catch((e) => { console.error(e); process.exit(1) })
