@@ -280,6 +280,7 @@ export default function SubmitPage() {
 
     if (uploadError) {
       console.error('Error uploading image:', uploadError)
+      alert(`No se pudo subir la imagen: ${uploadError.message}`)
       return null
     }
 

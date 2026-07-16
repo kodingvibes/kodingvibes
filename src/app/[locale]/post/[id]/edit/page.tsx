@@ -322,7 +322,7 @@ export default function EditPostPage() {
 
     if (uploadError) {
       console.error('Error uploading image:', uploadError)
-      return null
+      throw new Error(`No se pudo subir la imagen: ${uploadError.message}`)
     }
 
     const { data: { publicUrl } } = supabase.storage
@@ -436,8 +436,9 @@ export default function EditPostPage() {
 
       router.push(`/post/${postId}`)
       router.refresh()
-    } catch {
-      setError('Error al actualizar el post')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error al actualizar el post'
+      setError(message)
       setSaving(false)
     }
   }
