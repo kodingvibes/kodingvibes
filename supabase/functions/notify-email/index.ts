@@ -164,7 +164,7 @@ serve(async (req) => {
       })
     }
 
-    const siteUrl = Deno.env.get('SITE_URL') || 'https://www.madtrackers.com'
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://www.kodingvibes.com'
     const postUrl = n.post_id ? `${siteUrl}/post/${n.post_id}` : siteUrl
     const body = buildEmailBody(n, postUrl)
     await sendViaBrevo(brevoApiKey, recipient.email, body)
