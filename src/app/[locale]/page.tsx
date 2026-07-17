@@ -165,7 +165,10 @@ export default function Home() {
   // Fetch popular posts for hero carousel
   useEffect(() => {
     const fetchHeroPopularPosts = async () => {
-      // Fetch top 5 most voted posts from all public groups
+      const oneMonthAgo = new Date()
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+
+      // Fetch top 5 most voted posts from the last month
       const { data: popularPosts, error } = await supabase
         .from('posts')
         .select(`
@@ -176,6 +179,7 @@ export default function Home() {
         .eq('is_deleted', false)
         .eq('status', 'published')
         .gte('vote_count', 1)
+        .gte('created_at', oneMonthAgo.toISOString())
         .order('vote_count', { ascending: false })
         .limit(5)
 
