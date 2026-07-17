@@ -260,6 +260,7 @@ export type Database = {
           banner_url: string | null
           created_at: string
           email: string
+          email_notifications: boolean
           id: string
           is_admin: boolean
           name: string | null
@@ -271,6 +272,7 @@ export type Database = {
           banner_url?: string | null
           created_at?: string
           email: string
+          email_notifications?: boolean
           id: string
           is_admin?: boolean
           name?: string | null
@@ -282,6 +284,7 @@ export type Database = {
           banner_url?: string | null
           created_at?: string
           email?: string
+          email_notifications?: boolean
           id?: string
           is_admin?: boolean
           name?: string | null

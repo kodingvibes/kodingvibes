@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
-import { User, Save, ArrowLeft, AtSign, AlertCircle, Users, Settings, KeyRound, Copy, Bot, Power, Check, Trash2, Upload, X } from 'lucide-react'
+import { User, Save, ArrowLeft, AtSign, AlertCircle, Users, Settings, KeyRound, Copy, Bot, Power, Check, Trash2, Upload, X, Bell, BellOff } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { LoadingSpinner } from '@/components/ui/Loading'
@@ -20,6 +20,7 @@ interface Profile {
   username: string | null
   avatar_url: string | null
   banner_url: string | null
+  email_notifications: boolean
 }
 
 type ProfileUpsert = {
@@ -29,6 +30,7 @@ type ProfileUpsert = {
   username: string | null
   avatar_url: string | null
   banner_url: string | null
+  email_notifications: boolean
 }
 
 interface Group {
@@ -319,6 +321,8 @@ export default function ProfilePage() {
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [newBannerFile, setNewBannerFile] = useState<File | null>(null)
   const [removeBanner, setRemoveBanner] = useState(false)
+  const [emailNotifications, setEmailNotifications] = useState(true)
+  const [savingEmailPref, setSavingEmailPref] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -360,6 +364,7 @@ export default function ProfilePage() {
         username: newUsername,
         avatar_url: initialAvatarUrl,
         banner_url: null,
+        email_notifications: true,
       })
       .select()
       .single()
@@ -379,6 +384,7 @@ export default function ProfilePage() {
       setBannerPreview(data.banner_url || null)
       setNewBannerFile(null)
       setRemoveBanner(false)
+      setEmailNotifications(data.email_notifications ?? true)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     }
@@ -505,6 +511,7 @@ export default function ProfilePage() {
           setBannerPreview(data.banner_url || null)
           setNewBannerFile(null)
           setRemoveBanner(false)
+          setEmailNotifications(data.email_notifications ?? true)
         } else {
           // Perfil no existe, crearlo automáticamente
           await createProfile(user.id, user.email || '', metadataAvatar)
@@ -885,6 +892,7 @@ export default function ProfilePage() {
         name: name || null,
         avatar_url: finalAvatarUrl,
         banner_url: finalBannerUrl,
+        email_notifications: emailNotifications,
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
@@ -910,6 +918,33 @@ export default function ProfilePage() {
     }
 
     setSaving(false)
+  }
+
+  const handleToggleEmailPref = async (nextValue: boolean) => {
+    if (!userId) return
+    const previous = emailNotifications
+    setEmailNotifications(nextValue)
+    setSavingEmailPref(true)
+    setError(null)
+
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        email_notifications: nextValue,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId)
+
+    if (updateError) {
+      console.error('Error updating email preference:', updateError)
+      setEmailNotifications(previous)
+      setError('No se pudo actualizar la preferencia de email')
+    } else {
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
+    }
+
+    setSavingEmailPref(false)
   }
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1188,6 +1223,44 @@ export default function ProfilePage() {
                   placeholder="Tu nombre"
                   className="w-full p-3 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                 />
+              </div>
+
+              <div className="border-t border-border pt-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 mt-0.5">
+                    {emailNotifications ? (
+                      <Bell className="h-5 w-5 text-primary" />
+                    ) : (
+                      <BellOff className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <label htmlFor="email-notifications" className="block text-sm font-medium text-foreground">
+                      Notificaciones por email
+                    </label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Recibí un email cuando alguien responda a tu post o comentario. Está activado por defecto.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    id="email-notifications"
+                    role="switch"
+                    aria-checked={emailNotifications}
+                    onClick={() => handleToggleEmailPref(!emailNotifications)}
+                    disabled={savingEmailPref || !userId}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      emailNotifications ? 'bg-primary' : 'bg-muted'
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        emailNotifications ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-border">
