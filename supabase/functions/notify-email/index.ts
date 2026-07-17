@@ -2,14 +2,13 @@
 //
 // Webhook receiver triggered by Supabase Database Webhooks on
 // INSERT into public.notifications. Sends a transactional email
-// via Mailgun when the notification target user has
+// via Brevo (ex-Sendinblue) when the notification target user has
 // email_notifications = true.
 //
 // Required secrets:
-//   MAILGUN_API_KEY
-//   MAILGUN_DOMAIN      (e.g. "mg.kodingvibes.com" once verified)
-//   MAILGUN_REGION      (default: "us")  -- "us" or "eu"
-//   MAILGUN_FROM        (default: "KodingVibes <noreply@${MAILGUN_DOMAIN}>")
+//   BREVO_API_KEY
+//   BREVO_FROM_EMAIL   (e.g. "noreply@madtrackers.com")
+//   BREVO_FROM_NAME    (default: "KodingVibes")
 //   SUPABASE_URL       (auto)
 //   SUPABASE_SERVICE_ROLE_KEY  (auto)
 //
@@ -47,15 +46,8 @@ interface Recipient {
   email_notifications: boolean
 }
 
-const MAILGUN_REGION = (Deno.env.get('MAILGUN_REGION') || 'us').toLowerCase()
-const MAILGUN_DOMAIN = Deno.env.get('MAILGUN_DOMAIN') || ''
-const FROM = Deno.env.get('MAILGUN_FROM') || `KodingVibes <noreply@${MAILGUN_DOMAIN}>`
-
-function mailgunBaseUrl() {
-  return MAILGUN_REGION === 'eu'
-    ? 'https://api.eu.mailgun.net/v3'
-    : 'https://api.mailgun.net/v3'
-}
+const FROM_NAME = Deno.env.get('BREVO_FROM_NAME') || 'KodingVibes'
+const FROM_EMAIL = Deno.env.get('BREVO_FROM_EMAIL') || ''
 
 function buildEmailBody(n: NotificationRecord, postUrl: string): { subject: string; html: string; text: string } {
   const actor = n.actor_name || 'Alguien'
@@ -100,28 +92,28 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;')
 }
 
-async function sendViaMailgun(apiKey: string, to: string, body: { subject: string; html: string; text: string }) {
-  if (!MAILGUN_DOMAIN) throw new Error('Missing MAILGUN_DOMAIN')
-  const form = new URLSearchParams()
-  form.set('from', FROM)
-  form.set('to', to)
-  form.set('subject', body.subject)
-  form.set('text', body.text)
-  form.set('html', body.html)
+async function sendViaBrevo(apiKey: string, to: string, body: { subject: string; html: string; text: string }) {
+  if (!FROM_EMAIL) throw new Error('Missing BREVO_FROM_EMAIL')
 
-  const url = `${mailgunBaseUrl()}/${MAILGUN_DOMAIN}/messages`
-  const res = await fetch(url, {
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${btoa(`api:${apiKey}`)}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'api-key': apiKey,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
     },
-    body: form.toString(),
+    body: JSON.stringify({
+      sender: { name: FROM_NAME, email: FROM_EMAIL },
+      to: [{ email: to }],
+      subject: body.subject,
+      htmlContent: body.html,
+      textContent: body.text,
+    }),
   })
 
   if (!res.ok) {
     const errText = await res.text()
-    throw new Error(`Mailgun ${res.status}: ${errText}`)
+    throw new Error(`Brevo ${res.status}: ${errText}`)
   }
 }
 
@@ -131,11 +123,11 @@ serve(async (req) => {
   }
 
   try {
-    const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY')
+    const brevoApiKey = Deno.env.get('BREVO_API_KEY')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    if (!mailgunApiKey) throw new Error('Missing MAILGUN_API_KEY')
+    if (!brevoApiKey) throw new Error('Missing BREVO_API_KEY')
     if (!supabaseUrl || !supabaseServiceKey) throw new Error('Missing Supabase env vars')
 
     const payload: WebhookPayload = await req.json()
@@ -172,10 +164,10 @@ serve(async (req) => {
       })
     }
 
-    const siteUrl = Deno.env.get('SITE_URL') || 'https://www.kodingvibes.com'
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://www.madtrackers.com'
     const postUrl = n.post_id ? `${siteUrl}/post/${n.post_id}` : siteUrl
     const body = buildEmailBody(n, postUrl)
-    await sendViaMailgun(mailgunApiKey, recipient.email, body)
+    await sendViaBrevo(brevoApiKey, recipient.email, body)
 
     return new Response(JSON.stringify({ success: true, to: recipient.email }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
