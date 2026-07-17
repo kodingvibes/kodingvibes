@@ -2,12 +2,14 @@
 //
 // Webhook receiver triggered by Supabase Database Webhooks on
 // INSERT into public.notifications. Sends a transactional email
-// via Resend when the notification target user has
+// via Mailgun when the notification target user has
 // email_notifications = true.
 //
 // Required secrets:
-//   RESEND_API_KEY
-//   RESEND_FROM        (default: "KodingVibes <onboarding@resend.dev>")
+//   MAILGUN_API_KEY
+//   MAILGUN_DOMAIN      (e.g. "mg.kodingvibes.com" once verified)
+//   MAILGUN_REGION      (default: "us")  -- "us" or "eu"
+//   MAILGUN_FROM        (default: "KodingVibes <noreply@${MAILGUN_DOMAIN}>")
 //   SUPABASE_URL       (auto)
 //   SUPABASE_SERVICE_ROLE_KEY  (auto)
 //
@@ -45,7 +47,15 @@ interface Recipient {
   email_notifications: boolean
 }
 
-const FROM = Deno.env.get('RESEND_FROM') || 'KodingVibes <onboarding@resend.dev>'
+const MAILGUN_REGION = (Deno.env.get('MAILGUN_REGION') || 'us').toLowerCase()
+const MAILGUN_DOMAIN = Deno.env.get('MAILGUN_DOMAIN') || ''
+const FROM = Deno.env.get('MAILGUN_FROM') || `KodingVibes <noreply@${MAILGUN_DOMAIN}>`
+
+function mailgunBaseUrl() {
+  return MAILGUN_REGION === 'eu'
+    ? 'https://api.eu.mailgun.net/v3'
+    : 'https://api.mailgun.net/v3'
+}
 
 function buildEmailBody(n: NotificationRecord, postUrl: string): { subject: string; html: string; text: string } {
   const actor = n.actor_name || 'Alguien'
@@ -90,25 +100,28 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;')
 }
 
-async function sendViaResend(apiKey: string, to: string, body: { subject: string; html: string; text: string }) {
-  const res = await fetch('https://api.resend.com/emails', {
+async function sendViaMailgun(apiKey: string, to: string, body: { subject: string; html: string; text: string }) {
+  if (!MAILGUN_DOMAIN) throw new Error('Missing MAILGUN_DOMAIN')
+  const form = new URLSearchParams()
+  form.set('from', FROM)
+  form.set('to', to)
+  form.set('subject', body.subject)
+  form.set('text', body.text)
+  form.set('html', body.html)
+
+  const url = `${mailgunBaseUrl()}/${MAILGUN_DOMAIN}/messages`
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
+      'Authorization': `Basic ${btoa(`api:${apiKey}`)}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: JSON.stringify({
-      from: FROM,
-      to: [to],
-      subject: body.subject,
-      html: body.html,
-      text: body.text,
-    }),
+    body: form.toString(),
   })
 
   if (!res.ok) {
     const errText = await res.text()
-    throw new Error(`Resend ${res.status}: ${errText}`)
+    throw new Error(`Mailgun ${res.status}: ${errText}`)
   }
 }
 
@@ -118,11 +131,11 @@ serve(async (req) => {
   }
 
   try {
-    const resendApiKey = Deno.env.get('RESEND_API_KEY')
+    const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    if (!resendApiKey) throw new Error('Missing RESEND_API_KEY')
+    if (!mailgunApiKey) throw new Error('Missing MAILGUN_API_KEY')
     if (!supabaseUrl || !supabaseServiceKey) throw new Error('Missing Supabase env vars')
 
     const payload: WebhookPayload = await req.json()
@@ -162,7 +175,7 @@ serve(async (req) => {
     const siteUrl = Deno.env.get('SITE_URL') || 'https://www.kodingvibes.com'
     const postUrl = n.post_id ? `${siteUrl}/post/${n.post_id}` : siteUrl
     const body = buildEmailBody(n, postUrl)
-    await sendViaResend(resendApiKey, recipient.email, body)
+    await sendViaMailgun(mailgunApiKey, recipient.email, body)
 
     return new Response(JSON.stringify({ success: true, to: recipient.email }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
