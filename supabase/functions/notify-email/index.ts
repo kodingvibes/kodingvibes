@@ -123,6 +123,14 @@ serve(async (req) => {
   }
 
   try {
+    // Diagnostic: get egress IP to authorize in Brevo
+    try {
+      const ipResp = await fetch('https://api.ipify.org?format=json')
+      const ipData = await ipResp.json()
+      console.log('diagnostic egress IP:', JSON.stringify(ipData))
+    } catch (_ipErr) {
+      console.error('diagnostic IP fetch failed:', _ipErr.message)
+    }
     const brevoApiKey = Deno.env.get('BREVO_API_KEY')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
