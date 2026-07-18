@@ -370,7 +370,7 @@ export default function CommentSection({ postId, isAdmin: isAdminProp }: Comment
       const { data, error: commentsError } = await supabase
         .from('comments')
         .select(`
-          id, post_id, user_id, parent_id, content, created_at, updated_at, vote_count, is_deleted, deleted_at,
+          *,
           users:user_id (name, username, email, avatar_url)
         `)
         .eq('post_id', postId)
