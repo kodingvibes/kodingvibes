@@ -617,8 +617,7 @@ export default function CommentSection({ postId, isAdmin: isAdminProp }: Comment
         .from('comments')
         .update({
           is_deleted: true,
-          deleted_at: new Date().toISOString(),
-          content: ''
+          content: '',
         })
         .eq('id', commentId)
         .select('id, is_deleted')
