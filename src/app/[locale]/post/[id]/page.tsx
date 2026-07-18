@@ -101,6 +101,18 @@ export default async function PostPage({ params }: PostPageProps) {
   const { id } = await params
   const supabase = await createClient()
   
+  const { data: { user } } = await supabase.auth.getUser()
+
+  let isAdmin = false
+  if (user) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    isAdmin = Boolean(userData?.is_admin)
+  }
+
   const { data: post } = await supabase
     .from('posts')
     .select(`
@@ -443,7 +455,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
         {/* Comments section */}
         <div className="mt-6">
-          <CommentSection postId={post.id} />
+          <CommentSection postId={post.id} isAdmin={isAdmin} />
         </div>
       </div>
     </main>

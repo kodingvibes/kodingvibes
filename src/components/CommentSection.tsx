@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState, useCallback } from 'react'
 import MarkdownContent from './MarkdownContent'
-import { Send, CornerDownRight, ArrowBigUp, ArrowBigDown, Eye } from 'lucide-react'
+import { Send, CornerDownRight, ArrowBigUp, ArrowBigDown, Eye, MoreVertical, Shield, Trash2 } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 import { validateString, checkUserRateLimit, sanitizeMarkdown } from '@/lib/security/validation'
 import Image from 'next/image'
@@ -35,12 +35,14 @@ interface Comment {
 
 interface CommentSectionProps {
   postId: string
+  isAdmin?: boolean
 }
 
 interface CommentItemProps {
   comment: Comment
   depth?: number
   user: User | null
+  isAdmin: boolean
   replyTo: string | null
   replyContent: string
   loading: boolean
@@ -48,6 +50,8 @@ interface CommentItemProps {
   onReplyContentChange: (value: string) => void
   onSubmitReply: (e: React.FormEvent, commentId: string) => void
   onVote: (commentId: string, value: number) => void
+  onDelete: (commentId: string) => void
+  deletingId: string | null
   userVotes: Map<string, number>
   voteLoading: string | null
 }
@@ -56,6 +60,7 @@ const CommentItem = ({
   comment,
   depth = 0,
   user,
+  isAdmin,
   replyTo,
   replyContent,
   loading,
@@ -63,9 +68,12 @@ const CommentItem = ({
   onReplyContentChange,
   onSubmitReply,
   onVote,
+  onDelete,
+  deletingId,
   userVotes,
   voteLoading
 }: CommentItemProps) => {
+  const [menuOpen, setMenuOpen] = useState(false)
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -81,8 +89,22 @@ const CommentItem = ({
 
   const userVote = userVotes.get(comment.id)
   const isVoting = voteLoading === comment.id
+  const isDeleting = deletingId === comment.id
   const avatarUrl = comment.users?.avatar_url || null
   const profileHref = getPublicProfileHref(comment.users?.username, comment.user_id)
+  const isOwner = !!user && user.id === comment.user_id
+  const canModerate = isAdmin || isOwner
+  const isDeleted = (comment as unknown as { is_deleted?: boolean }).is_deleted === true
+
+  console.log('[CommentItem]', {
+    commentId: comment.id,
+    commentUserId: comment.user_id,
+    authUserId: user?.id,
+    isAdmin,
+    isOwner,
+    canModerate,
+    isDeleted,
+  })
 
   return (
     <div className={`${depth > 0 ? 'ml-6 sm:ml-8 border-l-2 border-border pl-4' : ''}`}>
@@ -145,17 +167,70 @@ const CommentItem = ({
             </div>
 
             <div className="text-foreground text-sm">
-              <MarkdownContent content={comment.content} />
+              {isDeleted ? (
+                <p className="italic text-muted-foreground text-sm">[Comentario eliminado]</p>
+              ) : (
+                <MarkdownContent content={comment.content} />
+              )}
             </div>
 
-            {user && (
-              <button
-                onClick={() => onReplyClick(comment.id)}
-                className="mt-3 text-xs text-muted-foreground hover:text-primary font-medium transition-colors"
-              >
-                {replyTo === comment.id ? 'Cancelar' : 'Responder'}
-              </button>
-            )}
+            <div className="mt-3 flex items-center gap-3">
+              {user && !isDeleted && (
+                <button
+                  onClick={() => onReplyClick(comment.id)}
+                  className="text-xs text-muted-foreground hover:text-primary font-medium transition-colors"
+                >
+                  {replyTo === comment.id ? 'Cancelar' : 'Responder'}
+                </button>
+              )}
+
+              {canModerate && !isDeleted && (
+                <div className="relative ml-auto">
+                  <button
+                    onClick={() => setMenuOpen(menuOpen => !menuOpen)}
+                    className="p-1 rounded-md hover:bg-muted text-muted-foreground transition-colors"
+                    aria-label="Opciones del comentario"
+                    title="Moderar comentario"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+
+                  {menuOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setMenuOpen(false)}
+                        aria-hidden
+                      />
+                      <div className="absolute right-0 mt-1 w-44 bg-card border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
+                        <div className="px-3 py-1.5 text-[10px] uppercase tracking-wide text-muted-foreground border-b border-border flex items-center gap-1">
+                          {isAdmin && (
+                            <Shield className="h-3 w-3 text-purple-600" />
+                          )}
+                          <span>{isAdmin ? 'Moderación admin' : 'Tus comentarios'}</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setMenuOpen(false)
+                            const confirmMsg = isAdmin && !isOwner
+                              ? '¿Eliminar este comentario como administrador? Esta acción lo ocultará.'
+                              : '¿Eliminar este comentario? Esta acción lo ocultará.'
+                            if (confirm(confirmMsg)) {
+                              onDelete(comment.id)
+                            }
+                          }}
+                          disabled={isDeleting}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span>{isDeleting ? 'Eliminando...' : 'Eliminar'}</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
             {replyTo === comment.id && (
               <form onSubmit={(e) => onSubmitReply(e, comment.id)} className="mt-3 animate-slide-up">
@@ -191,6 +266,7 @@ const CommentItem = ({
               comment={reply}
               depth={depth + 1}
               user={user}
+              isAdmin={isAdmin}
               replyTo={replyTo}
               replyContent={replyContent}
               loading={loading}
@@ -198,6 +274,8 @@ const CommentItem = ({
               onReplyContentChange={onReplyContentChange}
               onSubmitReply={onSubmitReply}
               onVote={onVote}
+              onDelete={onDelete}
+              deletingId={deletingId}
               userVotes={userVotes}
               voteLoading={voteLoading}
             />
@@ -243,7 +321,7 @@ const HiddenComment = ({
   )
 }
 
-export default function CommentSection({ postId }: CommentSectionProps) {
+export default function CommentSection({ postId, isAdmin: isAdminProp }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState('')
   const [replyTo, setReplyTo] = useState<string | null>(null)
@@ -254,7 +332,11 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   const [voteLoading, setVoteLoading] = useState<string | null>(null)
   const [visibleHidden, setVisibleHidden] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
+  const [isAdminResolved, setIsAdminResolved] = useState<boolean>(isAdminProp ?? false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const supabase = createClient()
+
+  const isAdmin = typeof isAdminProp === 'boolean' ? isAdminProp : isAdminResolved
 
   const fetchUserVotes = useCallback(async (currentUser: User) => {
     if (!currentUser) return
@@ -288,7 +370,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
       const { data, error: commentsError } = await supabase
         .from('comments')
         .select(`
-          *,
+          id, post_id, user_id, parent_id, content, created_at, updated_at, vote_count, is_deleted, deleted_at,
           users:user_id (name, username, email, avatar_url)
         `)
         .eq('post_id', postId)
@@ -336,15 +418,29 @@ export default function CommentSection({ postId }: CommentSectionProps) {
 
     const initialize = async () => {
       try {
+        // Resolve session and admin status synchronously first so the
+        // first render of <CommentItem> already knows the current user.
         const { data: { user: currentUser } } = await supabase.auth.getUser()
-        
-        if (isMounted) {
-          setUser(currentUser)
-          await fetchComments()
-          
-          if (currentUser) {
-            await fetchUserVotes(currentUser)
-          }
+        if (!isMounted) return
+
+        setUser(currentUser)
+
+        let resolvedAdmin = Boolean(isAdminProp)
+        if (currentUser && isAdminProp === undefined) {
+          const { data } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', currentUser.id)
+            .single()
+          resolvedAdmin = Boolean(data?.is_admin)
+        }
+        if (!isMounted) return
+        setIsAdminResolved(resolvedAdmin)
+
+        await fetchComments()
+
+        if (currentUser) {
+          await fetchUserVotes(currentUser)
         }
       } catch (err) {
         console.error('Error initializing component:', err)
@@ -359,7 +455,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
     return () => {
       isMounted = false
     }
-  }, [postId, supabase, fetchComments, fetchUserVotes])
+  }, [postId, supabase, fetchComments, fetchUserVotes, isAdminProp])
 
   const handleVote = async (commentId: string, value: number) => {
     if (!user) {
@@ -508,6 +604,47 @@ export default function CommentSection({ postId }: CommentSectionProps) {
     setReplyContent(value)
   }
 
+  const handleDeleteComment = async (commentId: string) => {
+    if (!user) {
+      alert('Debes iniciar sesión para eliminar comentarios')
+      return
+    }
+
+    setDeletingId(commentId)
+    try {
+      console.debug('[CommentSection] deleting', { commentId, isAdmin, userId: user.id })
+      const { data, error: deleteError } = await supabase
+        .from('comments')
+        .update({
+          is_deleted: true,
+          deleted_at: new Date().toISOString(),
+          content: ''
+        })
+        .eq('id', commentId)
+        .select('id, is_deleted')
+
+      console.debug('[CommentSection] delete result', { data, error: deleteError })
+
+      if (deleteError) {
+        console.error('Error deleting comment:', deleteError)
+        alert(`Error al eliminar el comentario: ${deleteError.message}`)
+        return
+      }
+
+      if (!data || data.length === 0) {
+        alert('No se pudo eliminar el comentario (probable problema de permisos).')
+        return
+      }
+
+      await fetchComments()
+    } catch (err) {
+      console.error('Unexpected error deleting comment:', err)
+      alert('Error al eliminar el comentario')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   const handleShowHidden = (commentId: string) => {
     setVisibleHidden(prev => new Set(prev).add(commentId))
   }
@@ -563,6 +700,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
             comment={comment}
             depth={depth}
             user={user}
+            isAdmin={isAdmin}
             replyTo={replyTo}
             replyContent={replyContent}
             loading={loading}
@@ -570,6 +708,8 @@ export default function CommentSection({ postId }: CommentSectionProps) {
             onReplyContentChange={handleReplyContentChange}
             onSubmitReply={handleSubmit}
             onVote={handleVote}
+            onDelete={handleDeleteComment}
+            deletingId={deletingId}
             userVotes={userVotes}
             voteLoading={voteLoading}
           />
