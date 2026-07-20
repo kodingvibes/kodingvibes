@@ -145,7 +145,10 @@ export default function Header() {
 
   const handleLogin = async () => {
     const baseUrl = window.location.origin.replace(/\/$/, '')
-    const redirectTo = `${baseUrl}/auth/callback`
+    const next = typeof window !== 'undefined' ? localStorage.getItem('late_redirect') : null
+    const redirectTo = next
+      ? `${baseUrl}/auth/callback?next=${encodeURIComponent(next)}`
+      : `${baseUrl}/auth/callback`
     
     await supabase.auth.signInWithOAuth({
       provider: 'google',
