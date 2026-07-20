@@ -16,11 +16,13 @@ export async function GET() {
     return NextResponse.json({ error: 'SSO misconfigured' }, { status: 500 })
   }
 
+  const meta = user.user_metadata as Record<string, string | undefined>
+
   const token = await new SignJWT({
     sub: user.id,
     email: user.email,
-    name: (user.user_metadata as any)?.name || user.email,
-    avatar: (user.user_metadata as any)?.avatar_url,
+    name: meta?.name || user.email || '',
+    avatar: meta?.avatar_url,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

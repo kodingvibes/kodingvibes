@@ -320,14 +320,14 @@ export default function Header() {
                         <Settings className="h-4 w-4" />
                         <span>{t('profile')}</span>
                       </Link>
-                      <a
+                      <Link
                         href="/api/sso/irc-token"
                         onClick={() => setIsMenuOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                       >
                         <MessageCircle className="h-4 w-4" />
                         <span>IRC</span>
-                      </a>
+                      </Link>
                       <Link
                         href="/drafts"
                         onClick={() => setIsMenuOpen(false)}
@@ -509,14 +509,14 @@ export default function Header() {
                   <span className="font-medium">{t('profile')}</span>
                 </Link>
                 
-                <a
+                <Link
                   href="/api/sso/irc-token"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted transition-colors text-foreground"
                 >
                   <MessageCircle className="h-5 w-5" />
                   <span className="font-medium">IRC</span>
-                </a>
+                </Link>
                 
                 {isAdmin && (
                   <Link
