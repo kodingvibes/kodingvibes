@@ -179,8 +179,22 @@ export default function Header() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    router.refresh()
     setIsMenuOpen(false)
+    setIsMobileMenuOpen(false)
+    // Clear late.kodingvibes.com IRC session by hitting its URL with a
+    // logout hint. The IRC SPA detects this param and wipes its
+    // localStorage before the auth check runs.
+    const lateIrcUrl = 'https://late.kodingvibes.com/irc?logout=1'
+    // Use a hidden iframe to clear the IRC localStorage without leaving
+    // kodingvibes (no full navigation away from the current page).
+    const iframe = document.createElement('iframe')
+    iframe.src = lateIrcUrl
+    iframe.style.display = 'none'
+    document.body.appendChild(iframe)
+    setTimeout(() => {
+      iframe.remove()
+      router.refresh()
+    }, 1500)
   }
 
   return (
