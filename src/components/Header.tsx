@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
-import { Plus, Sun, Moon, LogOut, User as UserIcon, Settings, Hash, Crown, Gamepad2, Menu, X, FileText } from 'lucide-react'
+import { Plus, Sun, Moon, LogOut, User as UserIcon, Settings, Hash, Crown, Gamepad2, Menu, X, FileText, MessageCircle } from 'lucide-react'
 import { useTheme } from '@/providers/theme-provider'
 import { LogoFull } from '@/components/icons/Logo'
 import { NotificationBell } from '@/components/NotificationBell'
@@ -320,6 +320,14 @@ export default function Header() {
                         <Settings className="h-4 w-4" />
                         <span>{t('profile')}</span>
                       </Link>
+                      <a
+                        href="/api/sso/irc-token"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        <span>IRC</span>
+                      </a>
                       <Link
                         href="/drafts"
                         onClick={() => setIsMenuOpen(false)}
@@ -500,6 +508,15 @@ export default function Header() {
                   <Settings className="h-5 w-5" />
                   <span className="font-medium">{t('profile')}</span>
                 </Link>
+                
+                <a
+                  href="/api/sso/irc-token"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted transition-colors text-foreground"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  <span className="font-medium">IRC</span>
+                </a>
                 
                 {isAdmin && (
                   <Link
