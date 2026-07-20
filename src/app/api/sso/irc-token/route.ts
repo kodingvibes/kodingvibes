@@ -7,7 +7,7 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.kodingvibes.com'}?auth=required`
+      `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.kodingvibes.com'}?auth_required=1&next=${encodeURIComponent('/api/sso/irc-token')}`
     )
   }
 
