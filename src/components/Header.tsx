@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { Plus, Sun, Moon, LogOut, User as UserIcon, Settings, Hash, Crown, Gamepad2, Menu, X, FileText, MessageCircle } from 'lucide-react'
 import { useTheme } from '@/providers/theme-provider'
@@ -38,7 +38,13 @@ export default function Header() {
   const t = useTranslations('nav')
   const tCommon = useTranslations('common')
   const tProfile = useTranslations('profile')
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const netRunUrl = 'https://netrun.kodingvibes.com'
+
+  const authRequired = searchParams.get('auth_required') === '1'
+  const nextFromUrl = searchParams.get('next')
+  const [showAuthModal, setShowAuthModal] = useState(false)
   
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -50,7 +56,6 @@ export default function Header() {
   const [userChannels, setUserChannels] = useState<ChannelInfo[]>([])
   const userMenuRef = useRef<HTMLDivElement>(null)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
-  const router = useRouter()
   const supabase = createClient()
   const { theme, toggleTheme } = useTheme()
 
@@ -145,10 +150,13 @@ export default function Header() {
 
   const handleLogin = async () => {
     const baseUrl = window.location.origin.replace(/\/$/, '')
-    const next = typeof window !== 'undefined' ? localStorage.getItem('late_redirect') : null
+    const next = nextFromUrl || (typeof window !== 'undefined' ? localStorage.getItem('late_redirect') : null)
+    if (next) localStorage.setItem('late_redirect', next)
     const redirectTo = next
       ? `${baseUrl}/auth/callback?next=${encodeURIComponent(next)}`
       : `${baseUrl}/auth/callback`
+    
+    setShowAuthModal(false)
     
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -157,6 +165,17 @@ export default function Header() {
       },
     })
   }
+
+  // Show auth modal when user lands here with ?auth_required=1
+  // and isn't already logged in
+  useEffect(() => {
+    if (!mounted) return
+    if (authRequired && !user) {
+      setShowAuthModal(true)
+    } else {
+      setShowAuthModal(false)
+    }
+  }, [authRequired, user, mounted])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -553,6 +572,37 @@ export default function Header() {
         >
           <Plus className="h-7 w-7" strokeWidth={3} />
         </Link>
+      )}
+
+      {showAuthModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                <MessageCircle className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="text-lg font-semibold text-foreground">Inicia sesión para chatear</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              Para acceder al chat de late.sh necesitas iniciar sesión. Después de iniciar
+              sesión, te llevaremos de vuelta automáticamente.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowAuthModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-border text-foreground hover:bg-muted transition-colors text-sm font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleLogin}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold hover:opacity-90 transition-opacity text-sm"
+              >
+                Iniciar sesión
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   )
