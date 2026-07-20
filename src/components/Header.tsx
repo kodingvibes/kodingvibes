@@ -326,7 +326,7 @@ export default function Header() {
                         className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                       >
                         <MessageCircle className="h-4 w-4" />
-                        <span>IRC</span>
+                        <span>Chat</span>
                       </Link>
                       <Link
                         href="/drafts"
@@ -515,7 +515,7 @@ export default function Header() {
                   className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted transition-colors text-foreground"
                 >
                   <MessageCircle className="h-5 w-5" />
-                  <span className="font-medium">IRC</span>
+                  <span className="font-medium">Chat</span>
                 </Link>
                 
                 {isAdmin && (
