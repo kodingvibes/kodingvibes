@@ -18,11 +18,20 @@ export async function GET() {
 
   const meta = user.user_metadata as Record<string, string | undefined>
 
+  // ponytail: late-auth-service reads `user_metadata.avatar_url`
+  // (Supabase convention) out of the JWT payload to seed the
+  // shell avatar on first login. We forward the metadata as a
+  // nested object so future fields (full_name, etc.) travel too
+  // without touching the bridge.
+  const userMetadata: Record<string, string | undefined> = {}
+  if (meta?.avatar_url) userMetadata.avatar_url = meta.avatar_url
+  if (meta?.name) userMetadata.name = meta.name
+
   const token = await new SignJWT({
     sub: user.id,
     email: user.email,
     name: meta?.name || user.email || '',
-    avatar: meta?.avatar_url,
+    user_metadata: userMetadata,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
