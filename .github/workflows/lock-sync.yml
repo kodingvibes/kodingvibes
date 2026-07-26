@@ -1,0 +1,32 @@
+name: Lockfile Healer
+
+on:
+  workflow_dispatch: # Permite ejecución manual
+  schedule:
+    - cron: '0 0 * * 0' # Se ejecuta cada domingo a medianoche
+
+jobs:
+  heal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Sync Dependencies
+        run: |
+          npm install
+          npm run lint # Opcional: verificar que el lock no rompa el lint
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "motoko-section9"
+          git config --global user.email "madkoding+motoko@gmail.com"
+          git add package-lock.json
+          git commit -m "chore: lockfile healer - synchronize package-lock.json with package.json" || echo "No changes to commit"
+          git push origin main
