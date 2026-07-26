@@ -27,7 +27,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.MOTOKO_PAT }}
         run: |
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/kodingvibes/kodingvibes.git
+          git remote set-url origin https://motoko-section9:${GH_TOKEN}@github.com/kodingvibes/kodingvibes.git
           git config --global user.name "motoko-section9"
           git config --global user.email "madkoding+motoko@gmail.com"
           git add package-lock.json
