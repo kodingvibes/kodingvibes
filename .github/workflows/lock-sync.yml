@@ -24,9 +24,15 @@ jobs:
           npm run lint # Opcional: verificar que el lock no rompa el lint
 
       - name: Commit and Push changes
+        env:
+          GH_TOKEN: ${{ secrets.MOTOKO_PAT }}
         run: |
           git config --global user.name "motoko-section9"
           git config --global user.email "madkoding+motoko@gmail.com"
           git add package-lock.json
-          git commit -m "chore: lockfile healer - synchronize package-lock.json with package.json" || echo "No changes to commit"
-          git push https://motoko-section9:${{ secrets.MOTOKO_PAT }}@github.com/kodingvibes/kodingvibes.git main
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "chore: lockfile healer - synchronize package-lock.json with package.json"
+          gh api repos/kodingvibes/kodingvibes/contents/package-lock.json \
+            -f message="chore: lockfile healer - synchronize package-lock.json with package.json" \
+            -f content="$(base64 -w0 package-lock.json)" \
+            -f sha="$(gh api repos/kodingvibes/kodingvibes/contents/package-lock.json --jq '.sha' 2>/dev/null || echo '')"
