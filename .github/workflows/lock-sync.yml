@@ -24,12 +24,9 @@ jobs:
           npm run lint # Opcional: verificar que el lock no rompa el lint
 
       - name: Commit and Push changes
-        env:
-          PAT_TOKEN: ${{ secrets.MOTOKO_PAT }}
         run: |
-          git remote set-url origin https://motoko-section9:${PAT_TOKEN}@github.com/kodingvibes/kodingvibes.git
           git config --global user.name "motoko-section9"
           git config --global user.email "madkoding+motoko@gmail.com"
           git add package-lock.json
           git commit -m "chore: lockfile healer - synchronize package-lock.json with package.json" || echo "No changes to commit"
-          git push origin main
+          git push https://motoko-section9:${{ secrets.MOTOKO_PAT }}@github.com/kodingvibes/kodingvibes.git main
