@@ -37,7 +37,7 @@ export async function GET() {
     .setIssuedAt()
     .setExpirationTime('5m')
     .setIssuer('kodingvibes.com')
-    .setAudience('late.sh')
+    .setAudience('late.kodingvibes.com')
     .sign(new TextEncoder().encode(secret))
 
   return NextResponse.redirect(`https://late.kodingvibes.com/irc?token=${token}`)
