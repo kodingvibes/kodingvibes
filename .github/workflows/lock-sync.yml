@@ -32,10 +32,15 @@ jobs:
           git add package-lock.json
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore: lockfile healer - synchronize package-lock.json with package.json"
-          SHA=$(gh api repos/kodingvibes/kodingvibes/contents/package-lock.json --jq '.sha' 2>/dev/null || echo "")
-          jq -n \
-            --arg msg "chore: lockfile healer - synchronize package-lock.json with package.json" \
-            --arg content "$(base64 -w0 package-lock.json)" \
-            --arg sha "$SHA" \
-            '{message: $msg, content: $content, sha: $sha}' | \
-          gh api repos/kodingvibes/kodingvibes/contents/package-lock.json --input -
+          python3 -c "
+import base64, json, subprocess
+with open('package-lock.json', 'rb') as f:
+    content = base64.b64encode(f.read()).decode()
+sha = subprocess.run(['gh', 'api', 'repos/kodingvibes/kodingvibes/contents/package-lock.json', '--jq', '.sha'], capture_output=True, text=True).stdout.strip()
+payload = {'message': 'chore: lockfile healer - synchronize package-lock.json with package.json', 'content': content}
+if sha:
+    payload['sha'] = sha
+with open('/tmp/payload.json', 'w') as f:
+    json.dump(payload, f)
+"
+          gh api repos/kodingvibes/kodingvibes/contents/package-lock.json --input /tmp/payload.json
