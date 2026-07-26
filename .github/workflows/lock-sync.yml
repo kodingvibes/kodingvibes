@@ -1,9 +1,12 @@
 name: Lockfile Healer
 
 on:
-  workflow_dispatch: # Permite ejecución manual
+  workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 0' # Se ejecuta cada domingo a medianoche
+    - cron: '0 0 * * 0'
+
+permissions:
+  contents: write
 
 jobs:
   heal:
@@ -12,6 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.MOTOKO_PAT }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -19,28 +23,13 @@ jobs:
           node-version: '20'
 
       - name: Sync Dependencies
-        run: |
-          npm install
-          npm run lint # Opcional: verificar que el lock no rompa el lint
+        run: npm install
 
       - name: Commit and Push changes
-        env:
-          GH_TOKEN: ${{ secrets.MOTOKO_PAT }}
         run: |
           git config --global user.name "motoko-section9"
           git config --global user.email "madkoding+motoko@gmail.com"
           git add package-lock.json
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore: lockfile healer - synchronize package-lock.json with package.json"
-          python3 -c "
-import base64, json, subprocess
-with open('package-lock.json', 'rb') as f:
-    content = base64.b64encode(f.read()).decode()
-sha = subprocess.run(['gh', 'api', 'repos/kodingvibes/kodingvibes/contents/package-lock.json', '--jq', '.sha'], capture_output=True, text=True).stdout.strip()
-payload = {'message': 'chore: lockfile healer - synchronize package-lock.json with package.json', 'content': content}
-if sha:
-    payload['sha'] = sha
-with open('/tmp/payload.json', 'w') as f:
-    json.dump(payload, f)
-"
-          gh api repos/kodingvibes/kodingvibes/contents/package-lock.json --input /tmp/payload.json
+          git push
