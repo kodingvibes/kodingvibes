@@ -12,7 +12,7 @@ import { compressImage } from '@/lib/utils'
 import { getYouTubeThumbnailUrl, normalizeYouTubeUrl } from '@/lib/youtube'
 import TagInput from '@/components/TagInput'
 import ChannelSelector from '@/components/ChannelSelector'
-import type { Tables } from '@/types/database'
+import type { Tables, TablesInsert } from '@/types/database'
 
 type Group = Tables<'groups'>
 type GroupTag = Tables<'group_tags'>
@@ -354,7 +354,7 @@ export default function SubmitPage() {
 
       const videoUrl = normalizeYouTubeUrl(youtubeUrl)
 
-      const basePayload = {
+      const basePayload: TablesInsert<'posts'> = {
         title: titleValidation.sanitized || title.trim(),
         content: sanitizedContent,
         image_url: imageUrl,
@@ -364,9 +364,17 @@ export default function SubmitPage() {
         status: postStatus,
       }
 
+      // El payload se arma como un solo objeto y no con un ternario: pasarle
+      // una unión de dos formas a insert() hace que el chequeo de propiedades
+      // sobrantes se resuelva contra una sola rama y rechace video_url.
+      const payload: TablesInsert<'posts'> = { ...basePayload }
+      if (videoUrl) {
+        payload.video_url = videoUrl
+      }
+
       let postResponse = await supabase
         .from('posts')
-        .insert(videoUrl ? { ...basePayload, video_url: videoUrl } : basePayload)
+        .insert(payload)
         .select()
         .single()
 
