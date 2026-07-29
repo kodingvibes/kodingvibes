@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyWebhookSignature } from '@/lib/webhook'
 
 export const dynamic = 'force-dynamic'
@@ -45,7 +45,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, ignored: 'no mentions' })
   }
 
-  const supabase = await createClient()
+  // late.sh llama server-to-server, sin cookie de sesión, así que la petición
+  // correría como `anon` y la única política de INSERT sobre notifications es
+  // `TO authenticated`. Aquí quien autentica es la firma HMAC de arriba.
+  const supabase = createAdminClient()
 
   // Find kodingvibes users by email
   const { data: kodingvibesUsers, error: usersErr } = await supabase
@@ -54,7 +57,8 @@ export async function POST(request: Request) {
     .in('email', data.mentioned_user_emails)
 
   if (usersErr) {
-    return NextResponse.json({ error: usersErr.message }, { status: 500 })
+    console.error('[chat/webhook] error buscando usuarios mencionados:', usersErr.message)
+    return NextResponse.json({ error: 'No se pudieron buscar los usuarios mencionados' }, { status: 500 })
   }
 
   if (!kodingvibesUsers?.length) {
@@ -93,7 +97,8 @@ export async function POST(request: Request) {
   // have those. Use the metadata JSONB to store the chat context.
   const { error: insErr } = await supabase.from('notifications').insert(rows)
   if (insErr) {
-    return NextResponse.json({ error: insErr.message }, { status: 500 })
+    console.error('[chat/webhook] error insertando notificaciones:', insErr.message)
+    return NextResponse.json({ error: 'No se pudieron crear las notificaciones' }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true, notified: rows.length })

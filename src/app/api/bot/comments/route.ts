@@ -119,12 +119,15 @@ export async function GET(request: Request) {
 
   const { page, perPage, from, to } = parsedPagination.pagination
 
+  // El cliente admin salta RLS, así que replicamos aquí el predicado de la
+  // política de SELECT de comments: los borrados no se exponen.
   const supabase = createAdminClient()
   let query = supabase
     .from('comments')
-    .select('id, post_id, user_id, parent_id, content, vote_count, is_deleted, created_at, updated_at, deleted_at', {
+    .select('id, post_id, user_id, parent_id, content, vote_count, created_at, updated_at', {
       count: 'exact',
     })
+    .eq('is_deleted', false)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
     .range(from, to)
