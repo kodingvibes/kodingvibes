@@ -115,13 +115,17 @@ export async function GET(request: Request) {
 
   const { page, perPage, from, to } = parsedPagination.pagination
 
+  // El cliente admin salta RLS, así que replicamos aquí el predicado de
+  // posts_select_policy: nada borrado, y solo publicado o propio.
   const supabase = createAdminClient()
   let query = supabase
     .from('posts')
     .select(
-      'id, user_id, group_id, title, content, tags, image_url, status, vote_count, is_deleted, created_at, updated_at, edited_at, is_bot_post, bot_name',
+      'id, user_id, group_id, title, content, tags, image_url, status, vote_count, created_at, updated_at, edited_at, is_bot_post, bot_name',
       { count: 'exact' }
     )
+    .eq('is_deleted', false)
+    .or(`status.eq.published,user_id.eq.${key.user_id}`)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
     .range(from, to)

@@ -164,17 +164,19 @@ export async function GET(request: Request) {
 
   const { page, perPage, from, to } = parsedPagination.pagination
 
+  // El cliente admin salta RLS. La política de votes es `auth.uid() = user_id`:
+  // el registro de votos es privado y solo los conteos agregados son públicos,
+  // vía posts.vote_count. Por eso el filtro es incondicional y `mine` no aplica
+  // aquí: se sigue validando para que un valor inválido dé 400 como en el resto
+  // de endpoints, pero la respuesta siempre son los votos propios.
   const supabase = createAdminClient()
   let query = supabase
     .from('votes')
     .select('id, post_id, user_id, value, created_at', { count: 'exact' })
+    .eq('user_id', key.user_id)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
     .range(from, to)
-
-  if (mineParsed.value) {
-    query = query.eq('user_id', key.user_id)
-  }
 
   if (postIdParsed.value) {
     query = query.eq('post_id', postIdParsed.value)
