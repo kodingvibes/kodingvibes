@@ -1,0 +1,82 @@
+name: CI
+
+# There was no CI on pull requests before this workflow: the only other one
+# (release.yml) triggers on push to main and just runs semantic-release, so
+# nothing ever compiled a branch. A broken `channels/page.tsx` re-export reached
+# review because of that. This runs the gates CLAUDE.md declares as the full
+# verification story — lint plus build — before merge, and again on main so a
+# breakage that slips through is visible immediately.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A new push to the same branch cancels the previous run; only the latest
+# commit matters.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Matches release.yml. The build is verified on Node 24+, and
+          # `cache: npm` needs a lockfile in sync with package.json.
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # `next build` type-checks the whole project and is the only gate that
+      # catches a broken import or a bad re-export (e.g. re-exporting `dynamic`
+      # from a module that no longer exports it).
+      #
+      # No NEXT_PUBLIC_SUPABASE_* variables are set on purpose: the Supabase
+      # clients fall back to the mock in that case, so the build must succeed
+      # without secrets. If this ever needs real credentials, that is a signal
+      # the build has started depending on the network and should be fixed
+      # rather than patched with repo secrets.
+      - name: Build
+        run: npm run build
+
+  # Kept separate and non-blocking so an advisory in a transitive dependency
+  # is visible without failing every unrelated pull request.
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit
+        run: npm run security:check
