@@ -1,7 +1,14 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: "class",
+  // "variant" (not "class") so Tailwind prints `.dark .dark\:foo` — a plain
+  // descendant selector. "class" prints `.dark\:foo:is(.dark *)` and "selector"
+  // prints `.dark\:foo:where(.dark, .dark *)`; both need :is()/:where(), which
+  // engines older than Chrome 88 / Firefox 78 discard entirely, losing every
+  // dark-mode rule at once. Verified by compiling the same input with all three
+  // modes and grepping the output. The `.dark` class is still what
+  // theme-provider.tsx toggles, so nothing else changes.
+  darkMode: ["variant", ".dark &"],
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
