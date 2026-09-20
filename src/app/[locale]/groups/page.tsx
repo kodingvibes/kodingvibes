@@ -1,13 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
 import { setRequestLocale } from 'next-intl/server'
 import Link from 'next/link'
 import { Hash, Plus, Users, Globe, Lock } from 'lucide-react'
 import GroupCard, { type GroupWithMembership } from '@/components/GroupCard'
-import type { Tables } from '@/types/database'
-
-export const dynamic = 'force-dynamic'
-
-type Group = Tables<'groups'>
+import { createClient } from '@/lib/supabase/server'
+import { getActiveGroups } from '@/lib/public-data'
 
 type MembershipRow = { group_id: string; role: string }
 
@@ -19,27 +15,24 @@ type Props = {
  * Rendered on the server so the channel list exists in the initial response.
  * As a client component this page bailed out to client-side rendering and
  * shipped an empty body to anything that does not run React.
+ *
+ * The channel list itself is cached and shared (getActiveGroups); only the
+ * per-user memberships are read live, since those genuinely differ per visitor.
  */
 export default async function GroupsPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
 
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  const { data: groupsData } = await supabase
-    .from('groups')
-    .select('*')
-    .eq('is_active', true)
-    .order('post_count', { ascending: false })
-
-  const groups = (groupsData ?? []) as Group[]
+  const groups = await getActiveGroups()
 
   let myGroups: GroupWithMembership[] = []
   let visibleGroups: GroupWithMembership[] = groups
+
+  // Only reach for the cookie-bound client when there is a session to resolve.
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (user) {
     const { data: memberships } = await supabase

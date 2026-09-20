@@ -5,6 +5,10 @@ import { createServer } from 'node:http'
 
 const PORT = Number(process.env.PORT || 54321)
 
+// Query counter: lets a test prove whether caching actually removed round-trips.
+let queryCount = 0
+const queriesByTable = {}
+
 const now = Date.now()
 const iso = (minutesAgo) => new Date(now - minutesAgo * 60_000).toISOString()
 
@@ -88,10 +92,25 @@ const server = createServer((req, res) => {
   const table = url.pathname.replace('/rest/v1/', '')
   res.setHeader('Content-Type', 'application/json')
 
+  // Instrumentation endpoints for cache verification.
+  if (url.pathname === '/__stats') {
+    res.writeHead(200).end(JSON.stringify({ total: queryCount, byTable: queriesByTable }))
+    return
+  }
+  if (url.pathname === '/__reset') {
+    queryCount = 0
+    for (const k of Object.keys(queriesByTable)) delete queriesByTable[k]
+    res.writeHead(200).end(JSON.stringify({ ok: true }))
+    return
+  }
+
   if (!url.pathname.startsWith('/rest/v1/')) {
     res.writeHead(404).end('[]')
     return
   }
+
+  queryCount++
+  queriesByTable[table] = (queriesByTable[table] ?? 0) + 1
 
   const select = url.searchParams.get('select') ?? ''
   const source = table === 'posts' ? posts : table === 'groups' ? groups : table === 'group_tags' ? groupTags : []

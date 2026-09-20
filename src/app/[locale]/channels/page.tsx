@@ -1,1 +1,1 @@
-export { default, dynamic } from '../groups/page'
+export { default } from '../groups/page'
