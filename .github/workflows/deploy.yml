@@ -1,0 +1,141 @@
+name: Deploy
+
+# AGENTS.md says the app "is deployed to Vercel from the `kodingvibes` project;
+# releases here are independent of Vercel deploys unless the workflow is
+# extended to trigger them." This is that extension.
+#
+# Why it exists: the Vercel Git integration stopped firing after 2026-07-20 and
+# no deployment has been created since, while main kept receiving commits
+# (verifiable with `gh api repos/O/R/deployments`). Nothing in CI noticed,
+# because nothing in CI deploys. This makes the deploy explicit, versioned and
+# reviewable instead of depending on a dashboard toggle nobody is watching.
+#
+# ---------------------------------------------------------------------------
+# SETUP (one time) — the workflow no-ops until these three repository secrets
+# exist, so merging it cannot break anything.
+#
+# 1. Create a token:  https://vercel.com/account/tokens
+# 2. Add the secrets in GitHub -> Settings -> Secrets and variables -> Actions:
+#
+#      VERCEL_TOKEN       the token from step 1
+#      VERCEL_ORG_ID      Vercel -> Team/Account Settings -> General -> ID
+#      VERCEL_PROJECT_ID  Vercel -> project `kodingvibes` -> Settings -> General -> Project ID
+#
+#    or, equivalently, from a checkout that is linked to Vercel:
+#      cat .vercel/project.json      # -> orgId / projectId
+#
+# 3. Run it: push to main, or Actions -> Deploy -> Run workflow.
+# ---------------------------------------------------------------------------
+
+on:
+  # Only after the CI workflow is green on main, so a broken build is never
+  # published. `CI` is the workflow name in ci.yml.
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  # Manual trigger: needed to make the first deploy after the secrets are added
+  # (workflow_run only fires on a new CI completion).
+  workflow_dispatch:
+
+concurrency:
+  # Never let two production deploys race.
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # For workflow_run, require CI to have succeeded. workflow_dispatch has no
+    # workflow_run payload, hence the explicit null check.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Deploy the exact commit CI validated, not whatever main points at by
+          # the time this job starts.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+
+      # A job-level `if` cannot read the secrets context, so the guard is a step
+      # that every later step keys off. Without the secrets this workflow goes
+      # green-and-idle rather than failing on every push to main.
+      - name: Check for Vercel credentials
+        id: creds
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          missing=""
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "$(printenv "$name")" ]; then missing="$missing $name"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping deploy — missing repository secret(s):$missing. Add them and re-run this workflow. See the header of .github/workflows/deploy.yml."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.creds.outputs.configured == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.creds.outputs.configured == 'true'
+        run: npm ci
+
+      # `vercel pull` fetches the project settings AND the environment variables
+      # configured in the Vercel dashboard, so the production build sees the same
+      # NEXT_PUBLIC_* values as a dashboard deploy. Pull, build and deploy must
+      # all run with the same working directory: `vercel build` writes .vercel/output
+      # and `vercel deploy --prebuilt` uploads it.
+      - name: Pull Vercel environment
+        if: steps.creds.outputs.configured == 'true'
+        run: npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build for production
+        if: steps.creds.outputs.configured == 'true'
+        run: npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy to production
+        if: steps.creds.outputs.configured == 'true'
+        id: deploy
+        run: |
+          url="$(npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN")"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed: $url"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Summary
+        if: steps.creds.outputs.configured == 'true'
+        run: |
+          {
+            echo "### Production deploy"
+            echo ""
+            echo "- Commit: \`${{ github.event.workflow_run.head_sha || github.sha }}\`"
+            echo "- Deployment: ${{ steps.deploy.outputs.url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
