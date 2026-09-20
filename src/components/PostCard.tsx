@@ -8,6 +8,7 @@ import PostActions from './PostActions'
 import MarkdownContent from './MarkdownContent'
 import { MessageSquare, Clock, Bot } from 'lucide-react'
 import { getPublicProfileHref } from '@/lib/profile'
+import { useLocale } from 'next-intl'
 
 interface Post {
   id: string
@@ -37,9 +38,27 @@ interface PostCardProps {
   currentUserId?: string | null
   isAdmin?: boolean
   tagStylesByKey?: Record<string, { name: string; color: string }>
+  priority?: boolean
 }
 
 const normalizeTagValue = (value: string) => value.toLowerCase().trim().replace(/\s+/g, '-')
+
+// Formatting is locale-independent on purpose: this component is rendered on
+// the server into the initial HTML, and a date formatted on the server for a
+// different timezone would mismatch on hydration. Both sides compute the same
+// string here, so there is no mismatch to fix up.
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const days = Math.floor(hours / 24)
+
+  if (days > 0) return `hace ${days} día${days > 1 ? 's' : ''}`
+  if (hours > 0) return `hace ${hours} hora${hours > 1 ? 's' : ''}`
+  return 'hace unos minutos'
+}
 
 export default function PostCard({
   post,
@@ -47,21 +66,10 @@ export default function PostCard({
   currentUserId = null,
   isAdmin = false,
   tagStylesByKey,
+  priority = false,
 }: PostCardProps) {
   const router = useRouter()
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const days = Math.floor(hours / 24)
-    
-    if (days > 0) return `hace ${days} día${days > 1 ? 's' : ''}`
-    if (hours > 0) return `hace ${hours} hora${hours > 1 ? 's' : ''}`
-    return 'hace unos minutos'
-  }
+  const locale = useLocale()
 
   const displayAuthor =
     post.is_bot_post && post.bot_name?.trim()
@@ -77,6 +85,9 @@ export default function PostCard({
 
   const displayAvatarUrl = post.users?.avatar_url || null
   const profileHref = getPublicProfileHref(post.users?.username, post.user_id)
+  // Locale-prefixed so a no-JS client never has to rely on a middleware
+  // redirect to reach the post.
+  const postHref = `/${locale}/post/${post.id}`
 
   if (post.is_deleted) {
     return (
@@ -89,10 +100,14 @@ export default function PostCard({
   const handleCardClick = (e: React.MouseEvent) => {
     // Evitar navegación si se hizo clic en botones de acción o votos
     const target = e.target as HTMLElement
-    if (target.closest('button') || target.closest('[data-no-navigate]')) {
+    if (
+      target.closest('button') ||
+      target.closest('[data-no-navigate]') ||
+      target.closest('a')
+    ) {
       return
     }
-    router.push(`/post/${post.id}`)
+    router.push(postHref)
   }
 
   const hasImage = !!post.image_url
@@ -106,7 +121,7 @@ export default function PostCard({
       : contentText
 
   return (
-    <article 
+    <article
       onClick={handleCardClick}
       className={`group relative border border-border rounded-xl overflow-hidden cursor-pointer hover:shadow-xl hover:border-primary/30 transition-all duration-300 animate-slide-up ${
         hasImage ? 'min-h-[180px]' : ''
@@ -115,7 +130,7 @@ export default function PostCard({
       {/* Background image with blur effect */}
       {hasImage && (
         <>
-          <div 
+          <div
             className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
             style={{ backgroundImage: `url(${post.image_url})` }}
           />
@@ -215,12 +230,20 @@ export default function PostCard({
             </div>
           )}
           
+          {/*
+            The title is a real <a> pointing at the post, not just an h2 with an
+            onClick handler: without it, a client that never runs the click
+            handler (no JS, terminal browser, crawler) has no way to reach the
+            post itself.
+          */}
           <h2 className={`text-lg font-semibold mb-2 transition-colors ${
             hasImage 
               ? 'text-white group-hover:text-white/90' 
               : 'text-foreground group-hover:text-primary'
           }`}>
-            {post.title}
+            <Link href={postHref} data-no-navigate className="hover:underline">
+              {post.title}
+            </Link>
           </h2>
 
           {/* Post image preview */}
@@ -231,6 +254,7 @@ export default function PostCard({
                 alt={post.title}
                 width={600}
                 height={400}
+                priority={priority}
                 className="w-full max-h-60 object-cover group-hover:scale-105 transition-transform duration-500"
               />
             </div>
@@ -240,14 +264,12 @@ export default function PostCard({
           {!hasImage && previewContent && (
             <div
               data-no-navigate
-              className={`mb-3 text-sm leading-relaxed line-clamp-[10] ${
-                hasImage ? 'text-white/80' : 'text-foreground/80'
-              }`}
+              className="mb-3 text-sm leading-relaxed line-clamp-[10] text-foreground/80"
             >
               <MarkdownContent content={previewContent} />
               {contentText.length > PREVIEW_MAX && (
                 <Link
-                  href={`/post/${post.id}`}
+                  href={postHref}
                   data-no-navigate
                   className="text-primary hover:underline font-medium"
                   onClick={(e) => e.stopPropagation()}
@@ -259,14 +281,18 @@ export default function PostCard({
           )}
 
           <div className={`flex items-center gap-4 text-sm ${hasImage ? 'text-white/70' : 'text-muted-foreground'}`}>
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${
-              hasImage 
-                ? 'hover:bg-white/10' 
-                : 'hover:bg-muted'
-            }`}>
+            <Link
+              href={postHref}
+              data-no-navigate
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${
+                hasImage 
+                  ? 'hover:bg-white/10' 
+                  : 'hover:bg-muted'
+              }`}
+            >
               <MessageSquare className="h-4 w-4" />
               <span>{post.comments_count || 0} comentarios</span>
-            </div>
+            </Link>
           </div>
         </div>
       </div>

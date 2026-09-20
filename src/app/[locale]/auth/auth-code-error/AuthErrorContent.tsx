@@ -1,12 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { AlertCircle, ArrowLeft } from 'lucide-react'
 
 export default function AuthErrorContent() {
-  const searchParams = useSearchParams()
-  const error = searchParams.get('error')
+  // Client-only read of ?error= so this route keeps server rendering instead of
+  // bailing out to an empty document for clients without JS.
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setError(new URLSearchParams(window.location.search).get('error'))
+  }, [])
 
   const getErrorMessage = (errorCode: string | null) => {
     switch (errorCode) {
