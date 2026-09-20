@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { Plus, Sun, Moon, LogOut, User as UserIcon, Settings, Hash, Crown, Gamepad2, Menu, X, FileText, MessageCircle } from 'lucide-react'
 import { useTheme } from '@/providers/theme-provider'
@@ -39,11 +39,14 @@ export default function Header() {
   const tCommon = useTranslations('common')
   const tProfile = useTranslations('profile')
   const router = useRouter()
-  const searchParams = useSearchParams()
   const netRunUrl = 'https://netrun.kodingvibes.com'
 
-  const authRequired = searchParams.get('auth_required') === '1'
-  const nextFromUrl = searchParams.get('next')
+  // Read the query string on the client only. Using next/navigation's
+  // useSearchParams() here would opt the whole page tree out of server
+  // rendering (Suspense bailout), leaving clients without JS — and users
+  // without JS at all, e.g. terminal browsers — with an empty document.
+  const [authRequired, setAuthRequired] = useState(false)
+  const [nextFromUrl, setNextFromUrl] = useState<string | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
   
   const [user, setUser] = useState<User | null>(null)
@@ -61,6 +64,10 @@ export default function Header() {
 
   useEffect(() => {
     setMounted(true)
+
+    const params = new URLSearchParams(window.location.search)
+    setAuthRequired(params.get('auth_required') === '1')
+    setNextFromUrl(params.get('next'))
   }, [])
 
   useEffect(() => {

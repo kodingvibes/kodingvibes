@@ -1,7 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { ImageIcon, X, Sparkles, Eye, Code, Youtube, Link as LinkIcon, HelpCircle } from 'lucide-react'
 import Image from 'next/image'
@@ -19,8 +19,18 @@ type GroupTag = Tables<'group_tags'>
 
 export default function SubmitPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const preselectedGroupId = searchParams.get('channel') || searchParams.get('group')
+
+  // Read ?channel=/?group= on the client. useSearchParams() would force the
+  // whole route into a client-side rendering bailout, so the page would ship an
+  // empty body to clients that do not run the React bundle.
+  const [preselectedGroupId, setPreselectedGroupId] = useState<string | null>(null)
+  const [paramsReady, setParamsReady] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setPreselectedGroupId(params.get('channel') || params.get('group'))
+    setParamsReady(true)
+  }, [])
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -80,7 +90,7 @@ export default function SubmitPage() {
     }
 
     fetchGroups()
-  }, [preselectedGroupId, supabase])
+  }, [preselectedGroupId, paramsReady, supabase])
 
   useEffect(() => {
     const fetchGroupData = async () => {

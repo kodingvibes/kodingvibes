@@ -26,6 +26,14 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <NextIntlClientProvider messages={messages}>
+      {/*
+        No <Suspense> wrapper here. A Suspense boundary around a client
+        component makes Next.js stream it into a `<div hidden>` that only an
+        inline script reveals, so text-mode browsers and clients without JS
+        would lose the navigation too. Header reads its query params on the
+        client instead of via useSearchParams(), so it can render inline and
+        needs no boundary.
+      */}
       <Header />
       {children}
     </NextIntlClientProvider>

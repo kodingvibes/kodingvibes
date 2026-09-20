@@ -1,0 +1,26 @@
+# Browser targets for this app.
+#
+# The problem this solves: Next.js compiles client bundles down to ES5 only
+# when a browserslist config exists (see `getSupportedBrowsers` in
+# next/dist/build/utils.js, which falls back to MODERN_BROWSERSLIST_TARGET —
+# chrome 64 / firefox 67 / safari 12 — and the `jsc.target = 'es5'` fallback in
+# next/dist/build/swc/options.js). Without this file the shipped JavaScript uses
+# syntax that no i386-era engine can parse, so the bundle throws before React
+# mounts and the page stays blank.
+#
+# It does *not* rewrite CSS. Verified by building and grepping the emitted
+# stylesheet: :is()/:where() survive whatever is listed here. The :where() rules
+# come from Tailwind's preflight and the typography plugin and are hard-coded in
+# those plugins. The one :is() rule that was ours (the dark variant) is gone
+# because tailwind.config.ts now uses darkMode: ["variant", ".dark &"], which
+# prints a plain descendant selector instead.
+#
+# `>= 0.5%` and `not dead` are deliberately absent: they resolve to recent
+# evergreen versions only, which is the opposite of the intent here.
+
+# Oldest engines this app is expected to render in.
+chrome >= 49
+firefox >= 45
+safari >= 10
+edge >= 15
+ie >= 11
