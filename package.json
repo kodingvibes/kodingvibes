@@ -24,7 +24,7 @@
     "isomorphic-dompurify": "^2.21.0",
     "jose": "^6.2.3",
     "lucide-react": "^0.563.0",
-    "next": "15.5.13",
+    "next": "15.5.25",
     "next-intl": "^4.9.0",
     "prismjs": "^1.30.0",
     "react": "^18",
@@ -35,7 +35,10 @@
     "zod": "^3.23.8"
   },
   "overrides": {
-    "jsdom": "26.1.0"
+    "jsdom": "26.1.0",
+    "dompurify": "3.4.15",
+    "nanoid": "3.3.19",
+    "postcss": "$postcss"
   },
   "allowScripts": {
     "@parcel/watcher": false,
@@ -50,9 +53,9 @@
     "@types/react-dom": "^18",
     "dotenv": "^17.2.3",
     "eslint": "^9.19.0",
-    "eslint-config-next": "15.5.13",
-    "postcss": "^8",
-    "sharp": "^0.34.5",
+    "eslint-config-next": "15.5.25",
+    "postcss": "^8.5.23",
+    "sharp": "0.35.4",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
     "@semantic-release/changelog": "^6.0.3",
