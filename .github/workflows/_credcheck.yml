@@ -1,0 +1,45 @@
+name: Credential check (temporary)
+
+# Desechable: comprueba qué secreto sirve para que semantic-release pueda
+# pushear a `main` protegido. No imprime ningún valor de token, solo el login,
+# los scopes y los permisos que la API devuelve. Se borra al terminar.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect each candidate credential
+        env:
+          CAND_MOTOKO_PAT: ${{ secrets.MOTOKO_PAT }}
+          CAND_GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CAND_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -u
+          check () {
+            name="$1"; tok="${2:-}"
+            if [ -z "$tok" ]; then
+              printf '%-16s ABSENT (el secreto no existe o esta vacio)\n' "$name"
+              return 0
+            fi
+            hdr="$(mktemp)"; body="$(mktemp)"
+            code="$(curl -sS -o "$body" -D "$hdr" -w '%{http_code}' -H "Authorization: Bearer $tok" https://api.github.com/user || echo 000)"
+            if [ "$code" != "200" ]; then
+              printf '%-16s INVALIDO (HTTP %s)\n' "$name" "$code"
+              return 0
+            fi
+            login="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("login","?"))' "$body" 2>/dev/null || echo '?')"
+            scopes="$(grep -i '^x-oauth-scopes:' "$hdr" | cut -d: -f2- | tr -d '\r ' || true)"
+            rcode="$(curl -sS -o "$body" -w '%{http_code}' -H "Authorization: Bearer $tok" https://api.github.com/repos/kodingvibes/kodingvibes || echo 000)"
+            perms="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(json.dumps(d.get("permissions")))' "$body" 2>/dev/null || echo '?')"
+            printf '%-16s login=%s scopes=[%s] repo(HTTP %s) permissions=%s\n' "$name" "$login" "$scopes" "$rcode" "$perms"
+          }
+
+          echo "=== candidatos ==="
+          check MOTOKO_PAT    "$CAND_MOTOKO_PAT"
+          check GH_TOKEN      "$CAND_GH_TOKEN"
+          check GITHUB_TOKEN  "$CAND_GITHUB_TOKEN"
