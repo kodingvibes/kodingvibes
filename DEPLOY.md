@@ -1,71 +1,92 @@
 # Desplegar a producción
 
-## El problema
+## Estado actual
 
-La integración Git de Vercel dejó de disparar deploys el **20-jul-2026**. Desde
-entonces `main` recibió 29 commits y ningún deployment se creó, así que el sitio
-quedó congelado en el estado de julio aunque el repositorio siguiera avanzando.
+Hay **dos mecanismos** que pueden crear deployments. Se solapan a propósito:
 
-Se puede comprobar en cualquier momento:
+| Mecanismo | Qué hace | Puerta de calidad |
+|---|---|---|
+| **Integración Git de Vercel** | Deploy automático en cada push a `main`, y un *preview* por PR | el propio build de Vercel |
+| **Workflow `Deploy`** (`.github/workflows/deploy.yml`) | `vercel pull/build/deploy` tras un CI verde en `main` | `CI` (lint + build) |
 
-```bash
-# Último deployment de Vercel (creador esperado: vercel[bot])
-gh api repos/kodingvibes/kodingvibes/deployments --jq '.[0] | "\(.created_at) \(.sha[0:8])"'
+## La integración Git estuvo caída 2 meses
 
-# ¿Vercel reporta estado en los commits recientes?
-gh api repos/kodingvibes/kodingvibes/commits/main/status --jq '.statuses | length'
-# 0 en los commits posteriores al corte = la integración no ve los pushes
-```
+Entre el **20-jul-2026** y el **21-sep-2026** Vercel no creó ningún deployment desde
+Git, mientras `main` recibía 29 commits: el sitio quedó congelado en el estado de
+julio. Nada lo detectó porque **nada en CI desplegaba**.
 
-`AGENTS.md` ya contemplaba la solución: *"the app is deployed to Vercel from the
-`kodingvibes` project; releases here are independent of Vercel deploys unless the
-workflow is extended to trigger them"*. `.github/workflows/deploy.yml` es esa
-extensión.
+**Causa raíz:** el repositorio se transfirió a la organización `kodingvibes`, pero la
+GitHub App de Vercel seguía instalada en la cuenta personal `madkoding`. Vercel
+guardaba `org: "madkoding"` y `sourceless: true` — ya no podía leer el repo.
 
-## Configuración (una sola vez)
-
-El workflow **no hace nada hasta que existan los tres secretos**, así que
-fusionarlo no puede romper nada. Sin ellos, el job termina en verde con un aviso
-`Skipping deploy — missing repository secret(s)`.
-
-### 1. Crear el token
-
-<https://vercel.com/account/tokens> → *Create Token*.
-- **Scope:** la cuenta u organización dueña del proyecto `kodingvibes`.
-- **Expiration:** lo que prefieras; al caducar, el deploy falla con un aviso claro.
-
-### 2. Obtener los dos IDs
-
-En el panel de Vercel:
-
-| Secreto | Dónde |
-|---|---|
-| `VERCEL_ORG_ID` | Team/Account **Settings → General → Team ID** |
-| `VERCEL_PROJECT_ID` | Proyecto `kodingvibes` → **Settings → General → Project ID** |
-
-O desde un checkout ya vinculado a Vercel:
+**Solución:** instalar la GitHub App en la organización
+(<https://github.com/apps/vercel> → *Install* → elegir **`kodingvibes`**) y reconectar:
 
 ```bash
-cat .vercel/project.json     # -> { "orgId": "...", "projectId": "..." }
+vercel git connect git@github.com:kodingvibes/kodingvibes.git
 ```
 
-### 3. Añadirlos en GitHub
+Queda bien cuando `link` muestra la organización y **no** aparece `sourceless`:
 
-**Settings → Secrets and variables → Actions → New repository secret**
+```bash
+curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
+  "https://api.vercel.com/v9/projects/kodingvibes?teamId=madkodings-projects" \
+  | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin)["link"], indent=1))'
+# org: kodingvibes, repoOwnerId: 308510421 (la org), sin la clave sourceless
+```
 
-- `VERCEL_TOKEN`
-- `VERCEL_ORG_ID`
-- `VERCEL_PROJECT_ID`
+> **Cuidado al reconectar:** `vercel git connect` (y `POST /v9/projects/{id}/link`)
+> **borran el link existente antes** de intentar crear el nuevo. Si la App no está
+> instalada, el intento falla y el proyecto queda con `link: null` — peor que antes.
+> Comprueba el estado después de cualquier intento.
 
-### 4. Desplegar
+## Cómo se comprueba si el deploy está vivo
 
-**Actions → Deploy → Run workflow**.
+```bash
+# De dónde vino cada deployment: "git" = integración, "cli" = alguien a mano
+curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
+  "https://api.vercel.com/v6/deployments?projectId=prj_8cEIvpSduwOkiP7zRvsCP0WtfngM&teamId=madkodings-projects&limit=10" \
+  | python3 -c 'import json,sys; [print(d["createdAt"], d.get("source")) for d in json.load(sys.stdin)["deployments"]]'
+```
 
-Hace falta el disparo manual la primera vez: el workflow reacciona a que **CI**
-termine, y `workflow_run` solo se activa con una ejecución nueva de CI. Después
-del primer despliegue, cada push a `main` con CI en verde despliega solo.
+Una racha de `cli` significa que la integración no está disparando. `git` significa
+que sí.
 
-## Cómo funciona
+## El workflow `Deploy`
+
+Se añadió **mientras la integración estaba caída**, para que el deploy no dependiera
+de un interruptor del panel que nadie mira. Sigue siendo útil: es el único camino que
+**exige un CI verde** antes de publicar.
+
+```
+push a main
+   └─ CI (ci.yml)              lint + build                    ← compuerta
+        └─ Deploy (deploy.yml) vercel pull/build/deploy        ← publicación
+```
+
+- **Solo despliega si CI pasó** (`workflow_run` con `conclusion == 'success'`).
+- **Despliega el commit exacto que CI validó** (`head_sha`), no el `main` del momento.
+- **`concurrency: deploy-production` sin `cancel-in-progress`**: dos deploys no se pisan.
+- **`vercel pull`** trae del panel las variables de entorno, así que el build de CI ve
+  los mismos `NEXT_PUBLIC_*` que un deploy del dashboard.
+- Sin los secretos, el job termina **en verde** con un aviso `Skipping deploy`. Es
+  deliberado: un `if` a nivel de job no puede leer el contexto `secrets`, así que la
+  comprobación es un step del que dependen los demás.
+
+Secretos necesarios (ya configurados): `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
+
+### Si quieres volver a un solo mecanismo
+
+Para dejar **solo la integración Git** (y perder la compuerta de CI):
+
+```bash
+gh workflow disable deploy.yml --repo kodingvibes/kodingvibes
+```
+
+Para dejar **solo el workflow** (y perder los previews por PR), desactiva los deploys
+automáticos desde el panel: *Project → Settings → Git → Ignored Build Step*.
+
+## Cómo funciona el workflow
 
 ```
 push a main
@@ -112,4 +133,6 @@ docker run --rm --network host --platform linux/386 i386/alpine:latest \
 | `Invalid token` / `401` | Token caducado, revocado o de otra cuenta |
 | `Project not found` | `VERCEL_PROJECT_ID` no corresponde a `kodingvibes`, o el token no tiene acceso a esa organización |
 | El workflow no se dispara nunca | `workflow_run` solo salta con una ejecución **nueva** de CI; usa el disparo manual |
-| Deploy verde pero el sitio no cambia | Revisa que el dominio apunte al proyecto correcto (Vercel → proyecto → Settings → Domains) |
+| Deploy verde pero el sitio no cambia | Revisa que el dominio apunte al proyecto correcto (*Settings → Domains*) |
+| Dos deployments por push | Los dos mecanismos están activos. Ver «Si quieres volver a un solo mecanismo» |
+| Deployment con error `ERR_REQUIRE_ESM` | Una dependencia ESM pura cargada con `require()`. Vercel no habilita `require(esm)`. Reprodúcelo con `node --no-experimental-require-module -e "require('paquete')"` y fija con `overrides` una versión cuya cadena sea CommonJS |
