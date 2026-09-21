@@ -1,3 +1,23 @@
+## [0.5.1](https://github.com/kodingvibes/kodingvibes/compare/v0.5.0...v0.5.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* **api/bot:** filtrar borradores, contenido eliminado y votos ajenos en los GET ([8fe4de3](https://github.com/kodingvibes/kodingvibes/commit/8fe4de34ff5359fcc8a88afa82429a84cd2b00ec))
+* **api/bot:** filtrar borradores, contenido eliminado y votos ajenos en los GET ([faaf2c2](https://github.com/kodingvibes/kodingvibes/commit/faaf2c2a317e8e382a3376661dc149b5afe0b73c))
+* **ci:** give semantic-release an admin PAT and a clear failure message ([bf79352](https://github.com/kodingvibes/kodingvibes/commit/bf7935214abf6f79566e6b087a6a237f9ab71c19))
+* **ci:** use GH_TOKEN for release to bypass branch protection ([aa80474](https://github.com/kodingvibes/kodingvibes/commit/aa80474e69f899a0a0a2fdc0d38c6b39f0b80ea2))
+* **deps:** pin jsdom to 26.1.0 so post pages stop returning 500 ([5afc9eb](https://github.com/kodingvibes/kodingvibes/commit/5afc9eb9d66e725a3708f756c44075d200ced9d0))
+* **mock:** make the Supabase stand-in support any query chain ([1c8fa4f](https://github.com/kodingvibes/kodingvibes/commit/1c8fa4fe6eecf9e7723958eda746de0dd39c65a2))
+* **ssr:** render pages on the server so clients without JS get content ([8cde08d](https://github.com/kodingvibes/kodingvibes/commit/8cde08de46746601b71992232b94cf2d0f2749e6))
+* **styles:** stop emitting :is() so old engines keep dark mode ([b480a95](https://github.com/kodingvibes/kodingvibes/commit/b480a954678b799466cf994829111a8f11adcd52))
+* **submit:** reparar el build tipando el payload del insert de posts ([dea6599](https://github.com/kodingvibes/kodingvibes/commit/dea6599e7f99c6a4d2fc579908a5a8f8f05c689f))
+
+
+### Performance Improvements
+
+* **feed:** cache the public queries behind the server render ([a198b81](https://github.com/kodingvibes/kodingvibes/commit/a198b81c858274747d0cdda0212e01734c927367))
+
 # [0.5.0](https://github.com/kodingvibes/kodingvibes/compare/v0.4.0...v0.5.0) (2026-07-26)
 
 
