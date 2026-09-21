@@ -5,10 +5,15 @@ name: Deploy
 # extended to trigger them." This is that extension.
 #
 # Why it exists: the Vercel Git integration stopped firing after 2026-07-20 and
-# no deployment has been created since, while main kept receiving commits
-# (verifiable with `gh api repos/O/R/deployments`). Nothing in CI noticed,
-# because nothing in CI deploys. This makes the deploy explicit, versioned and
-# reviewable instead of depending on a dashboard toggle nobody is watching.
+# no deployment was created for two months, while main kept receiving commits
+# (verifiable via the deployments API). Nothing in CI noticed, because nothing
+# in CI deploys. This makes the deploy explicit, versioned and reviewable
+# instead of depending on a dashboard toggle nobody is watching.
+#
+# The Git integration was reconnected on 2026-09-21, so both paths can now
+# publish the same commit. This workflow therefore checks first whether the
+# commit is already live in production and skips if so — otherwise every push
+# to main would produce two production deployments.
 #
 # ---------------------------------------------------------------------------
 # SETUP (one time) — the workflow no-ops until these three repository secrets
@@ -45,6 +50,11 @@ concurrency:
 
 permissions:
   contents: read
+
+env:
+  # The commit this run is responsible for. workflow_dispatch has no
+  # workflow_run payload, so fall back to the dispatched ref's SHA.
+  TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
 
 jobs:
   deploy:
@@ -86,15 +96,61 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Setup Node.js
+      # Idempotence guard. The Vercel Git integration usually deploys this same
+      # commit within seconds of the push, concurrently with this run. Deploying
+      # again would publish a second identical production deployment, so check
+      # what is already there and skip when this commit is live.
+      - name: Check whether this commit is already deployed
+        id: live
         if: steps.creds.outputs.configured == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          # Wait briefly for the Git integration to finish before deciding — it
+          # starts before this job and typically completes in under a minute.
+          deadline=$((SECONDS + 150))
+          while :; do
+            json="$(curl -sS --max-time 30 \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&teamId=$VERCEL_ORG_ID&target=production&limit=20")" || json=""
+
+            # jq is preinstalled on ubuntu-latest runners.
+            state="$(printf '%s' "$json" | jq -r --arg sha "$TARGET_SHA" '[ .deployments[]? | select((.meta.githubCommitSha // "") == $sha) | (.readyState // "unknown") ] | first // "absent"' 2>/dev/null || echo unknown)"
+
+            echo "commit ${TARGET_SHA:0:8} in production: $state"
+            case "$state" in
+              READY)
+                echo "already=true" >> "$GITHUB_OUTPUT"; exit 0 ;;
+              ERROR|CANCELED)
+                # A failed attempt must not block the fallback deploy.
+                echo "already=false" >> "$GITHUB_OUTPUT"; exit 0 ;;
+              BUILDING|QUEUED|INITIALIZING)
+                if [ "$SECONDS" -ge "$deadline" ]; then
+                  echo "already=false" >> "$GITHUB_OUTPUT"; exit 0
+                fi
+                sleep 15 ;;
+              *)
+                # absent, or the API could not be read: deploy.
+                echo "already=false" >> "$GITHUB_OUTPUT"; exit 0 ;;
+            esac
+          done
+
+      - name: Skip notice
+        if: steps.creds.outputs.configured == 'true' && steps.live.outputs.already == 'true'
+        run: |
+          echo "::notice::The Vercel Git integration already published ${TARGET_SHA:0:8} to production; skipping the duplicate deploy. Use workflow_dispatch if you need this workflow to deploy anyway."
+
+      - name: Setup Node.js
+        if: steps.creds.outputs.configured == 'true' && steps.live.outputs.already != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
 
       - name: Install dependencies
-        if: steps.creds.outputs.configured == 'true'
+        if: steps.creds.outputs.configured == 'true' && steps.live.outputs.already != 'true'
         run: npm ci
 
       # `vercel pull` fetches the project settings AND the environment variables
@@ -103,7 +159,7 @@ jobs:
       # all run with the same working directory: `vercel build` writes .vercel/output
       # and `vercel deploy --prebuilt` uploads it.
       - name: Pull Vercel environment
-        if: steps.creds.outputs.configured == 'true'
+        if: steps.creds.outputs.configured == 'true' && steps.live.outputs.already != 'true'
         run: npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -111,7 +167,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Build for production
-        if: steps.creds.outputs.configured == 'true'
+        if: steps.creds.outputs.configured == 'true' && steps.live.outputs.already != 'true'
         run: npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -119,7 +175,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Deploy to production
-        if: steps.creds.outputs.configured == 'true'
+        if: steps.creds.outputs.configured == 'true' && steps.live.outputs.already != 'true'
         id: deploy
         run: |
           url="$(npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN")"
@@ -136,6 +192,11 @@ jobs:
           {
             echo "### Production deploy"
             echo ""
-            echo "- Commit: \`${{ github.event.workflow_run.head_sha || github.sha }}\`"
-            echo "- Deployment: ${{ steps.deploy.outputs.url }}"
+            echo "- Commit: \`${TARGET_SHA}\`"
+            if [ "${{ steps.live.outputs.already }}" = "true" ]; then
+              echo "- Result: **skipped** — the Vercel Git integration already published this commit"
+            else
+              echo "- Result: deployed by this workflow"
+              echo "- Deployment: ${{ steps.deploy.outputs.url }}"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
