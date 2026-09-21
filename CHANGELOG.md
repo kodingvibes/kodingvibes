@@ -1,3 +1,10 @@
+## [0.5.2](https://github.com/kodingvibes/kodingvibes/compare/v0.5.1...v0.5.2) (2026-09-21)
+
+
+### Bug Fixes
+
+* **deps:** clear every production advisory, including a critical in next ([c449e74](https://github.com/kodingvibes/kodingvibes/commit/c449e74dbb947db61b55ca6e1003650589091e18))
+
 ## [0.5.1](https://github.com/kodingvibes/kodingvibes/compare/v0.5.0...v0.5.1) (2026-09-21)
 
 
