@@ -4,7 +4,10 @@ name: Credential check (temporary)
 # pushear a `main` protegido. No imprime ningún valor de token, solo el login,
 # los scopes y los permisos que la API devuelve. Se borra al terminar.
 on:
-  workflow_dispatch:
+  # push y no workflow_dispatch: GitHub solo registra workflow_dispatch cuando el
+  # workflow ya existe en la rama por defecto, y esta rama es desechable.
+  push:
+    branches: [tmp/credcheck]
 
 permissions:
   contents: read
