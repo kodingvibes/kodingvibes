@@ -1,48 +1,54 @@
-name: Credential check (temporary)
+name: Push probe (temporary)
 
-# Desechable: comprueba qué secreto sirve para que semantic-release pueda
-# pushear a `main` protegido. No imprime ningún valor de token, solo el login,
-# los scopes y los permisos que la API devuelve. Se borra al terminar.
+# Desechable. Reproduce la operación exacta que semantic-release necesita:
+# un push directo a una rama con la MISMA proteccion que `main`.
+# Comprueba cada credencial por separado y no imprime ningun valor de token.
 on:
-  # push y no workflow_dispatch: GitHub solo registra workflow_dispatch cuando el
-  # workflow ya existe en la rama por defecto, y esta rama es desechable.
   push:
     branches: [tmp/credcheck]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  check:
+  probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect each candidate credential
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Try to push with each credential
         env:
           CAND_MOTOKO_PAT: ${{ secrets.MOTOKO_PAT }}
           CAND_GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CAND_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -u
-          check () {
+          git config user.name  "probe-bot"
+          git config user.email "probe-bot@users.noreply.github.com"
+
+          try_push () {
             name="$1"; tok="${2:-}"
             if [ -z "$tok" ]; then
-              printf '%-16s ABSENT (el secreto no existe o esta vacio)\n' "$name"
-              return 0
+              printf '%-16s ABSENT\n' "$name"; return 0
             fi
-            hdr="$(mktemp)"; body="$(mktemp)"
-            code="$(curl -sS -o "$body" -D "$hdr" -w '%{http_code}' -H "Authorization: Bearer $tok" https://api.github.com/user || echo 000)"
-            if [ "$code" != "200" ]; then
-              printf '%-16s INVALIDO (HTTP %s)\n' "$name" "$code"
-              return 0
+            git checkout -q -B probe-base HEAD
+            echo "probe $name $(date -u +%s%N)" > .probe_marker
+            git add .probe_marker
+            git commit -q -m "chore: probe $name [skip ci]"
+            url="https://x-access-token:${tok}@github.com/${GITHUB_REPOSITORY}.git"
+            if git push -q "$url" HEAD:tmp/credcheck 2>/tmp/pusherr; then
+              printf '%-16s PUSH OK  <- este token sirve\n' "$name"
+            else
+              printf '%-16s PUSH RECHAZADO: %s\n' "$name" "$(head -1 /tmp/pusherr | cut -c1-140)"
             fi
-            login="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("login","?"))' "$body" 2>/dev/null || echo '?')"
-            scopes="$(grep -i '^x-oauth-scopes:' "$hdr" | cut -d: -f2- | tr -d '\r ' || true)"
-            rcode="$(curl -sS -o "$body" -w '%{http_code}' -H "Authorization: Bearer $tok" https://api.github.com/repos/kodingvibes/kodingvibes || echo 000)"
-            perms="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(json.dumps(d.get("permissions")))' "$body" 2>/dev/null || echo '?')"
-            printf '%-16s login=%s scopes=[%s] repo(HTTP %s) permissions=%s\n' "$name" "$login" "$scopes" "$rcode" "$perms"
+            git checkout -q -B tmp/credcheck "$(git rev-parse HEAD~1)" 2>/dev/null || true
+            rm -f .probe_marker
           }
 
-          echo "=== candidatos ==="
-          check MOTOKO_PAT    "$CAND_MOTOKO_PAT"
-          check GH_TOKEN      "$CAND_GH_TOKEN"
-          check GITHUB_TOKEN  "$CAND_GITHUB_TOKEN"
+          echo "=== candidatos (push a rama con proteccion igual a main) ==="
+          try_push GITHUB_TOKEN "$CAND_GITHUB_TOKEN"
+          try_push MOTOKO_PAT   "$CAND_MOTOKO_PAT"
+          try_push GH_TOKEN     "$CAND_GH_TOKEN"
