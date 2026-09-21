@@ -136,3 +136,50 @@ docker run --rm --network host --platform linux/386 i386/alpine:latest \
 | Deploy verde pero el sitio no cambia | Revisa que el dominio apunte al proyecto correcto (*Settings → Domains*) |
 | Dos deployments por push | Los dos mecanismos están activos. Ver «Si quieres volver a un solo mecanismo» |
 | Deployment con error `ERR_REQUIRE_ESM` | Una dependencia ESM pura cargada con `require()`. Vercel no habilita `require(esm)`. Reprodúcelo con `node --no-experimental-require-module -e "require('paquete')"` y fija con `overrides` una versión cuya cadena sea CommonJS |
+
+## `npm warn allow-scripts` en el build de Vercel
+
+Al instalar dependencias, Vercel imprime:
+
+```
+npm warn allow-scripts 4 packages have install scripts not yet covered by allowScripts:
+npm warn allow-scripts   @parcel/watcher@2.6.0 (install: node-gyp rebuild)
+npm warn allow-scripts   @swc/core@1.15.46 (postinstall: node postinstall.js)
+npm warn allow-scripts   sharp@0.34.5 (install: node install/check.js || npm run build)
+npm warn allow-scripts   unrs-resolver@1.12.2 (postinstall: node postinstall.js)
+```
+
+**No es un error y el build no está degradado.** Es el aviso de migración de npm
+hacia scripts de instalación opcionales: **npm 12** (8-jul-2026) los bloquea por
+defecto y solo avisa, mientras que **npm 11.16+** —el que usa hoy el builder de
+Vercel— avisa sin bloquear. El mismo `npm ci` imprime textos distintos según la
+versión (`npm warn allow-scripts` en 11, `npm warn install-scripts` en 12).
+
+Los cuatro paquetes traen **binarios precompilados** por plataforma
+(`optionalDependencies`: `@img/sharp-linux-x64`, `@parcel/watcher-linux-x64-glibc`,
+`@swc/core-linux-x64-*`, `@unrs/resolver-binding-linux-x64-gnu`). Sus scripts solo
+compilan desde fuente como respaldo, así que ejecutarlos no aporta nada aquí —
+salvo cuatro puntos de ejecución de código arbitrario en CI y en Vercel.
+
+Por eso `package.json` los **deniega explícitamente**:
+
+```json
+"allowScripts": {
+  "@parcel/watcher": false,
+  "@swc/core": false,
+  "sharp": false,
+  "unrs-resolver": false
+}
+```
+
+Comprobado con todo bloqueado: `next build` termina con `EXIT=0`, `sharp` hace un
+`resize` real (`libvips 8.17.3` → PNG), y `@parcel/watcher` y `unrs-resolver`
+cargan. **No conviertas esos `false` en `true`**: un `false` significa «revisado, su
+script no hace falta»; ausente significa «sin revisar». Si aparece un paquete nuevo
+en el aviso, añádelo al campo —`true` solo si de verdad necesita ejecutar su script—
+y consulta los pendientes con `npm install-scripts ls`.
+
+Si en el futuro el aviso nombra un paquete que **sí** necesita su script (uno sin
+binarios precompilados, p. ej. con `binding.gyp` y sin `optionalDependencies`), la
+solución es aprobarlo con `true`, no desactivar la política.
+
