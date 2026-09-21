@@ -60,6 +60,13 @@ jobs:
 
   # Kept separate and non-blocking so an advisory in a transitive dependency
   # is visible without failing every unrelated pull request.
+  #
+  # Split in two on purpose. A single audit over the whole tree reported 26
+  # findings, 21 of them reachable only through devDependencies (semantic-release
+  # pulls in its own copy of npm), and that noise buried a *critical* advisory in
+  # `next` — the framework actually serving every request. Auditing the
+  # production tree separately is what makes the signal readable; it is measured
+  # against `--omit=dev` so a dev-only advisory can never hide a shipped one.
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -78,5 +85,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Audit
+      # What actually ships. Read this one first: anything here is a real
+      # exposure in production, and most of it is fixable without a major bump.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+
+      # Informative: build-time tooling. Expected to be noisier — semantic-release
+      # bundles its own npm, which carries advisories the project cannot fix
+      # without a major bump of the release tooling.
+      - name: Audit dev dependencies
         run: npm run security:check
